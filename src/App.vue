@@ -5,12 +5,13 @@
       v-if="!isMobile"
       v-model="drawer"
       :rail="rail"
-      :permanent="false"
-      :temporary="true"
+      :permanent="true"
+      :temporary="false"
       location="left"
       class="navigation-drawer"
       @mouseenter="rail = false"
       @mouseleave="rail = true"
+      :width="rail ? 56 : 200"
     >
       <v-list>
         <v-list-item
@@ -26,7 +27,7 @@
       <v-list density="compact" nav>
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
         <v-list-item prepend-icon="mdi-image" title="上传任务" value="upload" @click="goToUpload"></v-list-item>
-        <v-list-item prepend-icon="mdi-history" title="检测历史" value="results" @click="goToResults"></v-list-item>
+        <v-list-item prepend-icon="mdi-history" title="检测历史" value="history" @click="goToHistory"></v-list-item>
         <v-list-item 
           v-if="isLoggedIn"
           prepend-icon="mdi-account" 
@@ -51,7 +52,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar>
+    <v-app-bar class="app-bar">
       <v-app-bar-nav-icon @click="drawer = !drawer" v-if="!isMobile"></v-app-bar-nav-icon>
       <v-toolbar-title>学术图像检测系统</v-toolbar-title>
       <v-spacer></v-spacer>
@@ -83,7 +84,7 @@
         <v-icon>mdi-image</v-icon>
         <span>上传任务</span>
       </v-btn>
-      <v-btn to="/results" value="results">
+      <v-btn to="/history" value="history">
         <v-icon>mdi-history</v-icon>
         <span>检测历史</span>
       </v-btn>
@@ -164,8 +165,8 @@ const goToUpload = () => {
   router.push('/upload')
 }
 
-const goToResults = () => {
-  router.push('/results')
+const goToHistory = () => {
+  router.push('/history')
 }
 
 const goToLogin = () => {
@@ -203,11 +204,42 @@ onMounted(() => {
 
 .navigation-drawer {
   position: fixed !important;
-  z-index: 100;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
 }
 
-/* 确保导航栏不会影响主内容区域的布局 */
+/* 移除主内容区域的左边距 */
 .v-main {
   margin-left: 0 !important;
+  padding-left: 56px !important;
+}
+
+/* 确保导航栏展开时不会影响主内容区域 */
+.v-navigation-drawer--rail {
+  position: fixed !important;
+  z-index: 1000;
+}
+
+.v-navigation-drawer--rail:not(:hover) {
+  width: 56px !important;
+}
+
+.v-navigation-drawer--rail:hover {
+  width: 200px !important;
+}
+
+/* 固定顶部栏 */
+.app-bar {
+  position: fixed !important;
+  z-index: 1001 !important;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+/* 调整主内容区域的上边距，为固定顶部栏留出空间 */
+.v-main {
+  padding-top: 64px !important;
 }
 </style>
