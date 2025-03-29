@@ -106,10 +106,16 @@ import TaskInfoStep from './steps/TaskInfoStep.vue'
 import ImageSelectionStep from './steps/ImageSelectionStep.vue'
 import DetectionStep from './steps/DetectionStep.vue'
 
+interface TaskInfo {
+  name: string
+  description: string
+  tags: string[]
+}
+
 const emit = defineEmits(['back', 'complete'])
 
 const currentStep = ref(1)
-const taskInfo = ref({
+const taskInfo = ref<TaskInfo>({
   name: '',
   description: '',
   tags: []

@@ -11,6 +11,7 @@ declare module 'vue' {
     ImageSelectionStep: typeof import('./components/steps/ImageSelectionStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TaskDetail: typeof import('./components/taskDetail.vue')['default']
     TaskInfoStep: typeof import('./components/steps/TaskInfoStep.vue')['default']
     UploadProgress: typeof import('./components/UploadProgress.vue')['default']
   }

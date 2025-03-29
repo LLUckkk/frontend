@@ -1,38 +1,28 @@
 <template>
   <v-card flat border="0">
+    <!-- 任务详情弹窗 -->
+    <v-dialog v-model="showDetail" fullscreen>
+      <task-detail v-if="showDetail" :task="currentTask" @close="showDetail = false" />
+    </v-dialog>
+
     <v-card-title class="d-flex align-center pa-0">
       检测历史
       <v-spacer></v-spacer>
-      <v-btn 
-        variant="outlined" 
-        class="mr-2"
-        @click="showSelection = !showSelection"
-        :color="showSelection ? 'primary' : undefined"
-      >
+      <v-btn variant="outlined" class="mr-2" @click="showSelection = !showSelection"
+        :color="showSelection ? 'primary' : undefined">
         {{ showSelection ? '取消选择' : '批量选择' }}
       </v-btn>
       <v-btn variant="outlined">新建</v-btn>
     </v-card-title>
 
     <v-card-text class="pa-0 mt-4">
-      <v-data-table
-        v-model="selected"
-        :headers="headers"
-        :items="tasks"
-        :items-per-page="10"
-        class="elevation-1"
-        :show-select="showSelection"
-        item-value="id"
-      >
+      <v-data-table v-model="selected" :headers="headers" :items="tasks" :items-per-page="10" class="elevation-1"
+        :show-select="showSelection" item-value="id">
         <!-- 进度条列自定义 -->
         <template v-slot:item.progress="{ item }">
           <div class="d-flex justify-center">
-            <v-progress-linear
-              :model-value="item.progress"
-              :color="getProgressColor(item.progress)"
-              height="20"
-              style="width: 90%"
-            >
+            <v-progress-linear :model-value="item.progress" :color="getProgressColor(item.progress)" height="20"
+              style="width: 90%">
               <template v-slot:default="{ value }">
                 <span>{{ Math.ceil(value) }}%</span>
               </template>
@@ -43,36 +33,16 @@
         <!-- 操作列自定义 -->
         <template v-slot:item.actions="{ item }">
           <div class="d-flex justify-center gap-2">
-            <v-btn
-              size="small"
-              color="primary"
-              variant="text"
-              @click="handleReview(item)"
-            >
-              重新评估
+            <v-btn size="small" color="primary" variant="text" @click="handleDetail(item)">
+              任务详情
             </v-btn>
-            <v-btn
-              size="small"
-              color="primary"
-              variant="text"
-              @click="handleDownload(item)"
-            >
+            <v-btn size="small" color="primary" variant="text" @click="handleDownload(item)">
               下载
             </v-btn>
-            <v-btn
-              size="small"
-              color="warning"
-              variant="text"
-              @click="handleUrge(item)"
-            >
+            <v-btn size="small" color="warning" variant="text" @click="handleUrge(item)">
               催一催
             </v-btn>
-            <v-btn
-              size="small"
-              color="error"
-              variant="text"
-              @click="handleDelete(item)"
-            >
+            <v-btn size="small" color="error" variant="text" @click="handleDelete(item)">
               删除
             </v-btn>
           </div>
@@ -81,25 +51,13 @@
 
       <!-- 批量操作按钮 -->
       <v-fade-transition>
-        <v-card
-          v-if="showSelection && selected.length > 0"
-          class="batch-actions"
-          elevation="2"
-        >
+        <v-card v-if="showSelection && selected.length > 0" class="batch-actions" elevation="2">
           <v-card-text class="d-flex align-center">
             <span class="mr-4">已选择 {{ selected.length }} 项</span>
-            <v-btn
-              color="primary"
-              variant="text"
-              @click="handleBatchDownload"
-            >
+            <v-btn color="primary" variant="text" @click="handleBatchDownload">
               批量下载
             </v-btn>
-            <v-btn
-              color="error"
-              variant="text"
-              @click="handleBatchDelete"
-            >
+            <v-btn color="error" variant="text" @click="handleBatchDelete">
               批量删除
             </v-btn>
           </v-card-text>
@@ -111,14 +69,17 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // 表格列定义
 const headers = [
-  { title: '任务ID', key: 'id', align: 'center', width: '120px' },
-  { title: '发布时间', key: 'publishTime', align: 'center', width: '180px' },
-  { title: '审稿人', key: 'reviewer', align: 'center', width: '100px' },
-  { title: '完成情况', key: 'progress', align: 'center', width: '200px' },
-  { title: '操作', key: 'actions', sortable: false, align: 'center', width: '350px' }
+  { title: '任务ID', key: 'id', align: 'center' as const, width: '120px' },
+  { title: '发布时间', key: 'publishTime', align: 'center' as const, width: '180px' },
+  { title: '审稿人', key: 'reviewer', align: 'center' as const, width: '100px' },
+  { title: '完成情况', key: 'progress', align: 'center' as const, width: '200px' },
+  { title: '操作', key: 'actions', sortable: false, align: 'center' as const, width: '350px' }
 ]
 
 // 模拟任务数据
@@ -219,6 +180,10 @@ const tasks = ref([
 const showSelection = ref(false)
 const selected = ref([])
 
+// 控制详情页显示
+const showDetail = ref(false)
+const currentTask = ref<any>(null)
+
 // 获取进度条颜色
 const getProgressColor = (progress: number) => {
   if (progress === 100) return 'success'
@@ -227,8 +192,8 @@ const getProgressColor = (progress: number) => {
 }
 
 // 操作按钮处理函数
-const handleReview = (item: any) => {
-  console.log('重新评估', item)
+const handleDetail = (item: any) => {
+  router.push(`/task/${item.id}`)
 }
 
 const handleDownload = (item: any) => {
