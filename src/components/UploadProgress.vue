@@ -61,18 +61,9 @@
               <DetectionStep />
             </v-stepper-window-item>
 
-            <!-- 第四步：生成结果 -->
+            <!-- 第四步：发布审核 -->
             <v-stepper-window-item :value="4">
-              <v-container class="mt-4">
-                <v-row>
-                  <v-col cols="12">
-                    <div class="text-center">
-                      <v-icon size="64" color="success">mdi-check-circle</v-icon>
-                      <div class="text-h6 mt-4">检测完成</div>
-                    </div>
-                  </v-col>
-                </v-row>
-              </v-container>
+              <ReviewStep @update="updateReviewData" />
             </v-stepper-window-item>
           </v-stepper-window>
 
@@ -105,34 +96,46 @@ import { ref, computed } from 'vue'
 import TaskInfoStep from './steps/TaskInfoStep.vue'
 import ImageSelectionStep from './steps/ImageSelectionStep.vue'
 import DetectionStep from './steps/DetectionStep.vue'
+import ReviewStep from './steps/ReviewStep.vue'
+
+interface Image {
+  url: string
+  name: string
+  size: string
+  type: string
+  selected: boolean
+}
+
+interface TaskInfo {
+  name: string
+  description: string
+  tags: string[]
+}
+
+interface ReviewData {
+  selectedFakeImages: any[]
+  selectedRealImages: any[]
+  selectedReviewers: any[]
+}
 
 const emit = defineEmits(['back', 'complete'])
 
 const currentStep = ref(1)
-const taskInfo = ref({
+const taskInfo = ref<TaskInfo>({
   name: '',
   description: '',
   tags: []
 })
 
-const extractedImages = ref([
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片1.jpg',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片2.jpg',
-    size: '0.8MB',
-    type: 'image/png',
-    selected: false
-  }
-])
+const extractedImages = ref<Image[]>([])
 
-const selectedImages = ref<typeof extractedImages.value>([])
+const selectedImages = ref<Image[]>([])
+
+const reviewData = ref<ReviewData>({
+  selectedFakeImages: [],
+  selectedRealImages: [],
+  selectedReviewers: []
+})
 
 const canProceed = computed(() => {
   switch (currentStep.value) {
@@ -140,6 +143,10 @@ const canProceed = computed(() => {
       return taskInfo.value.name && taskInfo.value.description
     case 2:
       return selectedImages.value.length > 0
+    case 4:
+      const { selectedFakeImages, selectedRealImages, selectedReviewers } = reviewData.value
+      const hasSelectedImages = selectedFakeImages.length > 0 || selectedRealImages.length > 0
+      return hasSelectedImages && selectedReviewers.length > 0
     default:
       return true
   }
@@ -153,6 +160,10 @@ const updateSelectedImages = (images: typeof extractedImages.value) => {
   selectedImages.value = images
 }
 
+const updateReviewData = (data: ReviewData) => {
+  reviewData.value = data
+}
+
 const previousStep = () => {
   if (currentStep.value > 1) {
     currentStep.value--
@@ -163,7 +174,10 @@ const nextStep = () => {
   if (currentStep.value < 4) {
     currentStep.value++
   } else {
-    emit('complete')
+    if (canProceed.value) {
+      emit('complete')
+      emit('back')
+    }
   }
 }
 </script>
