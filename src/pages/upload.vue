@@ -6,41 +6,41 @@
           <v-row>
             <v-col cols="12" md="4">
               <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'free' }" @click="selectedVersion = 'free'">
-                <v-card-title class="text-h6">免费版</v-card-title>
-                <v-card-subtitle>0元/字</v-card-subtitle>
+                <v-card-title class="text-h6">基础版</v-card-title>
+                <v-card-subtitle>0元/张</v-card-subtitle>
                 <v-card-text>
-                  <div class="text-body-2 mb-4">适用于初稿查重</div>
+                  <div class="text-body-2 mb-4">适用于个人图片检测</div>
                   <v-list density="compact">
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div class="text-primary">数据库</div>
+                        <div class="text-primary">AI模型</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-primary">14个(近5年)</div>
+                        <div class="text-primary">基础版</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持语言</div>
+                        <div>支持格式</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-warning">中文</div>
+                        <div class="text-warning">JPG/PNG</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>免费次数</div>
+                        <div>免费额度</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-warning">每天1篇</div>
+                        <div class="text-warning">每天5张</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持AIGC检测</div>
+                        <div>检测精度</div>
                       </template>
                       <template v-slot:append>
-                        <v-icon color="error">mdi-fire</v-icon>
+                        <v-icon color="warning">mdi-star</v-icon>
                       </template>
                     </v-list-item>
                   </v-list>
@@ -51,24 +51,24 @@
             <v-col cols="12" md="4">
               <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'pro' }" @click="selectedVersion = 'pro'">
                 <v-card-title class="text-h6">专业版</v-card-title>
-                <v-card-subtitle>3元/万字</v-card-subtitle>
+                <v-card-subtitle>1元/张</v-card-subtitle>
                 <v-card-text>
-                  <div class="text-body-2 mb-4">适用于修改稿查重</div>
+                  <div class="text-body-2 mb-4">适用于批量图片检测</div>
                   <v-list density="compact">
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div class="text-primary">数据库</div>
+                        <div class="text-primary">AI模型</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-primary">14个</div>
+                        <div class="text-primary">专业版</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持语言</div>
+                        <div>支持格式</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-warning">中文</div>
+                        <div class="text-warning">全格式</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
@@ -81,10 +81,13 @@
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持AIGC检测</div>
+                        <div>检测精度</div>
                       </template>
                       <template v-slot:append>
-                        <v-icon color="error">mdi-fire</v-icon>
+                        <div class="d-flex">
+                          <v-icon color="warning">mdi-star</v-icon>
+                          <v-icon color="warning">mdi-star</v-icon>
+                        </div>
                       </template>
                     </v-list-item>
                   </v-list>
@@ -95,40 +98,45 @@
             <v-col cols="12" md="4">
               <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'premium' }" @click="selectedVersion = 'premium'">
                 <v-card-title class="text-h6">至尊版</v-card-title>
-                <v-card-subtitle>1.5元/千字</v-card-subtitle>
+                <v-card-subtitle>定制价格</v-card-subtitle>
                 <v-card-text>
-                  <div class="text-body-2 mb-4">更按优高校的系统</div>
+                  <div class="text-body-2 mb-4">适用于工业级图片检测</div>
                   <v-list density="compact">
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div class="text-primary">数据库</div>
+                        <div class="text-primary">AI模型</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-primary">18个</div>
+                        <div class="text-primary">尊贵定制</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持语言</div>
+                        <div>支持格式</div>
                       </template>
                       <template v-slot:append>
-                        <div class="text-warning">中英文</div>
+                        <div class="text-warning">全格式</div>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>极速检测</div>
+                        <div>检测极速</div>
                       </template>
                       <template v-slot:append>
+                        <v-icon color="success">mdi-check</v-icon>
                         <v-icon color="success">mdi-check</v-icon>
                       </template>
                     </v-list-item>
                     <v-list-item>
                       <template v-slot:prepend>
-                        <div>支持AIGC检测</div>
+                        <div>检测精度</div>
                       </template>
                       <template v-slot:append>
-                        <v-icon color="error">mdi-fire</v-icon>
+                        <div class="d-flex">
+                          <v-icon color="warning">mdi-star</v-icon>
+                          <v-icon color="warning">mdi-star</v-icon>
+                          <v-icon color="warning">mdi-star</v-icon>
+                        </div>
                       </template>
                     </v-list-item>
                   </v-list>
@@ -143,8 +151,8 @@
                 <v-card-text class="text-center">
                   <div class="upload-area pa-8" @dragover.prevent @drop.prevent="handleDrop">
                     <v-icon size="64" color="grey">mdi-cloud-upload</v-icon>
-                    <div class="text-h6 mt-4">点击或拖拽文件到此处上传</div>
-                    <div class="text-caption text-grey">支持格式：压缩包文件大小不超过15M</div>
+                    <div class="text-h6 mt-4">点击或拖拽图片/文件到此处上传</div>
+                    <div class="text-caption text-grey">支持格式：JPG、PNG、ZIP等常见文件格式，xxx不超过10MB，xxx不超过xxMB</div>
                     <input
                       type="file"
                       ref="fileInput"
@@ -160,7 +168,7 @@
           <v-row class="mt-4">
             <v-col cols="12" class="d-flex justify-end">
               <v-btn color="primary" size="large" :disabled="!selectedVersion" @click="handleSubmit">
-                提交查重
+                提交检测
                 <v-icon end>mdi-arrow-right</v-icon>
               </v-btn>
             </v-col>
@@ -170,7 +178,7 @@
         <v-col cols="12" lg="3">
           <v-card>
             <v-card-title class="d-flex align-center">
-              全网班级动态
+              实时检测动态
               <v-spacer></v-spacer>
               <v-btn icon="mdi-chevron-left" variant="text" density="compact"></v-btn>
               <v-btn icon="mdi-chevron-right" variant="text" density="compact"></v-btn>
@@ -198,7 +206,7 @@
                         >{{ item.tag }}</v-chip>
                       </div>
                       <div class="text-caption text-grey">
-                        {{ item.count }}人查重 平均重复率: {{ item.rate }}
+                        {{ item.count }}张图片 平均造假率: {{ item.rate }}
                       </div>
                     </div>
                   </div>
@@ -228,36 +236,36 @@ const fileInput = ref<HTMLInputElement | null>(null)
 
 const timelineItems = ref([
   {
-    name: 'hhhxcyf',
+    name: 'zhw',
     avatar: '/avatars/default.png',
-    tag: '黄金班',
+    tag: '个人用户',
     tagColor: 'warning',
     count: '10',
-    rate: '14.6%'
+    rate: '30%'
   },
   {
-    name: 'asdfsfff',
+    name: 'hhh',
     avatar: '/avatars/default.png',
-    tag: '星璨班',
+    tag: '至尊用户',
     tagColor: 'error',
-    count: '24',
-    rate: '37.3%'
+    count: '240',
+    rate: '15%'
   },
   {
-    name: '飞飞的小花猪',
+    name: 'wyt',
     avatar: '/avatars/default.png',
-    tag: '钻石班',
-    tagColor: 'info',
+    tag: '个人用户',
+    tagColor: 'warning',
     count: '21',
-    rate: '8.8%'
+    rate: '45%'
   },
   {
-    name: '写不好论文不...',
+    name: 'md',
     avatar: '/avatars/default.png',
-    tag: '星璨班',
+    tag: '至尊用户',
     tagColor: 'error',
-    count: '21',
-    rate: '55.4%'
+    count: '521',
+    rate: '25%'
   }
 ])
 

@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     DetectionStep: typeof import('./components/steps/DetectionStep.vue')['default']
     ImageSelectionStep: typeof import('./components/steps/ImageSelectionStep.vue')['default']
+    ReviewStep: typeof import('./components/steps/ReviewStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TaskDetail: typeof import('./components/taskDetail.vue')['default']
