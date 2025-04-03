@@ -171,8 +171,9 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
+                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
                   >
-                  查看详情
+                    查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
                   </v-btn>
                 </div>
@@ -191,8 +192,9 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
+                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
                   >
-                  查看详情
+                    查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
                   </v-btn>
                 </div>
@@ -211,6 +213,7 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
+                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
                   >
                     查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
