@@ -85,11 +85,6 @@
             class="role-toggle"
           >
             <v-btn 
-              value="admin" 
-              :class="{ 'active-role': selectedRole === 'admin' }"
-              class="role-btn"
-            >管理员</v-btn>
-            <v-btn 
               value="publisher" 
               :class="{ 'active-role': selectedRole === 'publisher' }"
               class="role-btn"
@@ -103,51 +98,137 @@
         </div>
 
         <v-form @submit.prevent="handleSubmit">
-          <v-text-field
-            v-model="username"
-            label="请输入用户名"
-            variant="outlined"
-            density="comfortable"
-            class="mb-4"
-            prepend-inner-icon="mdi-account"
-          ></v-text-field>
-
-          <v-text-field
-            v-model="password"
-            label="输入密码"
-            variant="outlined"
-            density="comfortable"
-            class="mb-4"
-            type="password"
-            prepend-inner-icon="mdi-lock"
-          ></v-text-field>
-
-          <!-- 验证码区域 -->
-          <div class="captcha-section mb-6">
+          <!-- 登录表单 -->
+          <template v-if="loginType === 'login'">
             <v-text-field
-              v-model="captchaInput"
-              label="请输入验证码"
+              v-model="username"
+              label="请输入用户名"
               variant="outlined"
               density="comfortable"
-              :error-messages="captchaError"
-              class="captcha-input"
-              prepend-inner-icon="mdi-shield-check"
-            >
-              <template v-slot:append>
-                <DynamicCaptcha
-                  ref="captchaRef"
-                  @update:code="code => captchaCode = code"
-                />
-              </template>
-            </v-text-field>
-          </div>
+              class="mb-4"
+              prepend-inner-icon="mdi-account"
+            ></v-text-field>
 
-          <v-checkbox
-            v-model="agreement"
-            label="我已阅读《隐私政策》和《使用协议》"
-            hide-details
-            class="mb-6"
-          ></v-checkbox>
+            <v-text-field
+              v-model="password"
+              label="输入密码"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              type="password"
+              prepend-inner-icon="mdi-lock"
+            ></v-text-field>
+
+            <!-- 验证码区域 -->
+            <div class="captcha-section mb-6">
+              <v-text-field
+                v-model="captchaInput"
+                label="请输入验证码"
+                variant="outlined"
+                density="comfortable"
+                :error-messages="captchaError"
+                class="captcha-input"
+                prepend-inner-icon="mdi-shield-check"
+              >
+                <template v-slot:append>
+                  <DynamicCaptcha
+                    ref="captchaRef"
+                    @update:code="code => captchaCode = code"
+                  />
+                </template>
+              </v-text-field>
+            </div>
+
+            <v-checkbox
+              v-model="agreement"
+              label="我已阅读《隐私政策》和《使用协议》"
+              hide-details
+              class="mb-6"
+            ></v-checkbox>
+          </template>
+
+          <!-- 注册表单 -->
+          <template v-else>
+            <v-text-field
+              v-model="registerForm.username"
+              label="设置用户名"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              prepend-inner-icon="mdi-account"
+              :rules="[v => !!v || '用户名不能为空', v => v.length >= 4 || '用户名至少4个字符']"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="registerForm.password"
+              label="设置密码"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              type="password"
+              prepend-inner-icon="mdi-lock"
+              :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码至少6个字符']"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="registerForm.confirmPassword"
+              label="确认密码"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              type="password"
+              prepend-inner-icon="mdi-lock-check"
+              :rules="[v => !!v || '请确认密码', v => v === registerForm.password || '两次输入的密码不一致']"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="registerForm.email"
+              label="邮箱"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              prepend-inner-icon="mdi-email"
+              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="registerForm.phone"
+              label="手机号码"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              prepend-inner-icon="mdi-phone"
+              :rules="[v => !!v || '手机号不能为空', v => /^1[3-9]\d{9}$/.test(v) || '请输入有效的手机号']"
+            ></v-text-field>
+
+            <!-- 验证码区域 -->
+            <div class="captcha-section mb-6">
+              <v-text-field
+                v-model="captchaInput"
+                label="请输入验证码"
+                variant="outlined"
+                density="comfortable"
+                :error-messages="captchaError"
+                class="captcha-input"
+                prepend-inner-icon="mdi-shield-check"
+              >
+                <template v-slot:append>
+                  <DynamicCaptcha
+                    ref="captchaRef"
+                    @update:code="code => captchaCode = code"
+                  />
+                </template>
+              </v-text-field>
+            </div>
+
+            <v-checkbox
+              v-model="agreement"
+              label="我已阅读并同意《隐私政策》和《使用协议》"
+              hide-details
+              class="mb-6"
+              :rules="[v => !!v || '请阅读并同意相关协议']"
+            ></v-checkbox>
+          </template>
 
           <v-btn
             block
@@ -160,7 +241,13 @@
           </v-btn>
 
           <div class="text-body-2 text-grey text-center mt-4">
-            <a href="#" class="text-decoration-none">忘记密码？</a>
+            <template v-if="loginType === 'login'">
+              <a href="#" class="text-decoration-none">忘记密码？</a>
+            </template>
+            <template v-else>
+              <span>已有账号？</span>
+              <a href="#" class="text-decoration-none ml-1" @click.prevent="loginType = 'login'">立即登录</a>
+            </template>
           </div>
         </v-form>
       </div>
@@ -180,6 +267,15 @@ const selectedRole = ref('reviewer')
 const username = ref('')
 const password = ref('')
 const agreement = ref(false)
+
+// 注册表单数据
+const registerForm = ref({
+  username: '',
+  password: '',
+  confirmPassword: '',
+  email: '',
+  phone: ''
+})
 
 // 验证码相关
 const captchaInput = ref('')
@@ -205,9 +301,12 @@ const handleSubmit = () => {
   if (!validateCaptcha()) {
     return
   }
-  // 继续登录流程...
+  // 继续登录/注册流程...
   if (loginType.value === 'login') {
     router.push('/task')
+  } else {
+    // 处理注册逻辑
+    console.log('注册信息：', registerForm.value)
   }
 }
 </script>
