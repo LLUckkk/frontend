@@ -212,19 +212,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const route = useRoute()
-
-// 获取路由参数
-const taskId = ref(route.query.id as string)
-const initialImageIndex = parseInt(route.query.imageIndex as string) || 0
-
 const taskProgress = [70, 85, 30]
 
 // 图片相关数据和方法
-const currentImageIndex = ref(initialImageIndex)
+const currentImageIndex = ref(0)
 const images = ref([
   {
     id: '1',
