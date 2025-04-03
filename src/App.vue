@@ -28,6 +28,7 @@
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
         <v-list-item prepend-icon="mdi-image" title="上传任务" value="upload" @click="goToUpload"></v-list-item>
         <v-list-item prepend-icon="mdi-history" title="检测历史" value="history" @click="goToHistory"></v-list-item>
+        <v-list-item prepend-icon="mdi-book-open-page-variant" title="审阅" value="review" @click="goToReview"></v-list-item>
         <v-list-item 
           v-if="isLoggedIn"
           prepend-icon="mdi-account" 
@@ -87,6 +88,10 @@
       <v-btn to="/history" value="history">
         <v-icon>mdi-history</v-icon>
         <span>检测历史</span>
+      </v-btn>
+      <v-btn to="/review" value="review">
+        <v-icon>mdi-book-open-page-variant</v-icon>
+        <span>审阅</span>
       </v-btn>
       <v-btn 
         v-if="isLoggedIn"
@@ -167,6 +172,10 @@ const goToUpload = () => {
 
 const goToHistory = () => {
   router.push('/history')
+}
+
+const goToReview = () => {
+  router.push('/review')
 }
 
 const goToLogin = () => {

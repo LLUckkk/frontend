@@ -6,7 +6,7 @@
     </v-dialog>
 
     <v-card-title class="d-flex align-center pa-0">
-      检测历史
+      <h1 class="text-h4 font-weight-bold">检测历史</h1>
       <v-spacer></v-spacer>
       <v-btn variant="outlined" class="mr-2" @click="showSelection = !showSelection"
         :color="showSelection ? 'primary' : undefined">
