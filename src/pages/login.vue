@@ -242,7 +242,7 @@
 
           <div class="text-body-2 text-grey text-center mt-4">
             <template v-if="loginType === 'login'">
-              <a href="#" class="text-decoration-none">忘记密码？</a>
+              <a href="#" class="text-decoration-none" @click.prevent="showForgotPasswordDialog = true">忘记密码？</a>
             </template>
             <template v-else>
               <span>已有账号？</span>
@@ -252,6 +252,16 @@
         </v-form>
       </div>
     </div>
+
+    <!-- 忘记密码对话框 -->
+    <v-dialog
+      v-model="showForgotPasswordDialog"
+      width="auto"
+      persistent
+      scrollable
+    >
+      <forgot-password @close="showForgotPasswordDialog = false" />
+    </v-dialog>
   </div>
 </template>
 
@@ -259,6 +269,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
+import ForgotPassword from '@/components/ForgotPassword.vue'
 
 const router = useRouter()
 const captchaRef = ref()
@@ -267,6 +278,7 @@ const selectedRole = ref('reviewer')
 const username = ref('')
 const password = ref('')
 const agreement = ref(false)
+const showForgotPasswordDialog = ref(false)
 
 // 注册表单数据
 const registerForm = ref({
@@ -315,7 +327,7 @@ const handleSubmit = () => {
 .login-page {
   display: flex;
   min-height: 100vh;
-  background-color: rgb(var(--v-theme-background));
+  background-color: var(--v-theme-background);
   padding-top: 40px;
 }
 
@@ -325,7 +337,7 @@ const handleSubmit = () => {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  background-color: rgb(var(--v-theme-surface));
+  background-color: var(--v-theme-surface);
 }
 
 .feature-content {
@@ -357,7 +369,7 @@ const handleSubmit = () => {
 
 .login-section {
   width: 480px;
-  background-color: white;
+  background-color: var(--v-theme-surface);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -368,6 +380,7 @@ const handleSubmit = () => {
 .login-container {
   width: 100%;
   max-width: 360px;
+  background-color: var(--v-theme-surface);
 }
 
 .login-toggle {
@@ -375,20 +388,20 @@ const handleSubmit = () => {
   border: none;
   border-radius: 8px;
   overflow: hidden;
-  background-color: #f5f7fa;
+  background-color: var(--v-theme-surface);
 }
 
 .login-toggle .v-btn {
   background-color: transparent;
-  color: #606266;
+  color: var(--v-theme-on-surface);
   font-weight: 500;
   height: 44px;
   transition: all 0.3s ease;
 }
 
 .login-toggle .active-tab {
-  background-color: #409eff;
-  color: white;
+  background-color: var(--v-theme-primary);
+  color: var(--v-theme-on-primary);
 }
 
 .role-toggle {
@@ -401,47 +414,47 @@ const handleSubmit = () => {
 
 .role-btn {
   flex: 1;
-  background-color: #f5f7fa !important;
-  color: #606266 !important;
-  border: 2px solid transparent !important;
+  background-color: var(--v-theme-surface) !important;
+  color: var(--v-theme-on-surface) !important;
+  border: none !important;
   transition: all 0.3s ease;
   height: 40px;
   font-weight: 500;
 }
 
 .role-btn:hover {
-  background-color: #ecf5ff !important;
-  color: #409eff !important;
+  background-color: var(--v-theme-primary-light) !important;
+  color: var(--v-theme-on-primary) !important;
 }
 
 .active-role {
-  background-color: #ecf5ff !important;
-  color: #409eff !important;
-  border-color: #409eff !important;
+  background-color: var(--v-theme-primary) !important;
+  color: var(--v-theme-on-primary) !important;
+  border: none !important;
 }
 
 .v-btn {
   text-transform: none !important;
+  background-color: var(--v-theme-primary);
+  color: var(--v-theme-on-primary);
 }
-
 
 .v-btn.v-btn--size-large {
   height: 44px;
   font-size: 16px;
   font-weight: 500;
-  background-color: #409eff !important;
   box-shadow: 0 2px 4px rgba(64, 158, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .v-btn.v-btn--size-large:hover {
-  background-color: #66b1ff !important;
+  background-color: var(--v-theme-primary-light);
   box-shadow: 0 4px 8px rgba(64, 158, 255, 0.3);
   transform: translateY(-1px);
 }
 
 .v-btn.v-btn--size-large:active {
-  background-color: #3a8ee6 !important;
+  background-color: var(--v-theme-primary-dark);
   transform: translateY(0);
 }
 
@@ -480,5 +493,15 @@ const handleSubmit = () => {
   .feature-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.forgot-password-dialog :deep(.v-overlay__content) {
+  opacity: 1;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.forgot-password-dialog :deep(.v-overlay__scrim) {
+  opacity: 0.7;
+  background-color: rgb(var(--v-theme-on-surface));
 }
 </style> 
