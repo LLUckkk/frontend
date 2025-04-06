@@ -3,15 +3,15 @@
     <!-- 左侧功能介绍区域 -->
     <div class="feature-section">
       <div class="feature-content">
-        <h1 class="text-h4 font-weight-bold mb-12">学术造假检测平台</h1>
+        <h1 class="text-h4 font-weight-bold mb-12">学术图像造假检测平台</h1>
         <div class="feature-grid">
           <div class="feature-item">
             <div class="feature-icon">
               <v-icon size="32" color="primary">mdi-magnify</v-icon>
             </div>
             <div class="feature-text">
-              <div class="text-subtitle-1 font-weight-medium">横向检测</div>
-              <div class="text-body-2 text-grey">将上传作业与知网和有关学术期刊、博硕士学位论文等海量数据进行比对</div>
+              <div class="text-subtitle-1 font-weight-medium">AI精准检测</div>
+              <div class="text-body-2 text-grey">基于深度学习与图像分析技术，精准识别重复、篡改、拼接等学术图像异常。</div>
             </div>
           </div>
           <div class="feature-item">
@@ -19,8 +19,8 @@
               <v-icon size="32" color="primary">mdi-compare</v-icon>
             </div>
             <div class="feature-text">
-              <div class="text-subtitle-1 font-weight-medium">纵向检测</div>
-              <div class="text-body-2 text-grey">将历年电子版作业上传至检测系统比对库中，作为检测比对数据源</div>
+              <div class="text-subtitle-1 font-weight-medium">秒级快速筛查</div>
+              <div class="text-body-2 text-grey">AI预检测可在数秒内完成初筛，大幅降低人工审核成本，提升出版社工作效率</div>
             </div>
           </div>
           <div class="feature-item">
@@ -28,8 +28,8 @@
               <v-icon size="32" color="primary">mdi-account-group</v-icon>
             </div>
             <div class="feature-text">
-              <div class="text-subtitle-1 font-weight-medium">校内互检</div>
-              <div class="text-body-2 text-grey">与校内同期学生作业比对，防止同期学生相互抄袭</div>
+              <div class="text-subtitle-1 font-weight-medium">双重验证机制</div>
+              <div class="text-body-2 text-grey">AI初检+人工复核双保险，确保结果客观可信，降低误判风险。</div>
             </div>
           </div>
           <div class="feature-item">
@@ -37,8 +37,8 @@
               <v-icon size="32" color="primary">mdi-pencil</v-icon>
             </div>
             <div class="feature-text">
-              <div class="text-subtitle-1 font-weight-medium">写作训练辅助</div>
-              <div class="text-body-2 text-grey">在学生课程作业的完成过程中，为学生提供不同阶段所需写作辅助服务</div>
+              <div class="text-subtitle-1 font-weight-medium">多角色协同平台</div>
+              <div class="text-body-2 text-grey">支持出版社、审稿人多端登录，任务进度实时追踪，反馈结果集中归档。</div>
             </div>
           </div>
           <div class="feature-item">
@@ -46,8 +46,8 @@
               <v-icon size="32" color="primary">mdi-school</v-icon>
             </div>
             <div class="feature-text">
-              <div class="text-subtitle-1 font-weight-medium">课程、教师/助教、学生网状强连接</div>
-              <div class="text-body-2 text-grey">支持学生多门课程，多个课程，多次作业，多个版本的检测和管理</div>
+              <div class="text-subtitle-1 font-weight-medium">可追溯审计</div>
+              <div class="text-body-2 text-grey">所有操作留痕，满足出版机构对流程透明性与合规性的严格要求</div>
             </div>
           </div>
           <div class="feature-item">
@@ -56,7 +56,7 @@
             </div>
             <div class="feature-text">
               <div class="text-subtitle-1 font-weight-medium">多维统计分析</div>
-              <div class="text-body-2 text-grey">支持按照课程、教师、学生等不同维度进行信息实时统计分析</div>
+              <div class="text-body-2 text-grey">自动生成结构化检测报告，附带篡改区域标记与证据链，助力学术争议裁定。</div>
             </div>
           </div>
         </div>
