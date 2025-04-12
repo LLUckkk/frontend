@@ -270,6 +270,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
+import user from '@/api/user'
 
 const router = useRouter()
 const captchaRef = ref()
@@ -309,13 +310,17 @@ const validateCaptcha = () => {
   return true
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!validateCaptcha()) {
     return
   }
   // 继续登录/注册流程...
   if (loginType.value === 'login') {
-    router.push('/task')
+    const response = await user.login({
+      email: username.value,
+      password: password.value
+    })
+    console.log(response, 'response')
   } else {
     // 处理注册逻辑
     console.log('注册信息：', registerForm.value)
