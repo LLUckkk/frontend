@@ -149,15 +149,21 @@
             <v-col cols="12">
               <v-card>
                 <v-card-text class="text-center">
-                  <div class="upload-area pa-8" @dragover.prevent @drop.prevent="handleDrop">
+                  <div 
+                    class="upload-area pa-8" 
+                    @dragover.prevent 
+                    @drop.prevent="handleDrop"
+                    @click="triggerFileInput"
+                  >
                     <v-icon size="64" color="grey">mdi-cloud-upload</v-icon>
                     <div class="text-h6 mt-4">点击或拖拽图片/文件到此处上传</div>
-                    <div class="text-caption text-grey">支持格式：JPG、PNG、ZIP等常见文件格式，xxx不超过10MB，xxx不超过xxMB</div>
+                    <div class="text-caption text-grey">支持格式：JPG、PNG、PDF等常见文件格式，单个文件不超过10MB</div>
                     <input
                       type="file"
                       ref="fileInput"
                       style="display: none"
                       @change="handleFileSelect"
+                      accept=".jpg,.jpeg,.png,.pdf"
                     >
                   </div>
                 </v-card-text>
@@ -167,7 +173,7 @@
 
           <v-row class="mt-4">
             <v-col cols="12" class="d-flex justify-end">
-              <v-btn color="primary" size="large" :disabled="!selectedVersion" @click="handleSubmit">
+              <v-btn color="primary" size="large" :disabled="!selectedVersion || !selectedFiles.length" @click="handleSubmit">
                 提交检测
                 <v-icon end>mdi-arrow-right</v-icon>
               </v-btn>
@@ -220,6 +226,7 @@
     
     <upload-progress
       v-else
+      :file-id="fileId"
       @back="showProgress = false"
       @next="handleProgressNext"
     />
@@ -228,11 +235,16 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import UploadProgress from '../components/UploadProgress.vue'
+import uploadApi from '@/api/upload'
 
+const router = useRouter()
 const showProgress = ref(false)
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+const selectedFiles = ref<File[]>([])
+const fileId = ref<string>('')
 
 const timelineItems = ref([
   {
@@ -270,28 +282,58 @@ const timelineItems = ref([
 ])
 
 const handleDrop = (event: DragEvent) => {
+  event.preventDefault()
   const files = event.dataTransfer?.files
   if (files && files.length > 0) {
-    // 处理文件上传
-    console.log('Dropped files:', files)
+    const file = files[0]
+    if (isValidFile(file)) {
+      selectedFiles.value = [file]
+    } else {
+      console.error('不支持的文件格式')
+    }
   }
 }
 
 const handleFileSelect = (event: Event) => {
   const files = (event.target as HTMLInputElement).files
   if (files && files.length > 0) {
-    // 处理文件上传
-    console.log('Selected files:', files)
+    const file = files[0]
+    if (isValidFile(file)) {
+      selectedFiles.value = [file]
+    } else {
+      console.error('不支持的文件格式')
+    }
   }
 }
 
-const handleSubmit = () => {
-  showProgress.value = true
+const isValidFile = (file: File): boolean => {
+  const validTypes = ['image/jpeg', 'image/png', 'application/pdf']
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  return validTypes.includes(file.type) && file.size <= maxSize
+}
+
+const handleSubmit = async () => {
+  if (!selectedFiles.value.length) return
+
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedFiles.value[0])
+
+    const { data } = await uploadApi.uploadFile(formData)
+    fileId.value = data.file_id
+    showProgress.value = true
+    router.push(`/upload?file_id=${data.file_id}`)
+  } catch (error) {
+    console.error('Upload failed:', error)
+  }
 }
 
 const handleProgressNext = (step: number) => {
   console.log('Progress step:', step)
-  // 处理进度步骤
+}
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
 }
 </script>
 

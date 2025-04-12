@@ -1,6 +1,6 @@
 //引入axios
 import axios from 'axios'
- 
+import router from '@/router'
 // 创建axios实例
 const instance = axios.create({
     //配置

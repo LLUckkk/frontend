@@ -12,7 +12,7 @@
           <v-stepper-header>
             <v-stepper-item
               :value="1"
-              title="上传任务"
+              title="选择图片"
               :complete="currentStep > 1"
             ></v-stepper-item>
 
@@ -20,7 +20,7 @@
 
             <v-stepper-item
               :value="2"
-              title="选择图片"
+              title="AI检测"
               :complete="currentStep > 2"
             ></v-stepper-item>
 
@@ -28,41 +28,28 @@
 
             <v-stepper-item
               :value="3"
-              title="AI检测"
-              :complete="currentStep > 3"
-            ></v-stepper-item>
-
-            <v-divider></v-divider>
-
-            <v-stepper-item
-              :value="4"
               title="发布审核"
-              :complete="currentStep > 4"
+              :complete="currentStep > 3"
             ></v-stepper-item>
           </v-stepper-header>
 
           <!-- 步骤内容 -->
           <v-stepper-window>
-            <!-- 第一步：上传任务 -->
+            <!-- 第一步：选择图片 -->
             <v-stepper-window-item :value="1">
-              <TaskInfoStep @update="updateTaskInfo" />
-            </v-stepper-window-item>
-
-            <!-- 第二步：选择图片 -->
-            <v-stepper-window-item :value="2">
               <ImageSelectionStep 
                 :images="extractedImages"
                 @update="updateSelectedImages"
               />
             </v-stepper-window-item>
 
-            <!-- 第三步：AI检测 -->
-            <v-stepper-window-item :value="3">
+            <!-- 第二步：AI检测 -->
+            <v-stepper-window-item :value="2">
               <DetectionStep />
             </v-stepper-window-item>
 
-            <!-- 第四步：发布审核 -->
-            <v-stepper-window-item :value="4">
+            <!-- 第三步：发布审核 -->
+            <v-stepper-window-item :value="3">
               <ReviewStep @update="updateReviewData" />
             </v-stepper-window-item>
           </v-stepper-window>
@@ -82,7 +69,7 @@
               @click="nextStep"
               :disabled="!canProceed"
             >
-              {{ currentStep === 4 ? '完成' : '下一步' }}
+              {{ currentStep === 3 ? '完成' : '下一步' }}
             </v-btn>
           </v-card-actions>
         </v-stepper>
@@ -92,11 +79,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import TaskInfoStep from './steps/TaskInfoStep.vue'
+import { ref, computed, onMounted } from 'vue'
 import ImageSelectionStep from './steps/ImageSelectionStep.vue'
 import DetectionStep from './steps/DetectionStep.vue'
 import ReviewStep from './steps/ReviewStep.vue'
+import uploadApi from '@/api/upload'
 
 interface Image {
   url: string
@@ -106,35 +93,20 @@ interface Image {
   selected: boolean
 }
 
-interface TaskInfo {
-  name: string
-  description: string
-  tags: string[]
-}
-
 interface ReviewData {
   selectedFakeImages: any[]
   selectedRealImages: any[]
   selectedReviewers: any[]
 }
 
-interface TaskInfo {
-  name: string
-  description: string
-  tags: string[]
-}
+const props = defineProps<{
+  fileId: string
+}>()
 
 const emit = defineEmits(['back', 'complete'])
 
 const currentStep = ref(1)
-const taskInfo = ref<TaskInfo>({
-  name: '',
-  description: '',
-  tags: []
-})
-
 const extractedImages = ref<Image[]>([])
-
 const selectedImages = ref<Image[]>([])
 
 const reviewData = ref<ReviewData>({
@@ -146,10 +118,8 @@ const reviewData = ref<ReviewData>({
 const canProceed = computed(() => {
   switch (currentStep.value) {
     case 1:
-      return taskInfo.value.name && taskInfo.value.description
-    case 2:
       return selectedImages.value.length > 0
-    case 4:
+    case 3:
       const { selectedFakeImages, selectedRealImages, selectedReviewers } = reviewData.value
       const hasSelectedImages = selectedFakeImages.length > 0 || selectedRealImages.length > 0
       return hasSelectedImages && selectedReviewers.length > 0
@@ -157,10 +127,6 @@ const canProceed = computed(() => {
       return true
   }
 })
-
-const updateTaskInfo = (info: typeof taskInfo.value) => {
-  taskInfo.value = info
-}
 
 const updateSelectedImages = (images: typeof extractedImages.value) => {
   selectedImages.value = images
@@ -177,7 +143,7 @@ const previousStep = () => {
 }
 
 const nextStep = () => {
-  if (currentStep.value < 4) {
+  if (currentStep.value < 3) {
     currentStep.value++
   } else {
     if (canProceed.value) {
@@ -186,6 +152,22 @@ const nextStep = () => {
     }
   }
 }
+
+// 获取提取的图片
+onMounted(async () => {
+  try {
+    const { data } = await uploadApi.getExtractedImages(props.fileId)
+    extractedImages.value = data.images.map((img: any) => ({
+      url: img.url,
+      name: img.name,
+      size: img.size,
+      type: img.type,
+      selected: false
+    }))
+  } catch (error) {
+    console.error('Failed to get extracted images:', error)
+  }
+})
 </script>
 
 <style scoped>

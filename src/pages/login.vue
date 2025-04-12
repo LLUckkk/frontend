@@ -101,12 +101,13 @@
           <!-- 登录表单 -->
           <template v-if="loginType === 'login'">
             <v-text-field
-              v-model="username"
-              label="请输入用户名"
+              v-model="email"
+              label="请输入邮箱"
               variant="outlined"
               density="comfortable"
               class="mb-4"
-              prepend-inner-icon="mdi-account"
+              prepend-inner-icon="mdi-email"
+              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
             ></v-text-field>
 
             <v-text-field
@@ -262,6 +263,8 @@
     >
       <forgot-password @close="showForgotPasswordDialog = false" />
     </v-dialog>
+
+    <AppSnackbar ref="snackbarRef" />
   </div>
 </template>
 
@@ -270,13 +273,15 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
+import AppSnackbar from '@/components/AppSnackbar.vue'
 import user from '@/api/user'
 
 const router = useRouter()
 const captchaRef = ref()
+const snackbarRef = ref()
 const loginType = ref('login')
 const selectedRole = ref('reviewer')
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const agreement = ref(false)
 const showForgotPasswordDialog = ref(false)
@@ -316,11 +321,31 @@ const handleSubmit = async () => {
   }
   // 继续登录/注册流程...
   if (loginType.value === 'login') {
-    const response = await user.login({
-      email: username.value,
-      password: password.value
-    })
-    console.log(response, 'response')
+    try {
+      const response = await user.login({
+        email: email.value,
+        password: password.value
+      })
+      localStorage.setItem("token", response.data.token)
+      snackbarRef.value?.open('登录成功', 'success')
+      router.push('/index')
+    } catch (error: any) {
+      let errorMessage = '网络错误，请稍后重试'
+      if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            errorMessage = '密码错误'
+            break
+          case 404:
+            errorMessage = '用户不存在'
+            break
+          default://400
+            errorMessage = '请联系管理员'
+            break
+        }
+      }
+      snackbarRef.value?.open(errorMessage, 'error')
+    }
   } else {
     // 处理注册逻辑
     console.log('注册信息：', registerForm.value)
