@@ -31,7 +31,7 @@ import { ref, computed } from 'vue'
 const show = ref(false)
 const message = ref('')
 const type = ref<'success' | 'error' | 'info'>('info')
-const timeout = ref(3000)
+const timeout = ref(5000)
 
 const icon = computed(() => {
   switch (type.value) {

@@ -24,21 +24,25 @@
             <v-list lines="two" class="thumbnail-scroll h-100">
               <v-list-item
                 v-for="(image, index) in displayImages"
-                :key="index"
+                :key="image.image_id"
                 :class="{ 'selected-item': image.selected }"
                 @click="selectImage(image)"
               >
                 <template v-slot:prepend>
                   <v-avatar size="60" class="me-2">
                     <v-img
-                      :src="image.url"
+                      :src="image.image_url"
                       cover
                       class="bg-grey-lighten-2"
                     ></v-img>
                   </v-avatar>
                 </template>
-                <v-list-item-title>{{ image.name }}</v-list-item-title>
-                <v-list-item-subtitle>{{ image.size }}</v-list-item-subtitle>
+                <v-list-item-title>
+                  {{ image.extracted_from_pdf ? `第 ${image.page_number} 页` : `图片 ${image.image_id}` }}
+                </v-list-item-title>
+                <v-list-item-subtitle>
+                  {{ image.extracted_from_pdf ? 'PDF提取' : '图片文件' }}
+                </v-list-item-subtitle>
                 <template v-slot:append>
                   <v-checkbox
                     v-model="image.selected"
@@ -70,7 +74,7 @@
               
               <div class="image-container">
                 <v-img
-                  :src="selectedImage.url"
+                  :src="selectedImage.image_url"
                   class="preview-image"
                   cover
                 ></v-img>
@@ -86,9 +90,12 @@
               ></v-btn>
 
               <div class="preview-info pa-4">
-                <div class="text-h6">{{ selectedImage.name }}</div>
-                <div class="text-body-2">大小：{{ selectedImage.size }}</div>
-                <div class="text-body-2">类型：{{ selectedImage.type }}</div>
+                <div class="text-h6">
+                  {{ selectedImage.extracted_from_pdf ? `第 ${selectedImage.page_number} 页` : `图片 ${selectedImage.image_id}` }}
+                </div>
+                <div class="text-body-2">
+                  {{ selectedImage.extracted_from_pdf ? '从PDF提取' : '图片文件' }}
+                </div>
               </div>
             </div>
             <div v-else class="d-flex align-center justify-center h-100">
@@ -105,10 +112,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 interface Image {
-  url: string
-  name: string
-  size: string
-  type: string
+  image_id: number
+  image_url: string
+  page_number?: number
+  extracted_from_pdf: boolean
   selected: boolean
 }
 
@@ -125,107 +132,63 @@ const emit = defineEmits<{
 // 添加示例图片数据
 const sampleImages = ref<Image[]>([
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片1.jpg',
-    size: '1.2MB',
-    type: 'image/jpeg',
+    image_id: 1,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片2.jpg',
-    size: '0.8MB',
-    type: 'image/png',
+    image_id: 2,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片3.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 3,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片4.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 4,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片5.jpg',
-    size: '1.5MB',
-    type: 'image/png',
-    selected: false
-  },{
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片1.jpg',
-    size: '1.2MB',
-    type: 'image/jpeg',
+    image_id: 5,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片2.jpg',
-    size: '0.8MB',
-    type: 'image/png',
+    image_id: 6,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片3.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 7,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片4.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 8,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片5.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 9,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   },
   {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片1.jpg',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片2.jpg',
-    size: '0.8MB',
-    type: 'image/png',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片3.jpg',
-    size: '1.5MB',
-    type: 'image/png',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片4.jpg',
-    size: '1.5MB',
-    type: 'image/png',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片5.jpg',
-    size: '1.5MB',
-    type: 'image/png',
+    image_id: 10,
+    image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+    extracted_from_pdf: false,
     selected: false
   }
 ])
@@ -249,10 +212,9 @@ const loadMoreImages = async () => {
     // 模拟加载更多图片
     await new Promise(resolve => setTimeout(resolve, 1000))
     const newImages = Array(5).fill(null).map((_, index) => ({
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: `图片${page.value * 5 + index + 1}.jpg`,
-      size: `${(Math.random() * 2 + 0.5).toFixed(1)}MB`,
-      type: Math.random() > 0.5 ? 'image/jpeg' : 'image/png',
+      image_id: page.value * 5 + index + 1,
+      image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+      extracted_from_pdf: false,
       selected: false
     }))
     
@@ -297,7 +259,7 @@ const currentIndex = ref(-1)
 
 const selectImage = (image: Image) => {
   selectedImage.value = image
-  currentIndex.value = displayImages.value.findIndex(img => img === image)
+  currentIndex.value = displayImages.value.findIndex(img => img.image_id === image.image_id)
 }
 
 const canNavigatePrev = computed(() => currentIndex.value > 0)

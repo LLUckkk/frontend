@@ -121,7 +121,7 @@
             ></v-text-field>
 
             <!-- 验证码区域 -->
-            <div class="captcha-section mb-6">
+            <!-- <div class="captcha-section mb-6">
               <v-text-field
                 v-model="captchaInput"
                 label="请输入验证码"
@@ -138,7 +138,7 @@
                   />
                 </template>
               </v-text-field>
-            </div>
+            </div> -->
 
             <v-checkbox
               v-model="agreement"
@@ -192,18 +192,8 @@
               :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
             ></v-text-field>
 
-            <v-text-field
-              v-model="registerForm.phone"
-              label="手机号码"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              prepend-inner-icon="mdi-phone"
-              :rules="[v => !!v || '手机号不能为空', v => /^1[3-9]\d{9}$/.test(v) || '请输入有效的手机号']"
-            ></v-text-field>
-
             <!-- 验证码区域 -->
-            <div class="captcha-section mb-6">
+            <!-- <div class="captcha-section mb-6">
               <v-text-field
                 v-model="captchaInput"
                 label="请输入验证码"
@@ -220,7 +210,7 @@
                   />
                 </template>
               </v-text-field>
-            </div>
+            </div> -->
 
             <v-checkbox
               v-model="agreement"
@@ -316,9 +306,9 @@ const validateCaptcha = () => {
 }
 
 const handleSubmit = async () => {
-  if (!validateCaptcha()) {
-    return
-  }
+  // if (!validateCaptcha()) {
+  //   return
+  // }
   // 继续登录/注册流程...
   if (loginType.value === 'login') {
     try {
@@ -326,9 +316,10 @@ const handleSubmit = async () => {
         email: email.value,
         password: password.value
       })
-      localStorage.setItem("token", response.data.token)
+      localStorage.setItem("token", response.data.access)
+      localStorage.setItem("isLoggedIn", "true")
       snackbarRef.value?.open('登录成功', 'success')
-      router.push('/index')
+      router.push('/')
     } catch (error: any) {
       let errorMessage = '网络错误，请稍后重试'
       if (error.response) {
@@ -347,8 +338,18 @@ const handleSubmit = async () => {
       snackbarRef.value?.open(errorMessage, 'error')
     }
   } else {
-    // 处理注册逻辑
-    console.log('注册信息：', registerForm.value)
+    try {
+      const response = await user.register({
+        username:registerForm.value.username,
+        email: registerForm.value.email,
+        password: registerForm.value.password,
+      })
+      snackbarRef.value?.open('注册成功','success')
+      loginType.value = 'login'
+    } catch (error) {
+      let errorMessage = '请联系管理员'
+      snackbarRef.value?.open(errorMessage, 'error')
+    }
   }
 }
 </script>

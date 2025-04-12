@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <div v-if="!showProgress">
+    
       <v-row>
         <v-col cols="12" lg="9">
           <v-row>
@@ -149,7 +149,7 @@
             <v-col cols="12">
               <v-card>
                 <v-card-text class="text-center">
-                  <div 
+                  <div v-if="!selectedFiles.length" 
                     class="upload-area pa-8" 
                     @dragover.prevent 
                     @drop.prevent="handleDrop"
@@ -157,14 +157,37 @@
                   >
                     <v-icon size="64" color="grey">mdi-cloud-upload</v-icon>
                     <div class="text-h6 mt-4">点击或拖拽图片/文件到此处上传</div>
-                    <div class="text-caption text-grey">支持格式：JPG、PNG、PDF等常见文件格式，单个文件不超过10MB</div>
+                    <div class="text-caption text-grey">支持格式：JPG、PNG、PDF、ZIP等常见文件格式，单个文件不超过10MB</div>
                     <input
                       type="file"
                       ref="fileInput"
                       style="display: none"
                       @change="handleFileSelect"
-                      accept=".jpg,.jpeg,.png,.pdf"
+                      accept=".jpg,.jpeg,.png,.pdf,.zip"
                     >
+                  </div>
+                  <div v-else class="file-preview pa-4">
+                    <v-row>
+                      <v-col cols="12" md="6" class="mx-auto">
+                        <v-card>
+                          <v-card-text class="d-flex align-center">
+                            <v-icon size="48" color="primary" class="mr-4">mdi-file</v-icon>
+                            <div>
+                              <div class="text-h6">{{ selectedFiles[0].name }}</div>
+                              <div class="text-caption text-grey">
+                                {{ formatFileSize(selectedFiles[0].size) }}
+                              </div>
+                            </div>
+                            <v-spacer></v-spacer>
+                            <v-btn
+                              icon="mdi-close"
+                              variant="text"
+                              @click="selectedFiles = []"
+                            ></v-btn>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
                   </div>
                 </v-card-text>
               </v-card>
@@ -173,9 +196,22 @@
 
           <v-row class="mt-4">
             <v-col cols="12" class="d-flex justify-end">
-              <v-btn color="primary" size="large" :disabled="!selectedVersion || !selectedFiles.length" @click="handleSubmit">
-                提交检测
-                <v-icon end>mdi-arrow-right</v-icon>
+              <v-btn 
+                color="primary" 
+                size="large" 
+                :disabled="!selectedVersion || !selectedFiles.length || loading" 
+                :loading="loading"
+                @click="handleSubmit"
+              >
+                {{ loading ? '处理中...' : '提交检测' }}
+                <template v-slot:loader>
+                  <v-progress-circular
+                    indeterminate
+                    color="white"
+                    size="24"
+                  ></v-progress-circular>
+                </template>
+                <v-icon v-if="!loading" end>mdi-arrow-right</v-icon>
               </v-btn>
             </v-col>
           </v-row>
@@ -222,29 +258,24 @@
           </v-card>
         </v-col>
       </v-row>
-    </div>
-    
-    <upload-progress
-      v-else
-      :file-id="fileId"
-      @back="showProgress = false"
-      @next="handleProgressNext"
-    />
+  
   </v-container>
+  <app-snackbar ref="snackbar"></app-snackbar>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import UploadProgress from '../components/UploadProgress.vue'
 import uploadApi from '@/api/upload'
+import AppSnackbar from '@/components/AppSnackbar.vue'
 
 const router = useRouter()
-const showProgress = ref(false)
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
 const fileId = ref<string>('')
+const loading = ref<boolean>(false)
+const snackbar = ref<InstanceType<typeof AppSnackbar> | null>(null)
 
 const timelineItems = ref([
   {
@@ -289,7 +320,7 @@ const handleDrop = (event: DragEvent) => {
     if (isValidFile(file)) {
       selectedFiles.value = [file]
     } else {
-      console.error('不支持的文件格式')
+      snackbar.value?.open('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
     }
   }
 }
@@ -301,35 +332,58 @@ const handleFileSelect = (event: Event) => {
     if (isValidFile(file)) {
       selectedFiles.value = [file]
     } else {
-      console.error('不支持的文件格式')
+      snackbar.value?.open('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
     }
   }
 }
 
 const isValidFile = (file: File): boolean => {
-  const validTypes = ['image/jpeg', 'image/png', 'application/pdf']
+  const validTypes = ['image/jpeg', 'image/png', 'application/pdf', 'application/zip', 'application/x-zip-compressed']
   const maxSize = 10 * 1024 * 1024 // 10MB
   return validTypes.includes(file.type) && file.size <= maxSize
 }
 
-const handleSubmit = async () => {
-  if (!selectedFiles.value.length) return
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
+const handleSubmit = async () => {
+  if (!selectedVersion.value) {
+    snackbar.value?.open('请选择检测版本', 'error')
+    return
+  }
+  
+  if (!selectedFiles.value.length) {
+    snackbar.value?.open('请选择要上传的文件', 'error')
+    return
+  }
+
+  loading.value = true
   try {
+    // 模拟延时
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
     const formData = new FormData()
     formData.append('file', selectedFiles.value[0])
 
-    const { data } = await uploadApi.uploadFile(formData)
-    fileId.value = data.file_id
-    showProgress.value = true
-    router.push(`/upload?file_id=${data.file_id}`)
+    // const { data } = await uploadApi.uploadFile(formData)
+    // console.log(data)
+    // fileId.value = data.file_id
+    let data = 1
+    snackbar.value?.open('文件上传成功，正在处理中...', 'success')
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    router.push(`/progress/${data}`)
   } catch (error) {
     console.error('Upload failed:', error)
+    snackbar.value?.open('文件上传失败，请稍后重试', 'error')
+  } finally {
+    loading.value = false
   }
-}
-
-const handleProgressNext = (step: number) => {
-  console.log('Progress step:', step)
 }
 
 const triggerFileInput = () => {
@@ -365,5 +419,15 @@ const triggerFileInput = () => {
 
 .v-timeline-item:last-child {
   margin-bottom: 0;
+}
+
+.file-preview {
+  border: 2px solid rgb(var(--v-theme-primary));
+  border-radius: 8px;
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+.v-btn--loading {
+  opacity: 1;
 }
 </style> 
