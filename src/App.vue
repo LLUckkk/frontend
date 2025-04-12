@@ -15,7 +15,7 @@
     >
       <v-list>
         <v-list-item
-          :prepend-avatar="isLoggedIn() ? './192.png' : undefined"
+          :prepend-avatar="isLoggedIn ? './192.png' : undefined"
           :subtitle="userInfo.student_id ?? '请登录'"
           :title="userInfo.name ?? '未登录'"
         >
@@ -30,14 +30,14 @@
         <v-list-item prepend-icon="mdi-history" title="检测历史" value="history" @click="goToHistory"></v-list-item>
         <v-list-item prepend-icon="mdi-book-open-page-variant" title="审阅" value="review" @click="goToReview"></v-list-item>
         <v-list-item 
-          v-if="isLoggedIn()"
+          v-if="isLoggedIn"
           prepend-icon="mdi-account" 
           title="个人主页" 
           value="profile" 
           @click="goToProfile"
         ></v-list-item>
         <v-list-item 
-          v-if="isLoggedIn()"
+          v-if="isLoggedIn"
           prepend-icon="mdi-logout" 
           title="退出登录" 
           value="logout"
@@ -94,7 +94,7 @@
         <span>审阅</span>
       </v-btn>
       <v-btn 
-        v-if="isLoggedIn()"
+        v-if="isLoggedIn"
         to="/profile"
         value="profile"
       >
@@ -102,7 +102,7 @@
         <span>个人主页</span>
       </v-btn>
       <v-btn 
-        v-if="isLoggedIn()"
+        v-if="isLoggedIn"
         @click="handleLogout"
         value="logout"
       >
@@ -110,7 +110,7 @@
         <span>退出登录</span>
       </v-btn>
       <v-btn 
-        v-if="isLoggedIn()"
+        v-if="isLoggedIn"
         @click="goToLogin"
         value="login"
       >
@@ -139,7 +139,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
-import { isLoggedIn  } from '@/api/user'
+import { isLoggedIn } from './api/user'
 const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
 import user from '@/api/user'
@@ -179,23 +179,21 @@ const goToReview = () => {
 }
 
 const goToLogin = () => {
+  isLoggedIn.value = true
   localStorage.setItem("isLoggedIn", "true")
-  console.log("???")
 }
 
 const handleLogout = async() => {
-  // 实现登出逻辑
   try {
-    console.log("!!!")
-      // let refresh = localStorage.getItem("token")
-      // const response = await user.logout({refresh})
-      // localStorage.romoveItem("token")
-      localStorage.setItem("isLoggedIn", "false")
-      // router.push('/login')
-
-    } catch (error: any) {
-      let errorMessage = '请联系管理员'
-    }
+    // let refresh = localStorage.getItem("token")
+    // const response = await user.logout({refresh})
+    // localStorage.romoveItem("token")
+    isLoggedIn.value = false
+    localStorage.setItem("isLoggedIn", "false")
+    // router.push('/login')
+  } catch (error: any) {
+    let errorMessage = '请联系管理员'
+  }
 }
 
 const toggleTheme = () => {

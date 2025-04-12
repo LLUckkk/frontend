@@ -10,14 +10,11 @@ declare module 'vue' {
     AppSnackbar: typeof import('./components/AppSnackbar.vue')['default']
     DetectionStep: typeof import('./components/steps/DetectionStep.vue')['default']
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
-    ErrorDialog: typeof import('./components/ErrorDialog.vue')['default']
     ForgotPassword: typeof import('./components/ForgotPassword.vue')['default']
     ImageSelectionStep: typeof import('./components/steps/ImageSelectionStep.vue')['default']
     ReviewStep: typeof import('./components/steps/ReviewStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Snackbar: typeof import('./components/Snackbar.vue')['default']
-    TaskInfoStep: typeof import('./components/steps/TaskInfoStep.vue')['default']
     UploadProgress: typeof import('./components/UploadProgress.vue')['default']
   }
 }
