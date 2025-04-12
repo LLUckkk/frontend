@@ -15,6 +15,7 @@ declare module 'vue' {
     ReviewStep: typeof import('./components/steps/ReviewStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Snackbar: typeof import('./components/Snackbar.vue')['default']
     UploadProgress: typeof import('./components/UploadProgress.vue')['default']
   }
 }

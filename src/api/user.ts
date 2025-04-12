@@ -18,7 +18,6 @@ export default {
     logout(data: any) {
         return http.post('/logout/', data).then(res => {
             isLoggedIn.value = false
-            localStorage.setItem("isLoggedIn", "false")
             return res
         })
     }

@@ -121,7 +121,7 @@
             ></v-text-field>
 
             <!-- 验证码区域 -->
-            <!-- <div class="captcha-section mb-6">
+            <div class="captcha-section mb-6">
               <v-text-field
                 v-model="captchaInput"
                 label="请输入验证码"
@@ -138,7 +138,7 @@
                   />
                 </template>
               </v-text-field>
-            </div> -->
+            </div>
 
             <v-checkbox
               v-model="agreement"
@@ -193,7 +193,7 @@
             ></v-text-field>
 
             <!-- 验证码区域 -->
-            <!-- <div class="captcha-section mb-6">
+            <div class="captcha-section mb-6">
               <v-text-field
                 v-model="captchaInput"
                 label="请输入验证码"
@@ -210,7 +210,7 @@
                   />
                 </template>
               </v-text-field>
-            </div> -->
+            </div>
 
             <v-checkbox
               v-model="agreement"
@@ -254,7 +254,6 @@
       <forgot-password @close="showForgotPasswordDialog = false" />
     </v-dialog>
 
-    <AppSnackbar ref="snackbarRef" />
   </div>
 </template>
 
@@ -263,7 +262,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
-import AppSnackbar from '@/components/AppSnackbar.vue'
+import { useSnackbarStore } from '@/stores/snackbar';
+const snackbar = useSnackbarStore();
 import user from '@/api/user'
 
 const router = useRouter()
@@ -306,37 +306,35 @@ const validateCaptcha = () => {
 }
 
 const handleSubmit = async () => {
-  // if (!validateCaptcha()) {
-  //   return
-  // }
+  if (!validateCaptcha()) {
+    return
+  }
   // 继续登录/注册流程...
   if (loginType.value === 'login') {
-    try {
       const response = await user.login({
         email: email.value,
         password: password.value
-      })
-      localStorage.setItem("token", response.data.access)
-      localStorage.setItem("isLoggedIn", "true")
-      snackbarRef.value?.open('登录成功', 'success')
-      router.push('/')
-    } catch (error: any) {
-      let errorMessage = '网络错误，请稍后重试'
-      if (error.response) {
+      }).then(res => {
+        localStorage.setItem("token", res.data.access)
+        localStorage.setItem("refresh", res.data.refresh)
+        localStorage.setItem("isLoggedIn", "true")
+        snackbar.showMessage('登录成功', 'success')
+        router.push('/')
+      }).catch(error => {
+        console.log(error)
+        let errorMessage = '网络错误，请稍后重试'
+        if (error.response) {
         switch (error.response.status) {
           case 401:
             errorMessage = '密码错误'
-            break
-          case 404:
-            errorMessage = '用户不存在'
             break
           default://400
             errorMessage = '请联系管理员'
             break
         }
       }
-      snackbarRef.value?.open(errorMessage, 'error')
-    }
+      snackbar.showMessage(errorMessage, 'error')
+    })
   } else {
     try {
       const response = await user.register({
@@ -344,11 +342,11 @@ const handleSubmit = async () => {
         email: registerForm.value.email,
         password: registerForm.value.password,
       })
-      snackbarRef.value?.open('注册成功','success')
+      snackbar.showMessage('注册成功','success')
       loginType.value = 'login'
     } catch (error) {
       let errorMessage = '请联系管理员'
-      snackbarRef.value?.open(errorMessage, 'error')
+      snackbar.showMessage(errorMessage, 'error')
     }
   }
 }

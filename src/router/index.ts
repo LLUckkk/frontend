@@ -36,7 +36,7 @@ router.isReady().then(() => {
 })
 
 router.beforeEach((to, from, next) => {
-  if (!isLoggedIn()) {
+  if (!isLoggedIn.value) {
     if (to.path === '/login') {
       next()
     } else {

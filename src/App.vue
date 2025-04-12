@@ -110,7 +110,7 @@
         <span>退出登录</span>
       </v-btn>
       <v-btn 
-        v-if="isLoggedIn"
+        v-else
         @click="goToLogin"
         value="login"
       >
@@ -132,6 +132,8 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <Snackbar />
   </v-app>
 </template>
 
@@ -143,6 +145,12 @@ import { isLoggedIn } from './api/user'
 const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
 import user from '@/api/user'
+import Snackbar from '@/components/Snackbar.vue'
+
+
+import { useSnackbarStore } from '@/stores/snackbar';
+const snackbar = useSnackbarStore();
+
 
 const drawer = ref(true)
 const rail = ref(true)
@@ -185,14 +193,16 @@ const goToLogin = () => {
 
 const handleLogout = async() => {
   try {
-    // let refresh = localStorage.getItem("token")
-    // const response = await user.logout({refresh})
-    // localStorage.romoveItem("token")
+    let refresh = localStorage.getItem("refresh")
+    const response = await user.logout({refresh})
+    localStorage.removeItem("refresh")
+    localStorage.removeItem("token")
     isLoggedIn.value = false
     localStorage.setItem("isLoggedIn", "false")
-    // router.push('/login')
+    snackbar.showMessage('退出成功', 'success')
+    router.push('/login')
   } catch (error: any) {
-    let errorMessage = '请联系管理员'
+    snackbar.showMessage('请联系管理员', 'error')
   }
 }
 
