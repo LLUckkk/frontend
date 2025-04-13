@@ -1,3 +1,4 @@
+import { da } from 'vuetify/locale'
 import http from './request'
 import { ref } from 'vue'
 
@@ -5,20 +6,34 @@ import { ref } from 'vue'
 export const isLoggedIn = ref(localStorage.getItem("isLoggedIn") === "true")
 
 export default {
-    login(data: any) {
-        return http.post('/login/', data).then(res => {
-            isLoggedIn.value = true
-            localStorage.setItem("isLoggedIn", "true")
-            return res
-        })
-    },
-    register(data: any) {
-        return http.post('/register/', data)
-    },
-    logout(data: any) {
-        return http.post('/logout/', data).then(res => {
-            isLoggedIn.value = false
-            return res
-        })
-    }
+  login(data: any) {
+    return http.post('/login/', data).then(res => {
+      isLoggedIn.value = true
+      localStorage.setItem("isLoggedIn", "true")
+      return res
+    })
+  },
+  register(data: any) {
+    return http.post('/register/', data)
+  },
+  logout(data: any) {
+    return http.post('/logout/', data).then(res => {
+      isLoggedIn.value = false
+      return res
+    })
+  },
+  getUserInfo() {
+    return http.get('/user/details/');
+  },
+  updateUserInfo(data: any) {
+    return http.put('/user/update/', data)
+  },
+  updateUserAvatar(data: any){
+    return http.put('/user/avatar/update/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+  }
 }

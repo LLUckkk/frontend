@@ -199,7 +199,6 @@
               <v-btn 
                 color="primary" 
                 size="large" 
-                :disabled="!selectedVersion || !selectedFiles.length || loading" 
                 :loading="loading"
                 @click="handleSubmit"
               >
@@ -267,7 +266,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import uploadApi from '@/api/upload'
-import AppSnackbar from '@/components/AppSnackbar.vue'
+import { useSnackbarStore } from '@/stores/snackbar';
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -275,7 +274,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
 const fileId = ref<string>('')
 const loading = ref<boolean>(false)
-const snackbar = ref<InstanceType<typeof AppSnackbar> | null>(null)
+const snackbar = useSnackbarStore();
 
 const timelineItems = ref([
   {
@@ -320,7 +319,7 @@ const handleDrop = (event: DragEvent) => {
     if (isValidFile(file)) {
       selectedFiles.value = [file]
     } else {
-      snackbar.value?.open('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
+      snackbar.showMessage('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
     }
   }
 }
@@ -332,7 +331,7 @@ const handleFileSelect = (event: Event) => {
     if (isValidFile(file)) {
       selectedFiles.value = [file]
     } else {
-      snackbar.value?.open('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
+      snackbar.showMessage('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
     }
   }
 }
@@ -353,13 +352,13 @@ const formatFileSize = (bytes: number): string => {
 
 const handleSubmit = async () => {
   if (!selectedVersion.value) {
-    snackbar.value?.open('请选择检测版本', 'error')
+    snackbar.showMessage('请选择检测版本', 'error')
     return
   }
   
   if (!selectedFiles.value.length) {
-    snackbar.value?.open('请选择要上传的文件', 'error')
-    return
+    snackbar.showMessage('请选择要上传的文件', 'error')
+    return 
   }
 
   loading.value = true
@@ -370,17 +369,16 @@ const handleSubmit = async () => {
     const formData = new FormData()
     formData.append('file', selectedFiles.value[0])
 
-    // const { data } = await uploadApi.uploadFile(formData)
-    // console.log(data)
-    // fileId.value = data.file_id
-    let data = 1
-    snackbar.value?.open('文件上传成功，正在处理中...', 'success')
+    const { data } = await uploadApi.uploadFile(formData)
+    console.log(data)
+    fileId.value = data.file_id
+    snackbar.showMessage('文件上传成功，正在处理中...', 'success')
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     router.push(`/progress/${data}`)
   } catch (error) {
     console.error('Upload failed:', error)
-    snackbar.value?.open('文件上传失败，请稍后重试', 'error')
+    snackbar.showMessage('文件上传失败，请稍后重试', 'error')
   } finally {
     loading.value = false
   }

@@ -193,6 +193,7 @@ const goToLogin = () => {
 
 const handleLogout = async() => {
   try {
+    //localStorage.clear()
     let refresh = localStorage.getItem("refresh")
     const response = await user.logout({refresh})
     localStorage.removeItem("refresh")
