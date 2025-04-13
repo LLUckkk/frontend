@@ -97,7 +97,7 @@
           </v-btn-toggle>
         </div>
 
-        <v-form @submit.prevent="handleSubmit">
+        <v-form ref="form" @submit.prevent="handleSubmit">
           <!-- 登录表单 -->
           <template v-if="loginType === 'login'">
             <v-text-field
@@ -107,7 +107,7 @@
               density="comfortable"
               class="mb-4"
               prepend-inner-icon="mdi-email"
-              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
+              :rules="loginRules.email"
             ></v-text-field>
 
             <v-text-field
@@ -118,6 +118,7 @@
               class="mb-4"
               type="password"
               prepend-inner-icon="mdi-lock"
+              :rules="loginRules.password"
             ></v-text-field>
 
             <!-- 验证码区域 -->
@@ -157,7 +158,7 @@
               density="comfortable"
               class="mb-4"
               prepend-inner-icon="mdi-account"
-              :rules="[v => !!v || '用户名不能为空', v => v.length >= 4 || '用户名至少4个字符']"
+              :rules="registerRules.username"
             ></v-text-field>
 
             <v-text-field
@@ -168,7 +169,7 @@
               class="mb-4"
               type="password"
               prepend-inner-icon="mdi-lock"
-              :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码至少6个字符']"
+              :rules="registerRules.password"
             ></v-text-field>
 
             <v-text-field
@@ -179,7 +180,7 @@
               class="mb-4"
               type="password"
               prepend-inner-icon="mdi-lock-check"
-              :rules="[v => !!v || '请确认密码', v => v === registerForm.password || '两次输入的密码不一致']"
+              :rules="registerRules.confirmPassword"
             ></v-text-field>
 
             <v-text-field
@@ -189,7 +190,7 @@
               density="comfortable"
               class="mb-4"
               prepend-inner-icon="mdi-email"
-              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
+              :rules="registerRules.email"
             ></v-text-field>
 
             <!-- 验证码区域 -->
@@ -226,7 +227,7 @@
             color="primary"
             size="large"
             type="submit"
-            :disabled="!agreement"
+            :disabled="!isFormValid"
           >
             {{ loginType === 'login' ? '登录' : '注册' }}
           </v-btn>
@@ -258,13 +259,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
 import { useSnackbarStore } from '@/stores/snackbar';
 const snackbar = useSnackbarStore();
 import user from '@/api/user'
+import { useUserStore } from '@/stores/user';
+const userStore = useUserStore();
 
 const router = useRouter()
 const captchaRef = ref()
@@ -275,6 +278,7 @@ const email = ref('')
 const password = ref('')
 const agreement = ref(false)
 const showForgotPasswordDialog = ref(false)
+const form = ref(null)
 
 // 注册表单数据
 const registerForm = ref({
@@ -289,6 +293,37 @@ const registerForm = ref({
 const captchaInput = ref('')
 const captchaCode = ref('')
 const captchaError = ref('')
+
+// 表单验证规则
+const loginRules = {
+  email: [
+    (v: string) => !!v || '邮箱不能为空',
+    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+  ],
+  password: [
+    (v: string) => !!v || '密码不能为空',
+    (v: string) => v.length >= 6 || '密码至少6个字符'
+  ]
+}
+
+const registerRules = {
+  username: [
+    (v: string) => !!v || '用户名不能为空',
+    (v: string) => v.length >= 4 || '用户名至少4个字符'
+  ],
+  password: [
+    (v: string) => !!v || '密码不能为空',
+    (v: string) => v.length >= 6 || '密码至少6个字符'
+  ],
+  confirmPassword: [
+    (v: string) => !!v || '请确认密码',
+    (v: string) => v === registerForm.value.password || '两次输入的密码不一致'
+  ],
+  email: [
+    (v: string) => !!v || '邮箱不能为空',
+    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+  ]
+}
 
 const validateCaptcha = () => {
   if (!captchaInput.value) {
@@ -305,6 +340,26 @@ const validateCaptcha = () => {
   return true
 }
 
+const isFormValid = computed(() => {
+  if (!agreement.value) return false
+  if (!validateCaptcha()) return false
+  
+  if (loginType.value === 'login') {
+    return email.value && password.value && 
+           /.+@.+\..+/.test(email.value) && 
+           password.value.length >= 6
+  } else {
+    return registerForm.value.username && 
+           registerForm.value.email && 
+           registerForm.value.password && 
+           registerForm.value.confirmPassword &&
+           registerForm.value.username.length >= 4 &&
+           /.+@.+\..+/.test(registerForm.value.email) &&
+           registerForm.value.password.length >= 6 &&
+           registerForm.value.password === registerForm.value.confirmPassword
+  }
+})
+
 const handleSubmit = async () => {
   if (!validateCaptcha()) {
     return
@@ -314,10 +369,14 @@ const handleSubmit = async () => {
       const response = await user.login({
         email: email.value,
         password: password.value
-      }).then(res => {
+      }).then(async res => {
         localStorage.setItem("token", res.data.access)
         localStorage.setItem("refresh", res.data.refresh)
         localStorage.setItem("isLoggedIn", "true")
+        
+        // 获取用户信息并存储到 user store
+        await userStore.fetchUserInfo();
+        
         snackbar.showMessage('登录成功', 'success')
         router.push('/')
       }).catch(error => {
@@ -326,7 +385,7 @@ const handleSubmit = async () => {
         if (error.response) {
         switch (error.response.status) {
           case 401:
-            errorMessage = '密码错误'
+            errorMessage = '账号/密码错误'
             break
           default://400
             errorMessage = '请联系管理员'
@@ -338,14 +397,26 @@ const handleSubmit = async () => {
   } else {
     try {
       const response = await user.register({
-        username:registerForm.value.username,
+        username: registerForm.value.username,
         email: registerForm.value.email,
         password: registerForm.value.password,
       })
-      snackbar.showMessage('注册成功','success')
+      snackbar.showMessage('注册成功', 'success')
       loginType.value = 'login'
-    } catch (error) {
-      let errorMessage = '请联系管理员'
+    } catch (error: any) {
+      let errorMessage = '注册失败，请稍后重试'
+      if (error.response) {
+        if (error.response.status === 400) {
+          // 处理字段验证错误
+          const errors = error.response.data
+          const errorMessages = []
+          
+          if (errors.username) errorMessages.push(`用户名已存在`)
+          if (errors.email) errorMessages.push(`邮箱已存在`)
+          
+          errorMessage = errorMessages.length > 0 ? errorMessages.join(';') : '请检查输入信息'
+        }
+      }
       snackbar.showMessage(errorMessage, 'error')
     }
   }

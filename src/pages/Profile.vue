@@ -7,14 +7,14 @@
           <v-card-item>
             <div class="d-flex justify-center">
               <v-avatar size="120" class="mb-4 position-relative">
-                <v-img :src="userInfo.avatar || './192.png'" cover></v-img>
+                <v-img :src="userStore.avatar" cover></v-img>
                 <v-btn icon="mdi-camera" variant="flat" color="primary" size="small" class="position-absolute"
                   style="bottom: 0; right: 0" @click="triggerFileInput"></v-btn>
               </v-avatar>
             </div>
             <input type="file" ref="fileInput" style="display: none" accept="image/*" @change="handleAvatarChange">
-            <v-card-title class="text-center">{{ userInfo.username || '未登录' }}</v-card-title>
-            <v-card-subtitle class="text-center">{{ userInfo.role || '请登录' }}</v-card-subtitle>
+            <v-card-title class="text-center">{{ userStore.displayName }}</v-card-title>
+            <v-card-subtitle class="text-center">{{ userStore.userRole }}</v-card-subtitle>
           </v-card-item>
           <v-card-text>
             <v-list>
@@ -23,14 +23,14 @@
                   <v-icon>mdi-email</v-icon>
                 </template>
                 <v-list-item-title>邮箱</v-list-item-title>
-                <v-list-item-subtitle>{{ userInfo.email || '未设置' }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ userStore.email || '未设置' }}</v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
                 <template v-slot:prepend>
                   <v-icon>mdi-email</v-icon>
                 </template>
                 <v-list-item-title>个人简介</v-list-item-title>
-                <v-list-item-subtitle>{{ userInfo.profile || '未设置' }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ userStore.profile || '未设置' }}</v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -115,21 +115,13 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, ref } from 'vue'
 import user from '@/api/user'
 import { useSnackbarStore } from '@/stores/snackbar'
-import { ca } from 'vuetify/locale'
+import { useUserStore } from '@/stores/user'
 
 const snackbar = useSnackbarStore()
-
-// 用户信息
-const userInfo = reactive({
-  username: '',
-  role: '',
-  email: '',
-  profile: '',
-  avatar: ''
-})
+const userStore = useUserStore()
 
 // 编辑表单
 const showEditDialog = ref(false)
@@ -147,19 +139,12 @@ const fileInput = ref<HTMLInputElement | null>(null)
 // 获取用户信息
 onMounted(async () => {
   try {
-    const response = await user.getUserInfo()
-    Object.assign(userInfo, {
-      username: response.data.username || '',
-      role: response.data.role || '',
-      email: response.data.email || '',
-      profile: response.data.profile || '',
-      avatar: response.data.avatar || './192.png'
-    })
+    await userStore.fetchUserInfo()
     // 初始化编辑表单
     editForm.value = {
-      username: userInfo.username,
-      email: userInfo.email,
-      profile: userInfo.profile,
+      username: userStore.username,
+      email: userStore.email,
+      profile: userStore.profile,
       avatar: null
     }
   } catch (error) {
@@ -174,21 +159,31 @@ const triggerFileInput = () => {
 }
 
 // 处理头像上传
-const handleAvatarChange = (event: Event) => {
+const handleAvatarChange = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file) {
-    // 预览新头像
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      userInfo.avatar = e.target?.result as string
-    }
-    reader.readAsDataURL(file)
-    try{
-      user.updateUserAvatar({
-      'avatar': file
-    })
-    } catch (error){
-      console.error('更新个人信息失败:', error)
+    try {
+      // 先预览新头像
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        // 临时更新头像显示
+        userStore.avatar = e.target?.result as string
+      }
+      reader.readAsDataURL(file)
+      
+      // 上传头像
+      const success = await userStore.updateAvatar(file)
+      if (success) {
+        snackbar.showMessage('头像更新成功', 'success')
+      } else {
+        // 如果上传失败，恢复原来的头像
+        await userStore.fetchUserInfo()
+        snackbar.showMessage('头像更新失败', 'error')
+      }
+    } catch (error) {
+      console.error('更新头像失败:', error)
+      // 发生错误时恢复原来的头像
+      await userStore.fetchUserInfo()
       snackbar.showMessage('头像上传失败', 'error')
     }
   }
@@ -207,10 +202,8 @@ const handleUpdateProfile = async () => {
 
     await user.updateUserInfo(formData)
     
-    // 使用表单数据更新 userInfo
-    userInfo.username = editForm.value.username
-    userInfo.email = editForm.value.email
-    userInfo.profile = editForm.value.profile
+    // 重新获取用户信息以更新 store
+    await userStore.fetchUserInfo()
     
     showEditDialog.value = false
     snackbar.showMessage('个人信息更新成功', 'success')

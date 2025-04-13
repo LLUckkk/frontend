@@ -1,5 +1,7 @@
 <template>
   <v-app :theme="theme">
+    <Snackbar />
+
     <!-- 只在非移动端显示侧边导航栏 -->
     <v-navigation-drawer
       v-if="!isMobile"
@@ -15,9 +17,9 @@
     >
       <v-list>
         <v-list-item
-          :prepend-avatar="isLoggedIn ? './192.png' : undefined"
-          :subtitle="userInfo.student_id ?? '请登录'"
-          :title="userInfo.name ?? '未登录'"
+          :prepend-avatar="isLoggedIn ? userStore.avatar : undefined"
+          :subtitle="userStore.userRole"
+          :title="userStore.displayName"
         >
         </v-list-item>
       </v-list>
@@ -133,7 +135,6 @@
       </v-card>
     </v-dialog>
 
-    <Snackbar />
   </v-app>
 </template>
 
@@ -146,7 +147,8 @@ const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
 import user from '@/api/user'
 import Snackbar from '@/components/Snackbar.vue'
-
+import { useUserStore } from '@/stores/user';
+const userStore = useUserStore();
 
 import { useSnackbarStore } from '@/stores/snackbar';
 const snackbar = useSnackbarStore();
@@ -158,16 +160,6 @@ const theme = ref('light')
 const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
-
-
-// 模拟用户信息
-const userInfo = ref<{
-  name: string | undefined;
-  student_id: string | undefined;
-}>({
-  name: undefined,
-  student_id: undefined
-})
 
 
 const goToHome = () => {
@@ -187,19 +179,18 @@ const goToReview = () => {
 }
 
 const goToLogin = () => {
-  isLoggedIn.value = true
-  localStorage.setItem("isLoggedIn", "true")
+  router.push('/login')
 }
 
 const handleLogout = async() => {
   try {
-    //localStorage.clear()
     let refresh = localStorage.getItem("refresh")
     const response = await user.logout({refresh})
     localStorage.removeItem("refresh")
     localStorage.removeItem("token")
     isLoggedIn.value = false
     localStorage.setItem("isLoggedIn", "false")
+    userStore.clearUserInfo() // 清除用户信息
     snackbar.showMessage('退出成功', 'success')
     router.push('/login')
   } catch (error: any) {
@@ -216,11 +207,16 @@ const goToProfile = () => {
   router.push('/profile')
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 从本地存储加载主题设置
   const savedTheme = localStorage.getItem('app_theme')
   if (savedTheme) {
     theme.value = savedTheme
+  }
+  
+  // 如果已登录，获取用户信息
+  if (isLoggedIn.value) {
+    await userStore.fetchUserInfo();
   }
 })
 </script>

@@ -29,7 +29,7 @@ export default {
     return http.put('/user/update/', data)
   },
   updateUserAvatar(data: any){
-    return http.put('/user/avatar/update/', data, {
+    return http.put('/user/avatar/', data, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
