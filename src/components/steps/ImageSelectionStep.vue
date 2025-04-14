@@ -5,11 +5,7 @@
         <div class="d-flex align-center mb-4">
           <span class="text-h6">已提取图片</span>
           <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-check-all"
-            @click="selectAllImages"
-          >
+          <v-btn color="primary" prepend-icon="mdi-check-all" @click="selectAllImages">
             全选
           </v-btn>
         </div>
@@ -22,35 +18,22 @@
         <v-card class="h-100">
           <v-card-text class="pa-0 h-100">
             <v-list lines="two" class="thumbnail-scroll h-100">
-              <v-list-item
-                v-for="(image, index) in displayImages"
-                :key="image.url"
-                :class="{ 'selected-item': image.selected }"
-                @click="selectImage(image)"
-              >
+              <v-list-item v-for="(image, index) in displayImages" :key="image.image_id"
+                :class="{ 'selected-item': image.selected }" @click="selectImage(image)">
                 <template v-slot:prepend>
                   <v-avatar size="60" class="me-2">
-                    <v-img
-                      :src="image.url"
-                      cover
-                      class="bg-grey-lighten-2"
-                    ></v-img>
+                    <v-img :src="image.image_url" cover class="bg-grey-lighten-2"></v-img>
                   </v-avatar>
                 </template>
                 <v-list-item-title>
-                  {{ image.name }}
+                  {{ `图片${image.image_id}` }}
                 </v-list-item-title>
                 <v-list-item-subtitle>
-                  {{ image.size }} - {{ image.type }}
+                  {{ image.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
                 </v-list-item-subtitle>
                 <template v-slot:append>
-                  <v-checkbox
-                    v-model="image.selected"
-                    hide-details
-                    density="compact"
-                    @click.stop
-                    @update:model-value="emitUpdate"
-                  ></v-checkbox>
+                  <v-checkbox v-model="image.selected" hide-details density="compact" @click.stop
+                    @update:model-value="emitUpdate"></v-checkbox>
                 </template>
               </v-list-item>
             </v-list>
@@ -63,38 +46,22 @@
         <v-card class="h-100">
           <v-card-text class="pa-0 preview-wrapper h-100">
             <div v-if="selectedImage" class="preview-container h-100">
-              <v-btn
-                icon="mdi-chevron-left"
-                variant="text"
-                size="x-large"
-                class="preview-nav-btn preview-nav-left"
-                :disabled="!canNavigatePrev"
-                @click="navigatePrev"
-              ></v-btn>
-              
+              <v-btn icon="mdi-chevron-left" variant="text" size="x-large" class="preview-nav-btn preview-nav-left"
+                :disabled="!canNavigatePrev" @click="navigatePrev"></v-btn>
+
               <div class="image-container">
-                <v-img
-                  :src="selectedImage.url"
-                  class="preview-image"
-                  cover
-                ></v-img>
+                <v-img :src="selectedImage.image_url" class="preview-image" cover></v-img>
               </div>
-              
-              <v-btn
-                icon="mdi-chevron-right"
-                variant="text"
-                size="x-large"
-                class="preview-nav-btn preview-nav-right"
-                :disabled="!canNavigateNext"
-                @click="navigateNext"
-              ></v-btn>
+
+              <v-btn icon="mdi-chevron-right" variant="text" size="x-large" class="preview-nav-btn preview-nav-right"
+                :disabled="!canNavigateNext" @click="navigateNext"></v-btn>
 
               <div class="preview-info pa-4">
                 <div class="text-h6">
-                  {{ selectedImage.name }}
+                  {{ `图片${selectedImage.image_id}` }}
                 </div>
                 <div class="text-body-2">
-                  {{ selectedImage.size }} - {{ selectedImage.type }}
+                  {{ selectedImage.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
                 </div>
               </div>
             </div>
@@ -109,103 +76,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import upload from '@/api/upload'
 
 interface Image {
-  url: string
-  name: string
-  size: string
-  type: string
+  image_id: number
+  image_url: string
+  page_number?: number
+  extracted_from_pdf: boolean
   selected: boolean
 }
 
 const props = withDefaults(defineProps<{
   images?: Image[]
+  fileId?: string
 }>(), {
-  images: () => []
+  images: () => [],
+  fileId: ''
 })
 
 const emit = defineEmits<{
   (e: 'update', selectedImages: Image[]): void
 }>()
 
-// 添加示例图片数据
-const sampleImages = ref<Image[]>([
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片1',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片2',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片3',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片4',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片5',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片6',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片7',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片8',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片9',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  },
-  {
-    url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    name: '图片10',
-    size: '1.2MB',
-    type: 'image/jpeg',
-    selected: false
-  }
-])
+// 使用响应式变量存储图片
+const localImages = ref<Image[]>([])
 
-// 使用计算属性合并props和示例图片
+// 使用计算属性合并props和本地图片
 const displayImages = computed(() => {
-  return props.images.length > 0 ? props.images : sampleImages.value
+  return localImages.value.length > 0 ? localImages.value : props.images
 })
 
 // 添加滚动加载相关变量
@@ -216,22 +115,21 @@ const hasMore = ref(true)
 // 添加滚动加载方法
 const loadMoreImages = async () => {
   if (loading.value || !hasMore.value) return
-  
+
   loading.value = true
   try {
     // 模拟加载更多图片
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    //await new Promise(resolve => setTimeout(resolve, 1000))
     const newImages = Array(5).fill(null).map((_, index) => ({
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: `图片${page.value * 5 + index + 1}`,
-      size: '1.2MB',
-      type: 'image/jpeg',
+      image_id: page.value * 5 + index + 1,
+      image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+      extracted_from_pdf: false,
       selected: false
     }))
-    
-    sampleImages.value.push(...newImages)
+
+    localImages.value.push(...newImages)
     page.value++
-    
+
     // 模拟数据加载完毕
     if (page.value >= 4) {
       hasMore.value = false
@@ -269,8 +167,9 @@ const selectedImage = ref<Image | null>(null)
 const currentIndex = ref(-1)
 
 const selectImage = (image: Image) => {
+  console.log(image)
   selectedImage.value = image
-  currentIndex.value = displayImages.value.findIndex(img => img.url === image.url)
+  currentIndex.value = displayImages.value.findIndex(img => img.image_id === image.image_id)
 }
 
 const canNavigatePrev = computed(() => currentIndex.value > 0)
@@ -301,6 +200,25 @@ const selectAllImages = () => {
 const emitUpdate = () => {
   emit('update', displayImages.value.filter(img => img.selected))
 }
+
+// 获取提取的图片
+onMounted(async () => {
+  if (props.fileId) {
+    //console.log('fileId value:', props.fileId)
+    try {
+      const { data } = await upload.getExtractedImages(props.fileId)
+      localImages.value = data.images.map((img: any) => ({
+        image_id: img.image_id,
+        image_url: import.meta.env.VITE_API_URL + img.image_url,
+        page_number: img.page_number,
+        extracted_from_pdf: img.extracted_from_pdf,
+        selected: false
+      }))
+    } catch (error) {
+      console.error('Failed to get extracted images:', error)
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -388,4 +306,4 @@ const emitUpdate = () => {
   right: 0;
   padding: 16px;
 }
-</style> 
+</style>

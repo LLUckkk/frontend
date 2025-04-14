@@ -27,6 +27,5 @@ declare module 'vue-router/auto-routes' {
     '/task/[id]': RouteRecordInfo<'/task/[id]', '/task/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     '/task/detail': RouteRecordInfo<'/task/detail', '/task/detail', Record<never, never>, Record<never, never>>,
     '/upload': RouteRecordInfo<'/upload', '/upload', Record<never, never>, Record<never, never>>,
-    '/upload/[file_id]': RouteRecordInfo<'/upload/[file_id]', '/upload/:file_id', { file_id: ParamValue<true> }, { file_id: ParamValue<false> }>,
   }
 }

@@ -364,7 +364,7 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     // 模拟延时
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    //await new Promise(resolve => setTimeout(resolve, 2000))
     
     const formData = new FormData()
     formData.append('file', selectedFiles.value[0])
@@ -373,9 +373,9 @@ const handleSubmit = async () => {
     console.log(data)
     fileId.value = data.file_id
     snackbar.showMessage('文件上传成功，正在处理中...', 'success')
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    //await new Promise(resolve => setTimeout(resolve, 2000))
     
-    router.push(`/progress/${data}`)
+    router.push(`/progress/${data.file_id}`)
   } catch (error) {
     console.error('Upload failed:', error)
     snackbar.showMessage('文件上传失败，请稍后重试', 'error')

@@ -45,6 +45,7 @@
         <v-stepper-window-item :value="1">
           <ImageSelectionStep 
             :images="extractedImages"
+            :fileId="fileId"
             @update="updateSelectedImages"
           />
         </v-stepper-window-item>
@@ -104,13 +105,8 @@ interface ReviewData {
   selectedReviewers: any[]
 }
 
-// 定义路由参数的类型
-interface RouteParams {
-  file_id: string
-}
-
 const router = useRouter()
-const route = useRoute()
+const route = useRoute<'/progress/[file_id]'>()
 
 const currentStep = ref(1)
 const extractedImages = ref<Image[]>([])
@@ -121,6 +117,9 @@ const reviewData = ref<ReviewData>({
   selectedRealImages: [],
   selectedReviewers: []
 })
+
+// 简化 fileId 计算
+const fileId = computed(() => String(route.params.file_id || ''))
 
 const canProceed = computed(() => {
   switch (currentStep.value) {
@@ -154,7 +153,7 @@ const nextStep = () => {
     currentStep.value++
   } else {
     if (canProceed.value) {
-      router.push(`/task/${(route.params as RouteParams).file_id}`)
+      router.push(`/task/${route.params.file_id}`)
     }
   }
 }
@@ -162,14 +161,15 @@ const nextStep = () => {
 // 获取提取的图片
 onMounted(async () => {
   try {
-    const { data } = await uploadApi.getExtractedImages((route.params as RouteParams).file_id)
+    const { data } = await uploadApi.getExtractedImages(route.params.file_id)
     extractedImages.value = data.images.map((img: any) => ({
       image_id: img.image_id,
-      image_url: img.image_url,
+      image_url: import.meta.env.VITE_API_URL + img.image_url,
       page_number: img.page_number,
       extracted_from_pdf: img.extracted_from_pdf,
       selected: false
     }))
+    //console.log(extractedImages.value[0].image_url)
   } catch (error) {
     console.error('Failed to get extracted images:', error)
   }
