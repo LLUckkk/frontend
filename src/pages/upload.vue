@@ -1,6 +1,6 @@
 <template>
-  <v-container>
-    
+    <!-- 上传页面内容 -->
+    <div v-show="!showProgress">
       <v-row>
         <v-col cols="12" lg="9">
           <v-row>
@@ -257,16 +257,101 @@
           </v-card>
         </v-col>
       </v-row>
-  
-  </v-container>
-  <app-snackbar ref="snackbar"></app-snackbar>
+    </div>
+
+    <!-- 进度页面内容 -->
+    <div v-show="showProgress" class="upload-progress">
+      <!-- 返回按钮 -->
+      <div class="d-flex align-center mb-6">
+        <v-btn 
+          icon="mdi-arrow-left" 
+          variant="text" 
+          @click="returnToUpload" 
+          class="mr-2 return-btn"
+        >
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+        <span class="text-h6 font-weight-medium">返回上传</span>
+      </div>
+
+      <v-stepper v-model="currentStep">
+        <!-- 步骤指示器 -->
+        <v-stepper-header>
+          <v-stepper-item
+            :value="1"
+            title="选择图片"
+            :complete="currentStep > 1"
+          ></v-stepper-item>
+
+          <v-divider></v-divider>
+
+          <v-stepper-item
+            :value="2"
+            title="AI检测"
+            :complete="currentStep > 2"
+          ></v-stepper-item>
+
+          <v-divider></v-divider>
+
+          <v-stepper-item
+            :value="3"
+            title="发布审核"
+            :complete="currentStep > 3"
+          ></v-stepper-item>
+        </v-stepper-header>
+
+        <!-- 步骤内容 -->
+        <v-stepper-window>
+          <!-- 第一步：选择图片 -->
+          <v-stepper-window-item :value="1">
+            <ImageSelectionStep 
+              :images="extractedImages"
+              :fileId="fileId"
+              @update="updateSelectedImages"
+            />
+          </v-stepper-window-item>
+
+          <!-- 第二步：AI检测 -->
+          <v-stepper-window-item :value="2">
+            <DetectionStep />
+          </v-stepper-window-item>
+
+          <!-- 第三步：发布审核 -->
+          <v-stepper-window-item :value="3">
+            <ReviewStep @update="updateReviewData" />
+          </v-stepper-window-item>
+        </v-stepper-window>
+
+        <!-- 底部按钮 -->
+        <v-card-actions>
+          <v-btn
+            variant="text"
+            @click="previousStep"
+            :disabled="currentStep === 1"
+          >
+            上一步
+          </v-btn>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="nextStep"
+            :disabled="!canProceed"
+          >
+            {{ currentStep === 3 ? '完成' : '下一步' }}
+          </v-btn>
+        </v-card-actions>
+      </v-stepper>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import uploadApi from '@/api/upload'
-import { useSnackbarStore } from '@/stores/snackbar';
+import { useSnackbarStore } from '@/stores/snackbar'
+import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
+import DetectionStep from '@/components/steps/DetectionStep.vue'
+import ReviewStep from '@/components/steps/ReviewStep.vue'
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -274,7 +359,33 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
 const fileId = ref<string>('')
 const loading = ref<boolean>(false)
-const snackbar = useSnackbarStore();
+const snackbar = useSnackbarStore()
+
+// 进度页面相关状态
+const showProgress = ref(false)
+const currentStep = ref(1)
+const extractedImages = ref<Image[]>([])
+const selectedImages = ref<Image[]>([])
+
+interface Image {
+  image_id: number
+  image_url: string
+  page_number?: number
+  extracted_from_pdf: boolean
+  selected: boolean
+}
+
+interface ReviewData {
+  selectedFakeImages: any[]
+  selectedRealImages: any[]
+  selectedReviewers: any[]
+}
+
+const reviewData = ref<ReviewData>({
+  selectedFakeImages: [],
+  selectedRealImages: [],
+  selectedReviewers: []
+})
 
 const timelineItems = ref([
   {
@@ -363,9 +474,6 @@ const handleSubmit = async () => {
 
   loading.value = true
   try {
-    // 模拟延时
-    //await new Promise(resolve => setTimeout(resolve, 2000))
-    
     const formData = new FormData()
     formData.append('file', selectedFiles.value[0])
 
@@ -373,9 +481,20 @@ const handleSubmit = async () => {
     console.log(data)
     fileId.value = data.file_id
     snackbar.showMessage('文件上传成功，正在处理中...', 'success')
-    //await new Promise(resolve => setTimeout(resolve, 2000))
     
-    router.push(`/progress/${data.file_id}`)
+    // 获取提取的图片
+    const { data: imagesData } = await uploadApi.getExtractedImages(data.file_id)
+    extractedImages.value = imagesData.images.map((img: any) => ({
+      image_id: img.image_id,
+      image_url: import.meta.env.VITE_API_URL + img.image_url,
+      page_number: img.page_number,
+      extracted_from_pdf: img.extracted_from_pdf,
+      selected: false
+    }))
+    
+    // 显示进度页面并重置为第一步
+    showProgress.value = true
+    currentStep.value = 1
   } catch (error) {
     console.error('Upload failed:', error)
     snackbar.showMessage('文件上传失败，请稍后重试', 'error')
@@ -386,6 +505,62 @@ const handleSubmit = async () => {
 
 const triggerFileInput = () => {
   fileInput.value?.click()
+}
+
+// 进度页面相关方法
+const canProceed = computed(() => {
+  switch (currentStep.value) {
+    case 1:
+      return selectedImages.value.length > 0
+    case 3:
+      const { selectedFakeImages, selectedRealImages, selectedReviewers } = reviewData.value
+      const hasSelectedImages = selectedFakeImages.length > 0 || selectedRealImages.length > 0
+      return hasSelectedImages && selectedReviewers.length > 0
+    default:
+      return true
+  }
+})
+
+const updateSelectedImages = (images: typeof extractedImages.value) => {
+  selectedImages.value = images
+}
+
+const updateReviewData = (data: ReviewData) => {
+  reviewData.value = data
+}
+
+const previousStep = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
+
+const nextStep = () => {
+  if (currentStep.value < 3) {
+    currentStep.value++
+  } else {
+    if (canProceed.value) {
+      router.push(`/task/${fileId.value}`)
+    }
+  }
+}
+
+// 添加返回上传页面的方法
+const returnToUpload = () => {
+  showProgress.value = false
+  // 清空文件
+  selectedFiles.value = []
+  // 重置其他状态
+  selectedVersion.value = null
+  fileId.value = ''
+  extractedImages.value = []
+  selectedImages.value = []
+  currentStep.value = 1
+  reviewData.value = {
+    selectedFakeImages: [],
+    selectedRealImages: [],
+    selectedReviewers: []
+  }
 }
 </script>
 
@@ -428,4 +603,16 @@ const triggerFileInput = () => {
 .v-btn--loading {
   opacity: 1;
 }
-</style> 
+
+.upload-progress {
+  position: relative;
+  min-height: 100vh;
+  max-height: 300vh;
+  background-color: rgb(var(--v-theme-surface));
+  overflow: hidden;
+}
+
+.v-stepper {
+  box-shadow: none;
+}
+</style>
