@@ -35,5 +35,13 @@ export default {
       }
     })
 
+  },
+  // 请求重置密码邮件
+  requestPasswordReset(email: string) {
+    return http.post('/password-reset/', { email })
+  },
+  // 重置密码
+  resetPassword(uidb64: string, token: string, newPassword: string) {
+    return http.post(`/password-reset/${uidb64}/${token}/`, { new_password: newPassword })
   }
 }
