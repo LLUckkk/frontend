@@ -1,5 +1,4 @@
 <template>
-  <v-container class="mt-4">
     <v-row>
       <v-col cols="12">
         <div class="d-flex align-center mb-4">
@@ -72,7 +71,6 @@
         </v-card>
       </v-col>
     </v-row>
-  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -268,12 +266,17 @@ onMounted(async () => {
   position: relative;
   overflow: hidden;
   background-color: rgb(var(--v-theme-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .preview-image {
-  height: 100%;
-  width: 100%;
+  max-height: 100%;
+  max-width: 100%;
   object-fit: contain;
+  width: auto;
+  height: auto;
 }
 
 .preview-nav-btn {

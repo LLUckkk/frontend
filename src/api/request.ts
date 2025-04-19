@@ -28,9 +28,49 @@ instance.interceptors.response.use(response=>{
     return response
 },
  error=>{
+    // 处理401错误，尝试刷新token
+    if (error.response && error.response.status === 401) {
+        return refreshToken().then(newToken => {
+            // 更新请求头中的token
+            error.config.headers['Authorization'] = 'Bearer ' + newToken
+            // 重试原始请求
+            return instance(error.config)
+        }).catch(err => {
+            // 刷新token失败，跳转到登录页
+            localStorage.removeItem('token')
+            localStorage.removeItem('refresh')
+            router.push('/login')
+            return Promise.reject(err)
+        })
+    }
     return Promise.reject(error)
   }
 )
+
+// 刷新token的函数
+const refreshToken = async () => {
+    const refresh = localStorage.getItem('refresh')
+    if (!refresh) {
+        return Promise.reject(new Error('No refresh token available'))
+    }
+    
+    try {
+        const response = await axios.post(
+            import.meta.env.VITE_API_URL + '/api/token/refresh/',
+            { refresh: refresh }
+        )
+        
+        if (response.data && response.data.access) {
+            // 保存新的access token
+            localStorage.setItem('token', response.data.access)
+            return response.data.access
+        } else {
+            return Promise.reject(new Error('Invalid response format'))
+        }
+    } catch (error) {
+        return Promise.reject(error)
+    }
+}
  
 //导出axios
 export default instance
