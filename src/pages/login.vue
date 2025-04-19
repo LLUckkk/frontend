@@ -407,6 +407,7 @@ const handleSubmit = async () => {
         username: registerForm.value.username,
         email: registerForm.value.email,
         password: registerForm.value.password,
+        role: selectedRole
       })
       snackbar.showMessage('注册成功', 'success')
       loginType.value = 'login'

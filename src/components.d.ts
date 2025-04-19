@@ -8,17 +8,12 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     DetectionStep: typeof import('./components/steps/DetectionStep.vue')['default']
-    DetectStep: typeof import('./components/steps/DetectStep.vue')['default']
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
     ForgotPassword: typeof import('./components/ForgotPassword.vue')['default']
     ImageSelectionStep: typeof import('./components/steps/ImageSelectionStep.vue')['default']
-    ResultStep: typeof import('./components/steps/ResultStep.vue')['default']
     ReviewStep: typeof import('./components/steps/ReviewStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SelectStep: typeof import('./components/steps/SelectStep.vue')['default']
     Snackbar: typeof import('./components/Snackbar.vue')['default']
-    UploadProgress: typeof import('./components/UploadProgress.vue')['default']
-    UploadStep: typeof import('./components/steps/UploadStep.vue')['default']
   }
 }
