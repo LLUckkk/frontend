@@ -1,5 +1,5 @@
 <template>
-  <div class="captcha-wrapper" @click="refreshCaptcha">
+  <div class="captcha-wrapper" @click="handleClick">
     <canvas ref="captchaCanvas" :width="width" :height="height"></canvas>
     <v-icon class="refresh-icon" icon="mdi-refresh" size="small"></v-icon>
   </div>
@@ -22,6 +22,7 @@ const props = defineProps({
 const emit = defineEmits(['update:code'])
 const captchaCanvas = ref<HTMLCanvasElement | null>(null)
 let captchaCode = ''
+let isDrawing = false
 
 // 生成随机验证码
 const generateCode = (length: number = 4) => {
@@ -35,15 +36,30 @@ const generateCode = (length: number = 4) => {
 
 // 绘制验证码
 const drawCaptcha = () => {
+  if (isDrawing) return
+  isDrawing = true
+
   const canvas = captchaCanvas.value
   if (!canvas) return
 
   const ctx = canvas.getContext('2d')
   if (!ctx) return
 
-  // 清空画布
-  ctx.clearRect(0, 0, props.width, props.height)
+  try {
+    // 清空画布
+    ctx.clearRect(0, 0, props.width, props.height)
 
+    // 生成新的验证码
+    captchaCode = generateCode()
+    emit('update:code', captchaCode)
+
+    // 设置背景
+    ctx.fillStyle = '#f5f5f5'
+    ctx.fillRect(0, 0, props.width, props.height)
+
+    // 添加波浪线背景
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.05)'
+    ctx.lineWidth = 1
   // 生成新的验证码
   captchaCode = generateCode()
   emit('update:code', captchaCode)
@@ -152,10 +168,15 @@ const drawCaptcha = () => {
     ctx.arc(x2, y2, radius2, 0, 2 * Math.PI)
     ctx.stroke()
   }
+  } finally {
+    isDrawing = false
+  }
 }
 
-// 刷新验证码
-const refreshCaptcha = () => {
+// 处理点击事件
+const handleClick = (event: MouseEvent) => {
+  // 防止事件冒泡
+  event.stopPropagation()
   drawCaptcha()
 }
 
@@ -164,7 +185,7 @@ onMounted(() => {
 })
 
 defineExpose({
-  refreshCaptcha,
+  refreshCaptcha: drawCaptcha,
   getCode: () => captchaCode
 })
 </script>
@@ -174,6 +195,7 @@ defineExpose({
   position: relative;
   display: inline-block;
   cursor: pointer;
+  user-select: none;
 }
 
 .refresh-icon {
@@ -183,6 +205,7 @@ defineExpose({
   transform: translateY(-50%);
   opacity: 0;
   transition: opacity 0.3s;
+  pointer-events: none;
 }
 
 .captcha-wrapper:hover .refresh-icon {
@@ -191,5 +214,6 @@ defineExpose({
 
 canvas {
   border-radius: 4px;
+  vertical-align: middle;
 }
 </style> 

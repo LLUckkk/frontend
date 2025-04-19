@@ -54,14 +54,16 @@
                   <v-icon>mdi-image</v-icon>
                 </template>
                 <v-list-item-title>已上传任务</v-list-item-title>
-                <v-list-item-subtitle>{{ stats.uploadedTasks || 0 }}</v-list-item-subtitle>
+                <!-- <v-list-item-subtitle>{{ stats.uploadedTasks || 0 }}</v-list-item-subtitle> -->
+                <v-list-item-subtitle>0</v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
                 <template v-slot:prepend>
                   <v-icon>mdi-check-circle</v-icon>
                 </template>
                 <v-list-item-title>已完成任务</v-list-item-title>
-                <v-list-item-subtitle>{{ stats.completedTasks || 0 }}</v-list-item-subtitle>
+                <!-- <v-list-item-subtitle>{{ stats.completedTasks || 0 }}</v-list-item-subtitle> -->
+                <v-list-item-subtitle>0</v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -73,7 +75,7 @@
         <v-card>
           <v-card-title>最近活动</v-card-title>
           <v-card-text>
-            <v-timeline>
+            <!-- <v-timeline>
               <v-timeline-item v-for="(activity, index) in recentActivities" :key="index" :dot-color="activity.color"
                 size="small">
                 <div class="d-flex justify-space-between">
@@ -86,7 +88,8 @@
                   </v-chip>
                 </div>
               </v-timeline-item>
-            </v-timeline>
+            </v-timeline> -->
+            您最近没有审核操作哦~
           </v-card-text>
         </v-card>
       </v-col>
