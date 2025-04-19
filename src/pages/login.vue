@@ -259,7 +259,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
@@ -293,6 +293,13 @@ const registerForm = ref({
 const captchaInput = ref('')
 const captchaCode = ref('')
 const captchaError = ref('')
+
+// 监听登录类型变化，重置验证码
+watch(loginType, () => {
+  captchaInput.value = ''
+  captchaError.value = ''
+  captchaRef.value?.refreshCaptcha()
+})
 
 // 表单验证规则
 const loginRules = {
@@ -342,7 +349,7 @@ const validateCaptcha = () => {
 
 const isFormValid = computed(() => {
   if (!agreement.value) return false
-  if (!validateCaptcha()) return false
+  if (!captchaInput.value) return false
   
   if (loginType.value === 'login') {
     return email.value && password.value && 

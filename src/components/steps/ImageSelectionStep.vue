@@ -26,7 +26,7 @@
                   </v-avatar>
                 </template>
                 <v-list-item-title>
-                  {{ `图片${image.image_id}` }}
+                  {{ `图片${index + 1}` }}
                 </v-list-item-title>
                 <v-list-item-subtitle>
                   {{ image.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
