@@ -144,13 +144,10 @@
               </v-btn>
             </div>
             
-            <v-text-field 
-              v-model="passwordForm.verificationCode" 
-              label="验证码" 
-              variant="outlined" 
-              class="mb-4"
-              placeholder="请输入收到的验证码"
-            ></v-text-field>
+            <div class="mb-4">
+              <div class="text-subtitle-2 mb-2">验证码</div>
+              <VerificationCodeInput v-model="passwordForm.verificationCode" />
+            </div>
             
             <v-text-field 
               v-model="passwordForm.newPassword" 
@@ -198,6 +195,7 @@ import user from '@/api/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 import { useUserStore } from '@/stores/user'
 import { useRoute } from 'vue-router'
+import VerificationCodeInput from '@/components/VerificationCodeInput.vue'
 
 const snackbar = useSnackbarStore()
 const userStore = useUserStore()
@@ -226,15 +224,6 @@ const passwordForm = ref({
   confirmPassword: ''
 })
 
-// 检查URL中是否包含重置密码的token和uidb64
-onMounted(() => {
-  const uidb64 = route.query.uidb64 as string
-  const token = route.query.token as string
-  
-  if (uidb64 && token) {
-    showPasswordDialog.value = true
-  }
-})
 
 // 密码验证
 const isPasswordValid = computed(() => {
@@ -306,13 +295,16 @@ const resetPassword = async () => {
   
   try {
     resettingPassword.value = true
-    // 这里假设后端API接受验证码作为token
-    await user.resetPassword('verification', passwordForm.value.verificationCode, passwordForm.value.newPassword)
+    await user.confirmPasswordReset({
+      email: passwordForm.value.email,
+      reset_code: passwordForm.value.verificationCode,
+      new_password: passwordForm.value.newPassword
+    })
     snackbar.showMessage('密码重置成功', 'success')
     closePasswordDialog()
   } catch (error: any) {
     console.error('重置密码失败:', error)
-    const errorMsg = error.response?.data?.message || '重置密码失败'
+    const errorMsg = '重置密码失败'
     snackbar.showMessage(errorMsg, 'error')
   } finally {
     resettingPassword.value = false

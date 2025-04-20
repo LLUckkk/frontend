@@ -248,18 +248,91 @@
     <!-- 忘记密码对话框 -->
     <v-dialog
       v-model="showForgotPasswordDialog"
-      width="auto"
+      max-width="500"
       persistent
-      scrollable
     >
-      <forgot-password @close="showForgotPasswordDialog = false" />
+      <v-card>
+        <v-card-title>重置密码</v-card-title>
+        <v-card-text>
+          <v-form>
+            <div class="d-flex align-center mb-4">
+              <v-text-field 
+                v-model="forgotPasswordForm.email" 
+                label="邮箱" 
+                variant="outlined" 
+                class="flex-grow-1"
+                :rules="[
+                  v => !!v || '邮箱不能为空',
+                  v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+                ]"
+              ></v-text-field>
+              <v-btn 
+                color="primary" 
+                class="ml-2"
+                @click="requestResetEmail" 
+                :loading="sendingEmail"
+                :disabled="countdown > 0"
+              >
+                {{ countdown > 0 ? `${countdown}秒后重发` : '发送验证码' }}
+              </v-btn>
+            </div>
+            
+            <div class="mb-4">
+              <div class="text-subtitle-2 mb-2">验证码</div>
+              <VerificationCodeInput v-model="forgotPasswordForm.verificationCode" />
+            </div>
+            
+            <v-text-field 
+              v-model="forgotPasswordForm.newPassword" 
+              label="新密码" 
+              type="password"
+              variant="outlined" 
+              class="mb-4"
+              placeholder="请输入新密码"
+              :rules="[
+                v => !!v || '密码不能为空',
+                v => v.length >= 6 || '密码至少6个字符'
+              ]"
+            ></v-text-field>
+            
+            <v-text-field 
+              v-model="forgotPasswordForm.confirmPassword" 
+              label="确认新密码" 
+              type="password"
+              variant="outlined" 
+              class="mb-4"
+              placeholder="请再次输入新密码"
+              :rules="[
+                v => !!v || '请确认密码',
+                v => v === forgotPasswordForm.newPassword || '两次输入的密码不一致'
+              ]"
+            ></v-text-field>
+            
+            <v-btn 
+              color="primary" 
+              block
+              @click="resetPassword" 
+              :loading="resettingPassword"
+              :disabled="!isPasswordResetValid"
+            >
+              重置密码
+            </v-btn>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="closeForgotPasswordDialog">
+            取消
+          </v-btn>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DynamicCaptcha from '@/components/DynamicCaptcha.vue'
 import ForgotPassword from '@/components/ForgotPassword.vue'
@@ -268,6 +341,7 @@ const snackbar = useSnackbarStore();
 import user from '@/api/user'
 import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
+import VerificationCodeInput from '@/components/VerificationCodeInput.vue'
 
 const router = useRouter()
 const captchaRef = ref()
@@ -429,6 +503,114 @@ const handleSubmit = async () => {
     }
   }
 }
+
+const forgotPasswordForm = ref({
+  email: '',
+  verificationCode: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const sendingEmail = ref(false)
+const resettingPassword = ref(false)
+const countdown = ref(0)
+const countdownTimer = ref<number | null>(null)
+
+// 密码重置表单验证
+const isPasswordResetValid = computed(() => {
+  return forgotPasswordForm.value.email && 
+         /.+@.+\..+/.test(forgotPasswordForm.value.email) &&
+         forgotPasswordForm.value.verificationCode && 
+         forgotPasswordForm.value.newPassword && 
+         forgotPasswordForm.value.newPassword === forgotPasswordForm.value.confirmPassword &&
+         forgotPasswordForm.value.newPassword.length >= 6
+})
+
+// 关闭忘记密码对话框
+const closeForgotPasswordDialog = () => {
+  showForgotPasswordDialog.value = false
+  // 重置表单
+  setTimeout(() => {
+    forgotPasswordForm.value = {
+      email: '',
+      verificationCode: '',
+      newPassword: '',
+      confirmPassword: ''
+    }
+    // 清除倒计时
+    if (countdownTimer.value) {
+      clearInterval(countdownTimer.value)
+      countdownTimer.value = null
+    }
+    countdown.value = 0
+  }, 300)
+}
+
+// 开始倒计时
+const startCountdown = () => {
+  countdown.value = 60
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+  countdownTimer.value = window.setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      if (countdownTimer.value) {
+        clearInterval(countdownTimer.value)
+        countdownTimer.value = null
+      }
+    }
+  }, 1000)
+}
+
+// 请求重置密码邮件
+const requestResetEmail = async () => {
+  try {
+    sendingEmail.value = true
+    await user.requestPasswordReset(forgotPasswordForm.value.email)
+    snackbar.showMessage('验证码已发送，请查收邮箱', 'success')
+    startCountdown()
+  } catch (error: any) {
+    console.error('发送验证码失败:', error)
+    const errorMsg = error.response?.data?.message || '发送验证码失败'
+    snackbar.showMessage(errorMsg, 'error')
+  } finally {
+    sendingEmail.value = false
+  }
+}
+
+// 重置密码
+const resetPassword = async () => {
+  if (!isPasswordResetValid.value) {
+    snackbar.showMessage('请确保两次输入的密码一致且长度不少于6位', 'error')
+    return
+  }
+  
+  try {
+    resettingPassword.value = true
+    await user.confirmPasswordReset({
+      email: forgotPasswordForm.value.email,
+      reset_code: forgotPasswordForm.value.verificationCode,
+      new_password: forgotPasswordForm.value.newPassword
+    })
+    snackbar.showMessage('密码重置成功', 'success')
+    closeForgotPasswordDialog()
+  } catch (error: any) {
+    console.error('重置密码失败:', error)
+    const errorMsg = '重置密码失败'
+    snackbar.showMessage(errorMsg, 'error')
+  } finally {
+    resettingPassword.value = false
+  }
+}
+
+// 组件卸载时清除定时器
+onUnmounted(() => {
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
+})
 </script>
 
 <style scoped>

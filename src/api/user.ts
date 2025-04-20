@@ -40,8 +40,8 @@ export default {
   requestPasswordReset(email: string) {
     return http.post('/password-reset/', { email })
   },
-  // 重置密码
-  resetPassword(uidb64: string, token: string, newPassword: string) {
-    return http.post(`/password-reset/${uidb64}/${token}/`, { new_password: newPassword })
+  // 确认重置密码
+  confirmPasswordReset(data: { email: string, reset_code: string, new_password: string }) {
+    return http.post('/password-reset/confirm/', data)
   }
 }
