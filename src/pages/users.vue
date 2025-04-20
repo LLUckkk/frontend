@@ -39,13 +39,16 @@
         :headers="headers"
         :items="users"
         class="elevation-0"
-        :items-per-page="10"
+        :items-per-page="pageSize"
         hover
         :width="'100%'"
+        :loading="loading"
+        :items-length="totalUsers"
+        @update:options="handleTableOptionsUpdate"
       >
         <template v-slot:item.avatar="{ item }">
           <v-avatar size="40">
-            <v-img :src="item.avatar" :alt="item.username"></v-img>
+            <v-img :src="item.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'" :alt="item.username"></v-img>
           </v-avatar>
         </template>
 
@@ -224,12 +227,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import userApi from '@/api/user'
+import { useSnackbarStore } from '@/stores/snackbar'
+
+const snackbar = useSnackbarStore()
 
 interface User {
   id: number
   avatar: string
   username: string
+  email: string
   role: string
   permissions: {
     canPublish: boolean
@@ -249,128 +257,13 @@ const headers = [
   { title: '操作', key: 'actions', align: 'center', sortable: false },
 ] as const
 
-const users = ref<User[]>([
-  {
-    id: 1,
-    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    username: 'JCLR 2021',
-    role: '出版社',
-    permissions: {
-      canPublish: true,
-      canSubmit: true
-    },
-    registerTime: Date.now(),
-    lastLoginTime: Date.now() - 24 * 60 * 60 * 1000
-  },
-  {
-    id: 2,
-    avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-    username: '审稿人A',
-    role: '审稿人',
-    permissions: {
-      canPublish: false,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 7 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 2 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 3,
-    avatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-    username: '出版社B',
-    role: '出版社',
-    permissions: {
-      canPublish: true,
-      canSubmit: false
-    },
-    registerTime: Date.now() - 30 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 12 * 60 * 60 * 1000
-  },
-  {
-    id: 4,
-    avatar: 'https://randomuser.me/api/portraits/women/4.jpg',
-    username: '审稿人B',
-    role: '审稿人',
-    permissions: {
-      canPublish: false,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 90 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 5 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 5,
-    avatar: 'https://randomuser.me/api/portraits/men/5.jpg',
-    username: '出版社C',
-    role: '出版社',
-    permissions: {
-      canPublish: true,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 180 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 1 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 6,
-    avatar: 'https://randomuser.me/api/portraits/women/6.jpg',
-    username: '审稿人C',
-    role: '审稿人',
-    permissions: {
-      canPublish: false,
-      canSubmit: false
-    },
-    registerTime: Date.now() - 365 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 30 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 7,
-    avatar: 'https://randomuser.me/api/portraits/men/7.jpg',
-    username: '出版社D',
-    role: '出版社',
-    permissions: {
-      canPublish: true,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 2 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 1 * 60 * 60 * 1000
-  },
-  {
-    id: 8,
-    avatar: 'https://randomuser.me/api/portraits/women/8.jpg',
-    username: '审稿人D',
-    role: '审稿人',
-    permissions: {
-      canPublish: false,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 15 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 3 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 9,
-    avatar: 'https://randomuser.me/api/portraits/men/9.jpg',
-    username: '出版社E',
-    role: '出版社',
-    permissions: {
-      canPublish: true,
-      canSubmit: false
-    },
-    registerTime: Date.now() - 60 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 6 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 10,
-    avatar: 'https://randomuser.me/api/portraits/women/10.jpg',
-    username: '审稿人F',
-    role: '审稿人',
-    permissions: {
-      canPublish: false,
-      canSubmit: true
-    },
-    registerTime: Date.now() - 120 * 24 * 60 * 60 * 1000,
-    lastLoginTime: Date.now() - 10 * 24 * 60 * 60 * 1000
-  }
-])
+// 分页相关
+const users = ref<User[]>([])
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalUsers = ref(0)
+const totalPages = ref(1)
 
 // 权限编辑相关
 const showPermissionDialog = ref(false)
@@ -403,12 +296,12 @@ const selectHeader = (header: typeof headers[0]) => {
 
 const handleSearch = () => {
   if (!searchQuery.value) {
-    users.value = [...originalUsers.value]
+    fetchUsers(currentPage.value, pageSize.value)
     return
   }
   
   const query = searchQuery.value.toLowerCase()
-  users.value = originalUsers.value.filter(user => 
+  users.value = users.value.filter(user => 
     user.username.toLowerCase().includes(query)
   )
 }
@@ -430,11 +323,29 @@ const openPermissionDialog = (user: User) => {
   showPermissionDialog.value = true
 }
 
-const updatePermissions = () => {
+const updatePermissions = async () => {
   if (selectedUser.value) {
-    const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
-    if (userToUpdate) {
-      userToUpdate.permissions = { ...editingPermissions.value }
+    try {
+      // 更新发布权限
+      if (editingPermissions.value.canPublish) {
+        await userApi.updateUserPermission(selectedUser.value.id, 'canPublish')
+      }
+      
+      // 更新提交权限
+      if (editingPermissions.value.canSubmit) {
+        await userApi.updateUserPermission(selectedUser.value.id, 'canSubmit')
+      }
+      
+      // 更新本地数据
+      const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
+      if (userToUpdate) {
+        userToUpdate.permissions = { ...editingPermissions.value }
+      }
+      
+      snackbar.showMessage('权限更新成功', 'success')
+    } catch (error) {
+      console.error('更新权限失败:', error)
+      snackbar.showMessage('更新权限失败', 'error')
     }
   }
   showPermissionDialog.value = false
@@ -445,9 +356,16 @@ const openDeleteDialog = (user: User) => {
   showDeleteDialog.value = true
 }
 
-const deleteUser = () => {
+const deleteUser = async () => {
   if (selectedUser.value) {
-    users.value = users.value.filter(u => u.id !== selectedUser.value!.id)
+    try {
+      await userApi.deleteUser(selectedUser.value.id)
+      users.value = users.value.filter(u => u.id !== selectedUser.value!.id)
+      snackbar.showMessage('用户删除成功', 'success')
+    } catch (error) {
+      console.error('删除用户失败:', error)
+      snackbar.showMessage('删除用户失败', 'error')
+    }
   }
   showDeleteDialog.value = false
 }
@@ -512,7 +430,7 @@ const resetFilters = () => {
     endDate: null
   }
   timeError.value = ''
-  users.value = [...originalUsers.value]
+  fetchUsers(currentPage.value, pageSize.value)
   showFilterDialog.value = false
 }
 
@@ -598,8 +516,54 @@ const handleCustomTimeChange = () => {
   }
 }
 
+// 处理表格选项更新（分页、排序等）
+const handleTableOptionsUpdate = (options: any) => {
+  const { page, itemsPerPage } = options
+  currentPage.value = page
+  pageSize.value = itemsPerPage
+  fetchUsers(page, itemsPerPage)
+}
+
+// 从后端获取用户数据
+const fetchUsers = async (page: number, pageSize: number) => {
+  loading.value = true
+  try {
+    const response = await userApi.getUsers(page, pageSize)
+    const { users: userList, current_page, total_pages, total_users } = response.data
+    
+    // 转换后端数据格式为前端格式
+    users.value = userList.map((user: any) => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      permissions: {
+        canPublish: user.permissions?.includes('canPublish') || false,
+        canSubmit: user.permissions?.includes('canSubmit') || false
+      },
+      registerTime: new Date(user.date_joined).getTime(),
+      lastLoginTime: new Date(user.last_login || user.date_joined).getTime(),
+      avatar: user.avatar || ''
+    }))
+    
+    currentPage.value = current_page
+    totalPages.value = total_pages
+    totalUsers.value = total_users
+    
+    // 保存原始数据用于筛选
+    originalUsers.value = [...users.value]
+  } catch (error) {
+    console.error('获取用户数据失败:', error)
+    snackbar.showMessage('获取用户数据失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
 // 初始化
-initOriginalUsers()
+onMounted(() => {
+  fetchUsers(currentPage.value, pageSize.value)
+})
 </script>
 
 <style scoped>

@@ -15,9 +15,9 @@
     >
       <v-list>
         <v-list-item
-          prepend-avatar="./192.png"
-          title="Admin"
-          subtitle="管理员"
+          :prepend-avatar="isLoggedIn ? userStore.avatar : undefined"
+          :subtitle="userStore.role"
+          :title="userStore.displayName"
         >
         </v-list-item>
       </v-list>
@@ -25,12 +25,20 @@
       <v-divider></v-divider>
 
       <v-list density="compact" nav>
-        <v-list-item prepend-icon="mdi-chart-bar" title="统计分析" value="analytics" @click="goToAnalytics"></v-list-item>
-        <v-list-item prepend-icon="mdi-folder" title="文件管理" value="files" @click="goToFiles"></v-list-item>
-        <v-list-item prepend-icon="mdi-account-group" title="用户管理" value="users" @click="goToUsers"></v-list-item>
-        <v-list-item prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs" @click="goToLogs"></v-list-item>
+        <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics" @click="goToAnalytics"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="文件管理" value="files" @click="goToFiles"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users" @click="goToUsers"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs" @click="goToLogs"></v-list-item>
         <v-divider class="my-2"></v-divider>
-        <v-list-item prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>
+        <v-list-item 
+          v-else
+          prepend-icon="mdi-login" 
+          title="登录" 
+          value="login"
+          @click="goToLogin"
+        ></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -57,25 +65,37 @@
 
     <!-- 移动端底部导航栏 -->
     <v-bottom-navigation v-if="isMobile">
-      <v-btn to="/analytics" value="analytics">
+      <v-btn to="/" value="home">
+        <v-icon>mdi-home</v-icon>
+        <span>主页</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/analytics" value="analytics">
         <v-icon>mdi-chart-bar</v-icon>
         <span>统计分析</span>
       </v-btn>
-      <v-btn to="/files" value="files">
+      <v-btn v-if="isLoggedIn" to="/files" value="files">
         <v-icon>mdi-folder</v-icon>
         <span>文件管理</span>
       </v-btn>
-      <v-btn to="/users" value="users">
+      <v-btn v-if="isLoggedIn" to="/users" value="users">
         <v-icon>mdi-account-group</v-icon>
         <span>用户管理</span>
       </v-btn>
-      <v-btn to="/logs" value="logs">
+      <v-btn v-if="isLoggedIn" to="/logs" value="logs">
         <v-icon>mdi-clipboard-text-clock</v-icon>
         <span>日志记录</span>
       </v-btn>
-      <v-btn @click="handleLogout" value="logout">
+      <v-btn v-if="isLoggedIn" @click="handleLogout" value="logout">
         <v-icon>mdi-logout</v-icon>
         <span>退出登录</span>
+      </v-btn>
+      <v-btn 
+        v-else
+        @click="goToLogin"
+        value="login"
+      >
+        <v-icon>mdi-login</v-icon>
+        <span>登录</span>
       </v-btn>
     </v-bottom-navigation>
 
@@ -110,6 +130,18 @@ const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
 
+
+import { isLoggedIn } from './api/user'
+
+import user from '@/api/user'
+import Snackbar from '@/components/Snackbar.vue'
+import { useUserStore } from '@/stores/user';
+const userStore = useUserStore();
+
+import { useSnackbarStore } from '@/stores/snackbar';
+const snackbar = useSnackbarStore();
+
+
 // 模拟用户信息
 const userInfo = ref<{
   name: string;
@@ -119,33 +151,32 @@ const userInfo = ref<{
   student_id: '管理员'
 })
 
-// 模拟登录状态
-const isLoggedIn = ref(false)
+
 
 const goToHome = () => {
   router.push('/')
 }
 
-const goToUpload = () => {
-  router.push('/upload')
-}
-
-const goToHistory = () => {
-  router.push('/history')
-}
-
-const goToReview = () => {
-  router.push('/review')
-}
 
 const goToLogin = () => {
   router.push('/login')
 }
 
-const handleLogout = () => {
-  // 实现登出逻辑
-  isLoggedIn.value = false
-  router.push('/login')
+const handleLogout = async () => {
+  try {
+    // localStorage.clear()
+    let refresh = localStorage.getItem("refresh")
+    const response = await user.logout({refresh})
+    localStorage.removeItem("refresh")
+    localStorage.removeItem("token")
+    isLoggedIn.value = false
+    localStorage.setItem("isLoggedIn", "false")
+    userStore.clearUserInfo() // 清除用户信息
+    snackbar.showMessage('退出成功', 'success')
+    router.push('/login')
+  } catch (error: any) {
+    snackbar.showMessage('请联系管理员', 'error')
+  }
 }
 
 const toggleTheme = () => {
@@ -153,13 +184,6 @@ const toggleTheme = () => {
   localStorage.setItem('app_theme', theme.value)
 }
 
-const goToProfile = () => {
-  router.push('/profile')
-}
-
-const goToAdmin = () => {
-  router.push('/admin')
-}
 
 const goToAnalytics = () => {
   router.push('/analytics')
@@ -177,11 +201,16 @@ const goToLogs = () => {
   router.push('/logs')
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 从本地存储加载主题设置
   const savedTheme = localStorage.getItem('app_theme')
   if (savedTheme) {
     theme.value = savedTheme
+  }
+
+    // 如果已登录，获取用户信息
+    if (isLoggedIn.value) {
+    await userStore.fetchUserInfo();
   }
 })
 </script>

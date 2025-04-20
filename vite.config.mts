@@ -70,6 +70,16 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      '/api': {
+        target: 'http://122.9.45.122',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
+    hmr: {
+      overlay: false,
+    },
   },
   css: {
     preprocessorOptions: {
