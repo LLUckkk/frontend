@@ -193,7 +193,9 @@
     if (!validateCaptcha()) {
       return
     }
-    
+    // localStorage.setItem("isLoggedIn", "true")
+    // return
+
     const response = await user.login({
       email: email.value,
       password: password.value
