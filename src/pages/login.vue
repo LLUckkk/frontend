@@ -156,11 +156,11 @@
   const loginRules = {
     email: [
       (v: string) => !!v || '邮箱不能为空',
-      (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+      // (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
     ],
     password: [
       (v: string) => !!v || '密码不能为空',
-      (v: string) => v.length >= 6 || '密码至少6个字符'
+      // (v: string) => v.length >= 6 || '密码至少6个字符'
     ]
   }
   
@@ -180,12 +180,13 @@
   }
   
   const isFormValid = computed(() => {
-    if (!agreement.value) return false
-    if (!captchaInput.value) return false
+    // if (!agreement.value) return false
+    // if (!captchaInput.value) return false
     
-    return email.value && password.value && 
-           /.+@.+\..+/.test(email.value) && 
-           password.value.length >= 6
+    // return email.value && password.value && 
+    //        /.+@.+\..+/.test(email.value) && 
+    //        password.value.length >= 6
+    return true
   })
   
   const handleSubmit = async () => {
