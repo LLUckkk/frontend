@@ -180,13 +180,13 @@
   }
   
   const isFormValid = computed(() => {
-    // if (!agreement.value) return false
-    // if (!captchaInput.value) return false
+    if (!agreement.value) return false
+    if (!captchaInput.value) return false
     
     // return email.value && password.value && 
     //        /.+@.+\..+/.test(email.value) && 
     //        password.value.length >= 6
-    return true
+    return email.value && password.value 
   })
   
   const handleSubmit = async () => {
@@ -198,7 +198,8 @@
 
     const response = await user.login({
       email: email.value,
-      password: password.value
+      password: password.value,
+      role: 'reviewer'//admin
     }).then(async (res: { data: { access: string; refresh: string } }) => {
       localStorage.setItem("token", res.data.access)
       localStorage.setItem("refresh", res.data.refresh)
