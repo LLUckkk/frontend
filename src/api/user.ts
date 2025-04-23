@@ -44,13 +44,16 @@ export default {
     return http.post('/password-reset/confirm/', data)
   },
   // 获取分页用户信息
-  getUsers(page: number = 1, pageSize: number = 10) {
-    return http.get('/get_users/', {
-      params: {
-        page,
-        page_size: pageSize
-      }
-    })
+  getUsers(params: {
+    page: number;
+    page_size: number;
+    query?: string;
+    role?: string;
+    permission?: string;
+    startTime?: string;
+    endTime?: string;
+  }) {
+    return http.get('/get_users/', { params });
   },
   // 删除用户
   deleteUser(userId: number) {

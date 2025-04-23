@@ -519,16 +519,27 @@ const handleCustomTimeChange = () => {
 // 处理表格选项更新（分页、排序等）
 const handleTableOptionsUpdate = (options: any) => {
   const { page, itemsPerPage } = options
-  currentPage.value = page
-  pageSize.value = itemsPerPage
-  fetchUsers(page, itemsPerPage)
+  if (currentPage.value !== page || pageSize.value !== itemsPerPage) {
+    currentPage.value = page
+    pageSize.value = itemsPerPage
+    fetchUsers(page, itemsPerPage)
+  }
 }
 
 // 从后端获取用户数据
 const fetchUsers = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    const response = await userApi.getUsers(page, pageSize)
+    const params = {
+      page,
+      page_size: pageSize,
+      query: searchQuery.value || '',
+      role: filters.value.role || '',
+      permission: filters.value.canPublish !== null ? (filters.value.canPublish ? 'canPublish' : '') : '',
+      startTime: filters.value.startDate ? new Date(filters.value.startDate).toISOString().replace('T', ' ').slice(0, 19) : undefined,
+      endTime: filters.value.endDate ? new Date(filters.value.endDate).toISOString().replace('T', ' ').slice(0, 19) : undefined
+    }
+    const response = await userApi.getUsers(params)
     const { users: userList, current_page, total_pages, total_users } = response.data
     
     // 转换后端数据格式为前端格式
@@ -538,11 +549,11 @@ const fetchUsers = async (page: number, pageSize: number) => {
       email: user.email,
       role: user.role,
       permissions: {
-        canPublish: user.permissions?.includes('canPublish') || false,
-        canSubmit: user.permissions?.includes('canSubmit') || false
+        canPublish: user.permission === 1,
+        canSubmit: user.permission === 1
       },
       registerTime: new Date(user.date_joined).getTime(),
-      lastLoginTime: new Date(user.last_login || user.date_joined).getTime(),
+      lastLoginTime: new Date(user.date_joined).getTime(),
       avatar: user.avatar || ''
     }))
     
