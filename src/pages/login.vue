@@ -449,7 +449,8 @@ const handleSubmit = async () => {
   if (loginType.value === 'login') {
       const response = await user.login({
         email: email.value,
-        password: password.value
+        password: password.value,
+        role: selectedRole.value
       }).then(async res => {
         localStorage.setItem("token", res.data.access)
         localStorage.setItem("refresh", res.data.refresh)
@@ -481,7 +482,7 @@ const handleSubmit = async () => {
         username: registerForm.value.username,
         email: registerForm.value.email,
         password: registerForm.value.password,
-        role: selectedRole
+        role: selectedRole.value
       })
       snackbar.showMessage('注册成功', 'success')
       loginType.value = 'login'

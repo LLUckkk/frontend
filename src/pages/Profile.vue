@@ -75,7 +75,7 @@
         <v-card>
           <v-card-title>最近活动</v-card-title>
           <v-card-text>
-            <!-- <v-timeline>
+            <v-timeline>
               <v-timeline-item v-for="(activity, index) in recentActivities" :key="index" :dot-color="activity.color"
                 size="small">
                 <div class="d-flex justify-space-between">
@@ -88,8 +88,8 @@
                   </v-chip>
                 </div>
               </v-timeline-item>
-            </v-timeline> -->
-            您最近没有审核操作哦~
+            </v-timeline>
+            <!-- 您最近没有审核操作哦~ -->
           </v-card-text>
         </v-card>
       </v-col>
