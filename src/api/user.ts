@@ -64,5 +64,14 @@ export default {
     return http.post(`/user_permission/${userId}/`, {
       permission_name: permissionName
     })
+  },
+  // 创建管理员
+  createAdmin(data: {
+    username: string;
+    email: string;
+    password: string;
+    role?: string;
+  }) {
+    return http.post('/create-admin/', data)
   }
 }

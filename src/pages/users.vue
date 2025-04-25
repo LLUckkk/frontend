@@ -1,5 +1,4 @@
 <template>
-  <v-container>
     <!-- 标题 -->
     <v-row class="mb-6">
       <v-col>
@@ -14,11 +13,13 @@
           v-model="searchQuery"
           label="搜索用户名"
           append-inner-icon="mdi-magnify"
+          clearable
           density="compact"
           hide-details
           class="search-input"
           @keyup.enter="handleSearch"
           @click:append-inner="handleSearch"
+          @click:clear="handleSearch"
           placeholder="请输入用户名"
         ></v-text-field>
       </v-col>
@@ -30,6 +31,15 @@
           @click="showFilterDialog = true"
         >
           筛选
+        </v-btn>
+        <v-btn
+          v-if="currentUser && currentUser.email === 'admin@mail.com'"
+          color="success"
+          class="text-none"
+          prepend-icon="mdi-account-plus"
+          @click="showCreateAdminDialog = true"
+        >
+          创建管理员
         </v-btn>
       </v-col>
     </v-row>
@@ -43,40 +53,98 @@
         hover
         :width="'100%'"
         :loading="loading"
-        :items-length="totalUsers"
-        @update:options="handleTableOptionsUpdate"
+        hide-default-footer
       >
+        <template v-slot:top>
+          <div class="d-flex align-center pa-4">
+            <div class="text-caption text-medium-emphasis">
+              共 {{ totalUsers }} 条记录
+            </div>
+          </div>
+        </template>
         <template v-slot:item.avatar="{ item }">
           <v-avatar size="40">
             <v-img :src="item.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'" :alt="item.username"></v-img>
           </v-avatar>
         </template>
 
+        <template v-slot:item.email="{ item }">
+          <span>{{ item.email }}</span>
+        </template>
+
         <template v-slot:item.role="{ item }">
           <v-chip
-            :color="item.role === '出版社' ? 'success' : 'primary'"
+            v-if="item.email === ROOT_ADMIN_EMAIL"
+            color="purple"
             size="small"
             class="role-chip"
           >
-            {{ item.role }}
+            根管理员
+          </v-chip>
+          <v-chip
+            v-else
+            :color="getRoleColor(item.role)"
+            size="small"
+            class="role-chip"
+          >
+            {{ getRoleName(item.role) }}
           </v-chip>
         </template>
 
-        <template v-slot:item.permissions="{ item }">
+        <template v-slot:item.permission="{ item }">
           <div class="d-flex flex-column align-center">
             <v-chip
+              v-if="item.role === 'admin'"
               size="x-small"
-              :color="item.permissions.canPublish ? 'success' : 'error'"
+              color="error"
               class="mb-1"
             >
-              {{ item.permissions.canPublish ? '可发布审核' : '禁止发布' }}
+              管理员权限
             </v-chip>
-            <v-chip
-              size="x-small"
-              :color="item.permissions.canSubmit ? 'success' : 'error'"
-            >
-              {{ item.permissions.canSubmit ? '可提交检测' : '禁止提交' }}
-            </v-chip>
+            <template v-else>
+              <div class="d-flex flex-wrap justify-center gap-2">
+                <div class="d-flex align-center">
+                  <v-icon
+                    :color="getPermissionBit(item.permission, 3) ? 'info' : 'error'"
+                    size="small"
+                    class="mr-1"
+                  >
+                    {{ getPermissionBit(item.permission, 3) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  </v-icon>
+                  <span class="text-caption">上传图像</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    :color="getPermissionBit(item.permission, 2) ? 'success' : 'error'"
+                    size="small"
+                    class="mr-1"
+                  >
+                    {{ getPermissionBit(item.permission, 2) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  </v-icon>
+                  <span class="text-caption">提交AI检测</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    :color="getPermissionBit(item.permission, 1) ? 'warning' : 'error'"
+                    size="small"
+                    class="mr-1"
+                  >
+                    {{ getPermissionBit(item.permission, 1) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  </v-icon>
+                  <span class="text-caption">发布人工审核</span>
+                </div>
+                <div class="d-flex align-center">
+                  <v-icon
+                    :color="getPermissionBit(item.permission, 0) ? 'primary' : 'error'"
+                    size="small"
+                    class="mr-1"
+                  >
+                    {{ getPermissionBit(item.permission, 0) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  </v-icon>
+                  <span class="text-caption">提交人工审核</span>
+                </div>
+              </div>
+            </template>
           </div>
         </template>
 
@@ -110,6 +178,29 @@
           </v-btn>
         </template>
       </v-data-table>
+      
+      <div class="d-flex align-center justify-center pa-4">
+        <div class="d-flex align-center">
+          <span class="text-caption mr-2">每页显示</span>
+          <v-select
+            v-model="pageSize"
+            :items="[5, 10, 20, 50, 100]"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="width: 100px"
+            @update:model-value="handlePageSizeChange"
+          ></v-select>
+          <span class="text-caption ml-2">条</span>
+        </div>
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          :total-visible="7"
+          class="ml-4"
+          @update:model-value="handlePageChange"
+        ></v-pagination>
+      </div>
     </v-card>
 
     <!-- 权限设置对话框 -->
@@ -119,15 +210,27 @@
         <v-card-text>
           <div class="d-flex flex-column gap-4">
             <v-switch
-              v-model="editingPermissions.canPublish"
-              label="发布审核权限"
+              v-model="editingPermissions.uploadImage"
+              label="上传图像权限"
+              color="info"
+              hide-details
+            ></v-switch>
+            <v-switch
+              v-model="editingPermissions.submitAI"
+              label="提交AI检测权限"
               color="success"
               hide-details
             ></v-switch>
             <v-switch
-              v-model="editingPermissions.canSubmit"
-              label="提交检测权限"
-              color="success"
+              v-model="editingPermissions.publishReview"
+              label="发布人工审核权限"
+              color="warning"
+              hide-details
+            ></v-switch>
+            <v-switch
+              v-model="editingPermissions.submitReview"
+              label="提交人工审核权限"
+              color="primary"
               hide-details
             ></v-switch>
           </div>
@@ -169,21 +272,33 @@
               hide-details
             ></v-select>
             
-            <v-select
-              v-model="filters.canPublish"
-              :items="permissionOptions"
-              label="发布权限"
-              clearable
-              hide-details
-            ></v-select>
-            
-            <v-select
-              v-model="filters.canSubmit"
-              :items="submitOptions"
-              label="提交权限"
-              clearable
-              hide-details
-            ></v-select>
+            <div class="d-flex flex-column gap-2">
+              <div class="text-subtitle-2">权限筛选</div>
+              <v-switch
+                v-model="filters.permissions.uploadImage"
+                label="上传图像权限"
+                color="info"
+                hide-details
+              ></v-switch>
+              <v-switch
+                v-model="filters.permissions.submitAI"
+                label="提交AI检测权限"
+                color="success"
+                hide-details
+              ></v-switch>
+              <v-switch
+                v-model="filters.permissions.publishReview"
+                label="发布人工审核权限"
+                color="warning"
+                hide-details
+              ></v-switch>
+              <v-switch
+                v-model="filters.permissions.submitReview"
+                label="提交人工审核权限"
+                color="primary"
+                hide-details
+              ></v-switch>
+            </div>
             
             <v-select
               v-model="filters.timeRange"
@@ -223,7 +338,45 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-container>
+
+    <!-- 创建管理员对话框 -->
+    <v-dialog
+      v-if="currentUser && currentUser.email === 'admin@mail.com'"
+      v-model="showCreateAdminDialog"
+      max-width="500"
+    >
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">创建管理员</v-card-title>
+        <v-card-text>
+          <div class="d-flex flex-column gap-4">
+            <v-text-field
+              v-model="newAdmin.username"
+              label="用户名"
+              :rules="[v => !!v || '用户名不能为空']"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newAdmin.email"
+              label="邮箱"
+              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
+              required
+            ></v-text-field>
+            <v-text-field
+              v-model="newAdmin.password"
+              label="密码"
+              type="password"
+              :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码长度不能少于6位']"
+              required
+            ></v-text-field>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="showCreateAdminDialog = false">取消</v-btn>
+          <v-btn color="success" @click="createAdmin" :loading="creatingAdmin">创建</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -239,10 +392,7 @@ interface User {
   username: string
   email: string
   role: string
-  permissions: {
-    canPublish: boolean
-    canSubmit: boolean
-  }
+  permission: number
   registerTime: number
   lastLoginTime: number
 }
@@ -250,8 +400,9 @@ interface User {
 const headers = [
   { title: '头像', key: 'avatar', align: 'center', sortable: false },
   { title: '用户名', key: 'username', align: 'start' },
+  { title: '邮箱', key: 'email', align: 'start' },
   { title: '角色', key: 'role', align: 'center' },
-  { title: '权限', key: 'permissions', align: 'center', sortable: false },
+  { title: '权限', key: 'permission', align: 'center', sortable: false },
   { title: '注册时间', key: 'registerTime', align: 'center' },
   { title: '最后登录', key: 'lastLoginTime', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
@@ -268,9 +419,11 @@ const totalPages = ref(1)
 // 权限编辑相关
 const showPermissionDialog = ref(false)
 const selectedUser = ref<User | null>(null)
-const editingPermissions = ref<{ canPublish: boolean, canSubmit: boolean }>({
-  canPublish: false,
-  canSubmit: false
+const editingPermissions = ref({
+  uploadImage: false,
+  submitAI: false,
+  publishReview: false,
+  submitReview: false
 })
 
 // 删除对话框相关
@@ -284,7 +437,7 @@ const selectedHeader = ref<typeof headers[0] | null>(null)
 const searchableHeaders = computed(() => {
   return headers.filter(header => 
     header.key !== 'avatar' && 
-    header.key !== 'permissions' && 
+    header.key !== 'permission' && 
     header.key !== 'actions'
   )
 })
@@ -295,15 +448,9 @@ const selectHeader = (header: typeof headers[0]) => {
 }
 
 const handleSearch = () => {
-  if (!searchQuery.value) {
-    fetchUsers(currentPage.value, pageSize.value)
-    return
-  }
-  
-  const query = searchQuery.value.toLowerCase()
-  users.value = users.value.filter(user => 
-    user.username.toLowerCase().includes(query)
-  )
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchUsers(1, 10)
 }
 
 const formatTime = (timestamp: number) => {
@@ -319,27 +466,33 @@ const formatTime = (timestamp: number) => {
 
 const openPermissionDialog = (user: User) => {
   selectedUser.value = user
-  editingPermissions.value = { ...user.permissions }
+  if (user.role !== 'admin' && user.email !== ROOT_ADMIN_EMAIL) {
+    editingPermissions.value = {
+      uploadImage: getPermissionBit(user.permission, 3),
+      submitAI: getPermissionBit(user.permission, 2),
+      publishReview: getPermissionBit(user.permission, 1),
+      submitReview: getPermissionBit(user.permission, 0)
+    }
+  }
   showPermissionDialog.value = true
 }
 
 const updatePermissions = async () => {
-  if (selectedUser.value) {
+  if (selectedUser.value && selectedUser.value.role !== 'admin' && selectedUser.value.email !== ROOT_ADMIN_EMAIL) {
     try {
-      // 更新发布权限
-      if (editingPermissions.value.canPublish) {
-        await userApi.updateUserPermission(selectedUser.value.id, 'canPublish')
-      }
-      
-      // 更新提交权限
-      if (editingPermissions.value.canSubmit) {
-        await userApi.updateUserPermission(selectedUser.value.id, 'canSubmit')
-      }
+      // 计算权限值
+      const permissionValue = 
+        (editingPermissions.value.uploadImage ? 8 : 0) +
+        (editingPermissions.value.submitAI ? 4 : 0) +
+        (editingPermissions.value.publishReview ? 2 : 0) +
+        (editingPermissions.value.submitReview ? 1 : 0)
+
+      await userApi.updateUserPermission(selectedUser.value.id, permissionValue.toString())
       
       // 更新本地数据
       const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
       if (userToUpdate) {
-        userToUpdate.permissions = { ...editingPermissions.value }
+        userToUpdate.permission = permissionValue
       }
       
       snackbar.showMessage('权限更新成功', 'success')
@@ -374,33 +527,32 @@ const deleteUser = async () => {
 const showFilterDialog = ref(false)
 const filters = ref<{
   role: string | null
-  canPublish: boolean | null
-  canSubmit: boolean | null
+  permissions: {
+    uploadImage: boolean | null
+    submitAI: boolean | null
+    publishReview: boolean | null
+    submitReview: boolean | null
+  }
   timeRange: string | null
   startDate: string | null
   endDate: string | null
 }>({
   role: null,
-  canPublish: null,
-  canSubmit: null,
+  permissions: {
+    uploadImage: null,
+    submitAI: null,
+    publishReview: null,
+    submitReview: null
+  },
   timeRange: null,
   startDate: null,
   endDate: null
 })
 
 const roleOptions = [
-  { title: '出版社', value: '出版社' },
-  { title: '审稿人', value: '审稿人' }
-]
-
-const permissionOptions = [
-  { title: '可发布审核', value: true },
-  { title: '禁止发布', value: false }
-]
-
-const submitOptions = [
-  { title: '可提交检测', value: true },
-  { title: '禁止提交', value: false }
+  { title: '出版社', value: 'publisher' },
+  { title: '审稿人', value: 'reviewer' },
+  { title: '管理员', value: 'admin' }
 ]
 
 const timeRangeOptions = [
@@ -423,14 +575,20 @@ const initOriginalUsers = () => {
 const resetFilters = () => {
   filters.value = {
     role: null,
-    canPublish: null,
-    canSubmit: null,
+    permissions: {
+      uploadImage: null,
+      submitAI: null,
+      publishReview: null,
+      submitReview: null
+    },
     timeRange: null,
     startDate: null,
     endDate: null
   }
   timeError.value = ''
-  fetchUsers(currentPage.value, pageSize.value)
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchUsers(1, 10)
   showFilterDialog.value = false
 }
 
@@ -441,44 +599,24 @@ const applyFilters = () => {
     return
   }
   
-  let filteredUsers = [...originalUsers.value]
-  
-  // 角色筛选
-  if (filters.value.role) {
-    filteredUsers = filteredUsers.filter(user => user.role === filters.value.role)
+  // 计算权限值
+  let permissionValue = 0
+  if (filters.value.permissions.uploadImage !== null) {
+    permissionValue |= (filters.value.permissions.uploadImage ? 8 : 0)
+  }
+  if (filters.value.permissions.submitAI !== null) {
+    permissionValue |= (filters.value.permissions.submitAI ? 4 : 0)
+  }
+  if (filters.value.permissions.publishReview !== null) {
+    permissionValue |= (filters.value.permissions.publishReview ? 2 : 0)
+  }
+  if (filters.value.permissions.submitReview !== null) {
+    permissionValue |= (filters.value.permissions.submitReview ? 1 : 0)
   }
   
-  // 发布权限筛选
-  if (filters.value.canPublish !== null) {
-    filteredUsers = filteredUsers.filter(user => user.permissions.canPublish === filters.value.canPublish)
-  }
-  
-  // 提交权限筛选
-  if (filters.value.canSubmit !== null) {
-    filteredUsers = filteredUsers.filter(user => user.permissions.canSubmit === filters.value.canSubmit)
-  }
-  
-  // 时间范围筛选
-  if (filters.value.timeRange) {
-    const now = Date.now()
-    const ranges = {
-      '1d': 24 * 60 * 60 * 1000,
-      '7d': 7 * 24 * 60 * 60 * 1000,
-      '30d': 30 * 24 * 60 * 60 * 1000,
-      '90d': 90 * 24 * 60 * 60 * 1000,
-      '365d': 365 * 24 * 60 * 60 * 1000
-    }
-    const range = ranges[filters.value.timeRange as keyof typeof ranges]
-    filteredUsers = filteredUsers.filter(user => (now - user.registerTime) <= range)
-  } else if (filters.value.startDate && filters.value.endDate) {
-    const startTime = new Date(filters.value.startDate).getTime()
-    const endTime = new Date(filters.value.endDate).getTime()
-    filteredUsers = filteredUsers.filter(user => 
-      user.registerTime >= startTime && user.registerTime <= endTime
-    )
-  }
-  
-  users.value = filteredUsers
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchUsers(1, 10)
   showFilterDialog.value = false
 }
 
@@ -516,28 +654,92 @@ const handleCustomTimeChange = () => {
   }
 }
 
-// 处理表格选项更新（分页、排序等）
-const handleTableOptionsUpdate = (options: any) => {
-  const { page, itemsPerPage } = options
-  if (currentPage.value !== page || pageSize.value !== itemsPerPage) {
-    currentPage.value = page
-    pageSize.value = itemsPerPage
-    fetchUsers(page, itemsPerPage)
+
+const getRoleColor = (role: string) => {
+  switch (role) {
+    case 'publisher':
+      return 'success'
+    case 'reviewer':
+      return 'primary'
+    case 'admin':
+      return 'error'
+    default:
+      return 'grey'
   }
 }
+
+const getRoleName = (role: string) => {
+  switch (role) {
+    case 'publisher':
+      return '出版社'
+    case 'reviewer':
+      return '审稿人'
+    case 'admin':
+      return '管理员'
+    default:
+      return role
+  }
+}
+
+const getPermissionBit = (permission: number | null, bit: number) => {
+  if (permission === null) return false
+  return ((permission >> bit) & 1) === 1
+}
+
+// 创建管理员相关
+const showCreateAdminDialog = ref(false)
+const creatingAdmin = ref(false)
+const newAdmin = ref({
+  username: '',
+  email: '',
+  password: '',
+  role: 'admin'
+})
 
 // 从后端获取用户数据
 const fetchUsers = async (page: number, pageSize: number) => {
   loading.value = true
   try {
+    // 计算权限筛选值（4 位二进制）
+    let permissionFilter = ''
+    const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
+    if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
+      let value = 0
+      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }
+      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }
+      if (publishReview !== null) { value |= (publishReview ? 2 : 0) }
+      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }
+      permissionFilter = value.toString()
+    }
+
+    // 计算时间筛选
+    let startTimeFilter: string | undefined
+    let endTimeFilter: string | undefined
+    if (filters.value.timeRange) {
+      const now = Date.now()
+      const ranges: Record<string, number> = {
+        '1d': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+        '90d': 90 * 24 * 60 * 60 * 1000,
+        '365d': 365 * 24 * 60 * 60 * 1000
+      }
+      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+      startTimeFilter = formatDateFilter(now - rangeMs)
+      endTimeFilter = formatDateFilter(now)
+    } else if (filters.value.startDate && filters.value.endDate) {
+      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
+      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
+    }
+
     const params = {
       page,
       page_size: pageSize,
       query: searchQuery.value || '',
       role: filters.value.role || '',
-      permission: filters.value.canPublish !== null ? (filters.value.canPublish ? 'canPublish' : '') : '',
-      startTime: filters.value.startDate ? new Date(filters.value.startDate).toISOString().replace('T', ' ').slice(0, 19) : undefined,
-      endTime: filters.value.endDate ? new Date(filters.value.endDate).toISOString().replace('T', ' ').slice(0, 19) : undefined
+      permission: permissionFilter,
+      startTime: startTimeFilter,
+      endTime: endTimeFilter
     }
     const response = await userApi.getUsers(params)
     const { users: userList, current_page, total_pages, total_users } = response.data
@@ -548,13 +750,10 @@ const fetchUsers = async (page: number, pageSize: number) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      permissions: {
-        canPublish: user.permission === 1,
-        canSubmit: user.permission === 1
-      },
+      permission: user.permission,
       registerTime: new Date(user.date_joined).getTime(),
       lastLoginTime: new Date(user.date_joined).getTime(),
-      avatar: user.avatar || ''
+      avatar: 'http://122.9.45.122/media/'+user.avatar || ''
     }))
     
     currentPage.value = current_page
@@ -571,10 +770,75 @@ const fetchUsers = async (page: number, pageSize: number) => {
   }
 }
 
+// 创建管理员
+const createAdmin = async () => {
+  if (!newAdmin.value.username || !newAdmin.value.email || !newAdmin.value.password) {
+    snackbar.showMessage('请填写完整信息', 'error')
+    return
+  }
+
+  creatingAdmin.value = true
+  try {
+    const response = await userApi.createAdmin(newAdmin.value)
+    snackbar.showMessage('管理员创建成功', 'success')
+    showCreateAdminDialog.value = false
+    // 刷新用户列表
+    fetchUsers(currentPage.value, pageSize.value)
+    // 重置表单
+    newAdmin.value = {
+      username: '',
+      email: '',
+      password: '',
+      role: 'admin'
+    }
+  } catch (error) {
+    console.error('创建管理员失败:', error)
+    snackbar.showMessage('创建管理员失败', 'error')
+  } finally {
+    creatingAdmin.value = false
+  }
+}
+
+// 处理页码变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchUsers(page, pageSize.value)
+}
+
+// 处理每页数量变化
+const handlePageSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1 // 重置到第一页
+  fetchUsers(1, size)
+}
+
+// 当前用户
+const currentUser = ref<{ email: string } | null>(null)
+
 // 初始化
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await userApi.getUserInfo()
+    currentUser.value = res.data
+  } catch (error) {
+    console.error('获取当前用户信息失败:', error)
+  }
   fetchUsers(currentPage.value, pageSize.value)
 })
+
+const ROOT_ADMIN_EMAIL = 'admin@mail.com'
+
+// 时间格式化，用于筛选条件
+const formatDateFilter = (timestamp: number) => {
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 </script>
 
 <style scoped>
