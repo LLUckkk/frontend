@@ -6,7 +6,7 @@
     </v-dialog>
 
     <v-card-title class="d-flex align-center pa-0">
-      <h1 class="text-h4 font-weight-bold">检测历史</h1>
+      <h1 class="text-h4 font-weight-bold">人工审核</h1>
       <v-spacer></v-spacer>
       <v-btn 
         variant="outlined" 
@@ -38,7 +38,7 @@
         <v-card-text class="pt-4">
           <v-row>
             <v-col cols="12">
-              <div class="text-subtitle-1 mb-2">上传时间</div>
+              <div class="text-subtitle-1 mb-2">发布时间</div>
               <v-row>
                 <v-col cols="6">
                   <v-text-field
@@ -120,14 +120,14 @@
         <!-- 操作列自定义 -->
         <template v-slot:item.actions="{ item }">
           <div class="d-flex justify-center gap-2">
-            <v-btn 
-              size="small" 
-              color="primary" 
-              variant="text" 
-              @click="handleNext(item)"
-              :disabled="item.progress !== 100"
-            >
-              下一步
+            <v-btn size="small" color="primary" variant="text" @click="handleDetail(item)">
+              任务详情
+            </v-btn>
+            <v-btn size="small" color="primary" variant="text" @click="handleDownload(item)">
+              下载
+            </v-btn>
+            <v-btn size="small" color="warning" variant="text" @click="handleUrge(item)">
+              催一催
             </v-btn>
             <v-btn size="small" color="error" variant="text" @click="handleDelete(item)">
               删除
@@ -163,8 +163,8 @@ const router = useRouter()
 // 表格列定义
 const headers = [
   { title: '任务ID', key: 'id', align: 'center' as const, width: '120px' },
-  { title: '上传时间', key: 'publishTime', align: 'center' as const, width: '180px' },
-  { title: '检测进度', key: 'progress', align: 'center' as const, width: '200px' },
+  { title: '发布时间', key: 'publishTime', align: 'center' as const, width: '180px' },
+  { title: '完成情况', key: 'progress', align: 'center' as const, width: '200px' },
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const, width: '350px' }
 ]
 
@@ -370,8 +370,16 @@ const getProgressColor = (progress: number) => {
 }
 
 // 操作按钮处理函数
-const handleNext = (item: any) => {
+const handleDetail = (item: any) => {
   router.push(`/task/${item.id}`)
+}
+
+const handleDownload = (item: any) => {
+  console.log('下载', item)
+}
+
+const handleUrge = (item: any) => {
+  console.log('催一催', item)
 }
 
 const handleDelete = (item: any) => {

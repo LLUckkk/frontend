@@ -23,21 +23,13 @@
               <!-- 左侧进度和标签 -->
               <div class="d-flex align-center" style="min-width: 320px">
                 <div class="progress-circle mr-3 elevation-1">
-                  <span class="text-h5 font-weight-bold primary--text">{{ taskData?.progress }}%</span>
+                  <!-- <span class="text-h5 font-weight-bold primary--text">{{ taskData?.progress }}%</span> -->
+                  <span class="text-h5 font-weight-bold primary--text">90%</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <v-chip 
-                  color="primary" 
-                  variant="outlined" 
-                  size="x-large" 
-                  class="font-weight-medium px-3"
-                  elevation="1"
-                >
-                  重新AI检测
-                </v-chip>
               </div>
 
-              <!-- 任务列表 -->
+              <!-- 任务列表
               <div class="task-list">
                 <div class="d-flex flex-column">
                   <div class="task-item" v-for="i in 3" :key="i">
@@ -53,7 +45,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
               <!-- 右侧任务信息 -->
               <div class="task-stats d-flex align-center">
@@ -163,7 +155,6 @@
                   <div>
                     <div class="text-body-1">abc</div>
                     <div class="text-caption text-grey">结果：假</div>
-                    <div class="text-caption text-grey">理由：XXXX</div>
                   </div>
                   <v-spacer></v-spacer>
                   <v-btn
@@ -171,7 +162,7 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
-                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
+                    @click="handleViewDetail"
                   >
                     查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
@@ -184,7 +175,6 @@
                   <div>
                     <div class="text-body-1">abc</div>
                     <div class="text-caption text-grey">结果：假</div>
-                    <div class="text-caption text-grey">理由：XXXX</div>
                   </div>
                   <v-spacer></v-spacer>
                   <v-btn
@@ -192,7 +182,7 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
-                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
+                    @click="handleViewDetail"
                   >
                     查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
@@ -205,7 +195,6 @@
                   <div>
                     <div class="text-body-1">abc</div>
                     <div class="text-caption text-grey">结果：假</div>
-                    <div class="text-caption text-grey">理由：XXXX</div>
                   </div>
                   <v-spacer></v-spacer>
                   <v-btn
@@ -213,7 +202,7 @@
                     density="compact"
                     class="details-btn"
                     color="primary"
-                    @click="router.push(`/task/detail?id=${taskData?.id}&imageIndex=${currentImageIndex}`)"
+                    @click="handleViewDetail"
                   >
                     查看详情
                     <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
@@ -225,6 +214,29 @@
         </div>
       </div>
     </div>
+
+    <!-- 添加详情弹窗 -->
+    <v-dialog
+      v-model="showDetailDialog"
+      fullscreen
+      :scrim="false"
+      transition="dialog-bottom-transition"
+    >
+      <v-card>
+        <v-toolbar dark color="primary">
+          <v-btn icon dark @click="showDetailDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title>检测详情</v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+        <result-component 
+          v-if="showDetailDialog"
+          :task-id="taskData?.id"
+          :image-index="currentImageIndex"
+        />
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -232,16 +244,22 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useTheme } from 'vuetify'
+import { useUserStore } from '@/stores/user'
+import { useSnackbarStore } from '@/stores/snackbar'
+import ResultComponent from '@/components/result.vue'
 
 const router = useRouter()
 const route = useRoute()
 const theme = useTheme()
+const userStore = useUserStore()
+const snackbar = useSnackbarStore()
 
 interface Task {
   id: string
   publishTime: string
   reviewer: string
   progress: number
+  publisherId: string
 }
 
 interface Image {
@@ -281,14 +299,49 @@ const handleNextImage = () => {
   }
 }
 
-onMounted(async () => {
-  // 这里应该是从API获取数据，现在模拟一些数据
-  taskData.value = {
-    id: (route.params as RouteParams).id,
-    publishTime: '2024-01-01 12:00:00',
-    reviewer: '张三',
-    progress: 90
+const checkTaskPermission = async () => {
+  try {
+    // 这里应该是从API获取任务数据
+    // 模拟API调用
+    const response = await new Promise<Task>((resolve) => {
+      resolve({
+        id: (route.params as RouteParams).id,
+        publishTime: '2024-01-01 12:00:00',
+        reviewer: '张三',
+        progress: 90,
+        publisherId: 'user123' // 这里应该是实际的发布者ID
+      })
+    })
+
+    // 检查当前用户是否为任务发布者
+    if (response.publisherId !== userStore.username) {
+      snackbar.showMessage('您没有权限访问此任务', 'error')
+      router.push('/history')
+      return false
+    }
+
+    taskData.value = response
+    return true
+  } catch (error) {
+    snackbar.showMessage('获取任务信息失败', 'error')
+    router.push('/history')
+    return false
   }
+}
+
+// 添加弹窗控制变量
+const showDetailDialog = ref(false)
+
+// 修改查看详情按钮的点击事件
+const handleViewDetail = () => {
+  showDetailDialog.value = true
+}
+
+onMounted(async () => {
+  // 先检查权限
+  //const hasPermission = await checkTaskPermission()
+  const hasPermission = true
+  if (!hasPermission) return
 
   // 模拟图片数据
   images.value = [
@@ -611,5 +664,16 @@ onMounted(async () => {
     height: auto;
     min-height: 300px;
   }
+}
+
+/* 添加弹窗过渡动画样式 */
+.dialog-bottom-transition-enter-active,
+.dialog-bottom-transition-leave-active {
+  transition: transform 0.2s ease-in-out;
+}
+
+.dialog-bottom-transition-enter-from,
+.dialog-bottom-transition-leave-to {
+  transform: translateY(100%);
 }
 </style> 

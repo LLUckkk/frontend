@@ -43,6 +43,13 @@
           @click="goToHistory"
         ></v-list-item>
         <v-list-item 
+          v-if="userStore.role === 'publisher'"
+          prepend-icon="mdi-gavel" 
+          title="人工审核" 
+          value="annual" 
+          @click="gotoAnnual"
+        ></v-list-item>
+        <v-list-item 
           v-if="userStore.role === 'reviewer'"
           prepend-icon="mdi-book-open-page-variant" 
           title="审阅" 
@@ -204,6 +211,10 @@ const goToHistory = () => {
   router.push('/history')
 }
 
+const gotoAnnual = () => {
+  router.push('/annual')
+}
+
 const goToReview = () => {
   router.push('/review')
 }
@@ -214,7 +225,7 @@ const goToLogin = () => {
 
 const handleLogout = async() => {
   try {
-    // localStorage.clear()
+    //localStorage.clear()
     let refresh = localStorage.getItem("refresh")
     const response = await user.logout({refresh})
     localStorage.removeItem("refresh")
