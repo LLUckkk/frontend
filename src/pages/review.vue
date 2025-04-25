@@ -8,7 +8,7 @@
         </v-col>
       </v-row>
 
-      <!-- 搜索栏 -->
+      <!-- 搜索栏和筛选按钮 -->
       <v-row class="mb-4">
         <v-col cols="12" sm="8" md="6">
           <v-text-field
@@ -49,6 +49,15 @@
             </template>
           </v-text-field>
         </v-col>
+        <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-filter"
+            @click="showFilterDialog = true"
+          >
+            筛选
+          </v-btn>
+        </v-col>
       </v-row>
 
       <!-- 数据表格 -->
@@ -79,6 +88,83 @@
         </template>
       </v-data-table>
     </v-container>
+
+    <!-- 筛选对话框 -->
+    <v-dialog v-model="showFilterDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="text-h5 d-flex align-center">
+          筛选条件
+          <v-spacer></v-spacer>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            class="ml-2"
+            @click="showFilterDialog = false"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="filters.status"
+                  :items="['全部', '未完成', '已完成']"
+                  label="状态"
+                  clearable
+                ></v-select>
+              </v-col>
+              <v-col cols="12">
+                <v-select
+                  v-model="filters.publisher"
+                  :items="[...new Set(bookData.map(item => item.publisher))]"
+                  label="出版社"
+                  clearable
+                ></v-select>
+              </v-col>
+              <v-col cols="12">
+                <v-row>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model="filters.dateRange.start"
+                      label="开始日期"
+                      type="date"
+                      clearable
+                      @update:model-value="validateDateRange"
+                    ></v-text-field>
+                  </v-col>
+                  <v-col cols="6">
+                    <v-text-field
+                      v-model="filters.dateRange.end"
+                      label="结束日期"
+                      type="date"
+                      clearable
+                      @update:model-value="validateDateRange"
+                    ></v-text-field>
+                  </v-col>
+                </v-row>
+                <v-alert
+                  v-if="dateError"
+                  type="error"
+                  density="compact"
+                  class="mt-2"
+                >
+                  {{ dateError }}
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="applyFilters">应用筛选</v-btn>
+          <v-btn color="error" @click="resetFilters">重置</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -89,6 +175,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const searchQuery = ref('')
 const selectedHeader = ref<typeof headers[0] | null>(null)
+const showFilterDialog = ref(false)
 
 const headers = [
   { title: '任务', key: 'code', align: 'start' as const },
@@ -132,17 +219,78 @@ const handleSearch = () => {
   if (!selectedHeader.value || !searchQuery.value) return
 }
 
-const filteredBookData = computed(() => {
-  if (!selectedHeader.value || !searchQuery.value) return bookData
-  
-  const key = selectedHeader.value.key
-  return bookData.filter(item => {
-    const value = item[key as keyof typeof item]
-    if (typeof value === 'number') {
-      return value.toString().includes(searchQuery.value)
+// 筛选条件
+const filters = ref({
+  status: null,
+  publisher: null,
+  amount: null,
+  dateRange: {
+    start: null,
+    end: null
+  }
+})
+
+const dateError = ref('')
+
+const validateDateRange = () => {
+  if (filters.value.dateRange.start && filters.value.dateRange.end) {
+    const startDate = new Date(filters.value.dateRange.start)
+    const endDate = new Date(filters.value.dateRange.end)
+    
+    if (startDate > endDate) {
+      dateError.value = '开始日期不能大于结束日期'
+      return false
     }
-    return value.toString().toLowerCase().includes(searchQuery.value.toLowerCase())
-  })
+  }
+  dateError.value = ''
+  return true
+}
+
+const filteredBookData = computed(() => {
+  let filtered = bookData
+
+  // 应用搜索过滤
+  if (selectedHeader.value && searchQuery.value) {
+    const key = selectedHeader.value.key
+    filtered = filtered.filter(item => {
+      const value = item[key as keyof typeof item]
+      if (typeof value === 'number') {
+        return value.toString().includes(searchQuery.value)
+      }
+      return value.toString().toLowerCase().includes(searchQuery.value.toLowerCase())
+    })
+  }
+
+  // 应用筛选条件
+  if (filters.value.status && filters.value.status !== '全部') {
+    filtered = filtered.filter(item => item.status === filters.value.status)
+  }
+  if (filters.value.publisher) {
+    filtered = filtered.filter(item => item.publisher === filters.value.publisher)
+  }
+  if (filters.value.amount) {
+    filtered = filtered.filter(item => item.amount >= Number(filters.value.amount))
+  }
+  
+  // 应用日期范围筛选
+  if (filters.value.dateRange.start || filters.value.dateRange.end) {
+    filtered = filtered.filter(item => {
+      const itemDate = new Date(item.date)
+      const startDate = filters.value.dateRange.start ? new Date(filters.value.dateRange.start) : null
+      const endDate = filters.value.dateRange.end ? new Date(filters.value.dateRange.end) : null
+      
+      if (startDate && endDate) {
+        return itemDate >= startDate && itemDate <= endDate
+      } else if (startDate) {
+        return itemDate >= startDate
+      } else if (endDate) {
+        return itemDate <= endDate
+      }
+      return true
+    })
+  }
+
+  return filtered
 })
 
 const getStatusColor = (status: string) => {
@@ -158,6 +306,25 @@ const getStatusColor = (status: string) => {
 
 const goToTaskDetail = (item: any) => {
   router.push(`/task/detail`)
+}
+
+const applyFilters = () => {
+  if (!validateDateRange()) {
+    return
+  }
+  showFilterDialog.value = false
+}
+
+const resetFilters = () => {
+  filters.value = {
+    status: null,
+    publisher: null,
+    amount: null,
+    dateRange: {
+      start: null,
+      end: null
+    }
+  }
 }
 </script>
 

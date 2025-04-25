@@ -157,7 +157,7 @@
                   >
                     <v-icon size="64" color="grey">mdi-cloud-upload</v-icon>
                     <div class="text-h6 mt-4">点击或拖拽图片/文件到此处上传</div>
-                    <div class="text-caption text-grey">支持格式：JPG、PNG、PDF、ZIP等常见文件格式，单个文件不超过10MB</div>
+                    <div class="text-caption text-grey">支持格式：JPG、PNG、PDF、ZIP等常见文件格式，单个文件不超过100MB</div>
                     <input
                       type="file"
                       ref="fileInput"

@@ -21,7 +21,7 @@
           <div class="content-container">
             <div class="info-content d-flex align-center justify-space-between pa-4">
               <!-- 左侧进度和标签 -->
-              <div class="d-flex align-center" style="min-width: 320px">
+              <div class="d-flex align-center" style="min-width: 320px; margin-left: 200px">
                 <div class="progress-circle mr-3 elevation-1">
                   <span class="text-h5 font-weight-bold primary--text">90%</span>
                   <span class="text-caption">为假</span>
@@ -38,7 +38,7 @@
               </div>
 
               <!-- 任务列表 -->
-              <div class="task-list">
+              <!-- <div class="task-list">
                 <div class="d-flex flex-column">
                   <div class="task-item" v-for="i in 3" :key="i">
                     <div class="d-flex align-center">
@@ -53,7 +53,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
               <!-- 右侧任务信息 -->
               <div class="task-stats d-flex align-center">
@@ -153,17 +153,35 @@
               >
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <span class="text-body-2">{{ dimension.value }}%</span>
+                  <v-btn
+                    size="small"
+                    :color="dimension.showFakeArea ? 'error' : 'grey'"
+                    variant="tonal"
+                    @click="dimension.showFakeArea = !dimension.showFakeArea"
+                    class="fake-area-btn ml-4"
+                  >
+                    <v-icon size="small" :icon="dimension.showFakeArea ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
+                    {{ dimension.showFakeArea ? '隐藏造假区域' : '显示造假区域' }}
+                  </v-btn>
                 </div>
-                <v-slider
-                  v-model="dimension.value"
-                  :color="dimension.value > 60 ? 'success' : dimension.value > 30 ? 'warning' : 'error'"
-                  :min="0"
-                  :max="100"
-                  :step="1"
-                  class="mb-2"
-                  thumb-label
-                ></v-slider>
+                <div class="degree-buttons mb-2">
+                  <v-btn-group
+                    variant="outlined"
+                    class="d-flex"
+                  >
+                    <v-btn
+                      v-for="option in degreeOptions"
+                      :key="option.value"
+                      :color="dimension.value === option.value ? getDegreeColor(option.value) : 'grey'"
+                      :variant="dimension.value === option.value ? 'flat' : 'outlined'"
+                      class="flex-grow-1"
+                      @click="dimension.value = option.value"
+                      size="small"
+                    >
+                      {{ option.label }}
+                    </v-btn>
+                  </v-btn-group>
+                </div>
                 <v-text-field
                   v-model="dimension.reason"
                   :label="'请输入' + dimension.name + '的理由'"
@@ -203,10 +221,32 @@
 
       <!-- 底部操作按钮 -->
       <div class="d-flex justify-end pa-4">
-        <v-btn color="primary" class="mr-2">暂存</v-btn>
-        <v-btn color="primary">提交</v-btn>
+        <v-btn 
+          color="primary"
+          @click="handleSubmit"
+        >
+          提交
+        </v-btn>
       </div>
     </div>
+
+    <!-- 添加提示对话框 -->
+    <v-dialog v-model="showAlert" max-width="400">
+      <v-card>
+        <v-card-text class="pa-4">
+          <div class="text-center">{{ alertMessage }}</div>
+        </v-card-text>
+        <v-card-actions class="justify-center pb-4">
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="showAlert = false"
+          >
+            确定
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -263,28 +303,82 @@ const getAnswerColor = (index: number) => {
 }
 
 // 评分维度数据
-const dimensions = ref([
+interface Dimension {
+  name: string;
+  value: number | null;
+  reason: string;
+  showFakeArea: boolean;
+}
+
+const dimensions = ref<Dimension[]>([
   {
-    name: '真实性',
-    value: 80,
-    reason: ''
+    name: '高斯模糊',
+    value: null,
+    reason: '',
+    showFakeArea: false
   },
   {
-    name: '可信度',
-    value: 60,
-    reason: ''
+    name: '亮度/对比度调节',
+    value: null,
+    reason: '',
+    showFakeArea: false
   },
   {
-    name: '时效性',
-    value: 90,
-    reason: ''
+    name: '智能修复',
+    value: null,
+    reason: '',
+    showFakeArea: false
   },
   {
-    name: '关联度',
-    value: 70,
-    reason: ''
+    name: '暴力覆盖',
+    value: null,
+    reason: '',
+    showFakeArea: false
+  },
+  {
+    name: '同图复制',
+    value: null,
+    reason: '',
+    showFakeArea: false
+  },
+  {
+    name: '重叠切割',
+    value: null,
+    reason: '',
+    showFakeArea: false
+  },
+  {
+    name: '跨图拼接',
+    value: null,
+    reason: '',
+    showFakeArea: false
   }
 ])
+
+const degreeOptions = [
+  { value: 1, label: '很差' },
+  { value: 2, label: '较差' },
+  { value: 3, label: '一般' },
+  { value: 4, label: '较好' },
+  { value: 5, label: '很好' }
+]
+
+const getDegreeColor = (value: number) => {
+  switch (value) {
+    case 1:
+      return 'error'
+    case 2:
+      return 'warning'
+    case 3:
+      return 'yellow'
+    case 4:
+      return 'info'
+    case 5:
+      return 'success'
+    default:
+      return 'grey'
+  }
+}
 
 // 图片造假判定数据
 const imageJudgements = ref<(boolean | null)[]>(new Array(images.value.length).fill(null))
@@ -300,6 +394,62 @@ const getAnswerButtonColor = (index: number) => {
   const judgement = imageJudgements.value[index]
   if (judgement === null) return 'grey'
   return judgement ? 'error' : 'success'
+}
+
+const showAlert = ref(false)
+const alertMessage = ref('')
+
+const alert = (message: string) => {
+  alertMessage.value = message
+  showAlert.value = true
+}
+
+const checkAnswerCompletion = () => {
+  // 检查每张图片是否都已完成评分和判定
+  for (let i = 0; i < images.value.length; i++) {
+    // 检查造假判定是否已完成
+    if (imageJudgements.value[i] === null) {
+      return {
+        complete: false,
+        message: `第 ${i + 1} 张图片尚未进行造假判定`
+      }
+    }
+    
+    // 检查所有维度是否都已评分
+    const hasUnratedDimension = dimensions.value.some(dim => dim.value === null)
+    if (hasUnratedDimension) {
+      return {
+        complete: false,
+        message: `第 ${i + 1} 张图片的评分维度尚未评分完整`
+      }
+    }
+    
+    // 检查所有维度是否都填写了理由
+    const hasEmptyReason = dimensions.value.some(dim => !dim.reason)
+    if (hasEmptyReason) {
+      return {
+        complete: false,
+        message: `第 ${i + 1} 张图片的评分维度理由尚未填写完整`
+      }
+    }
+  }
+  
+  return {
+    complete: true,
+    message: '所有图片已完成评分'
+  }
+}
+
+const handleSubmit = () => {
+  const result = checkAnswerCompletion()
+  if (!result.complete) {
+    // 显示错误提示
+    alert(result.message)
+    return
+  }
+  
+  // TODO: 处理提交逻辑
+  console.log('提交成功')
 }
 </script>
 
@@ -328,6 +478,8 @@ const getAnswerButtonColor = (index: number) => {
   background-color: rgb(var(--v-theme-surface));
   min-height: 160px;
   padding: 12px 16px !important;
+  justify-content: center;
+  gap: 24px;
 }
 
 .progress-circle {
@@ -394,6 +546,8 @@ const getAnswerButtonColor = (index: number) => {
   border-radius: 8px;
   background-color: rgb(var(--v-theme-surface));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 280px;
+  margin-right: 200px
 }
 
 .answer-grid {
@@ -547,7 +701,7 @@ const getAnswerButtonColor = (index: number) => {
 }
 
 .dimension-section {
-  width: 300px;
+  width: 360px;
   padding: 20px;
   background-color: rgb(var(--v-theme-surface));
   height: calc(100vh - 380px);
@@ -575,5 +729,22 @@ const getAnswerButtonColor = (index: number) => {
 
 .fake-judge-section {
   border-top: 1px solid rgba(var(--v-theme-primary), 0.1);
+}
+
+.degree-buttons {
+  width: 100%;
+}
+
+.degree-buttons .v-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.fake-area-btn {
+  font-size: 0.75rem;
+  text-transform: none;
+  letter-spacing: 0;
+  min-width: 120px;  /* 确保按钮有固定的最小宽度 */
 }
 </style> 
