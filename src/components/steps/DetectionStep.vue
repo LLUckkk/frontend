@@ -53,7 +53,7 @@
                   >
                     查看报告
                   </v-btn>
-                  <v-btn
+                  <!-- <v-btn
                     color="grey-lighten-5"
                     variant="elevated"
                     class="px-8 py-2"
@@ -62,7 +62,7 @@
                     elevation="2"
                   >
                     批量下载
-                  </v-btn>
+                  </v-btn> -->
                   <v-btn
                     :color="isDarkMode ? 'green-darken-2' : 'success'"
                     variant="elevated"
@@ -71,6 +71,7 @@
                     prepend-icon="mdi-check-circle"
                     elevation="2"
                     @click="completeDetection"
+                    :disabled="!hasSelectedImages"
                   >
                     完成检测
                   </v-btn>
@@ -89,8 +90,15 @@
                 <div class="d-flex align-center">
                   <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
                   <span class="text-h6">疑似造假图片</span>
-                  <v-chip color="error" class="ml-4" size="small">{{ detectionResult.fakeImages.length }}</v-chip>
+                  <v-chip color="error" class="ml-4" size="small">{{ selectedFakeCount }}/{{ detectionResult.fakeImages.length }}</v-chip>
                 </div>
+                <v-btn
+                  color="error"
+                  variant="text"
+                  @click="selectAllFake"
+                >
+                  {{ isAllFakeSelected ? '取消全选' : '全选' }}
+                </v-btn>
               </v-card-title>
               <v-card-text class="pa-6">
                 <v-sheet class="overflow-x-auto">
@@ -98,19 +106,25 @@
                     <v-hover v-for="(img, index) in detectionResult.fakeImages" :key="index" v-slot="{ isHovering, props }">
                       <v-card
                         v-bind="props"
-                        class="ma-2"
+                        class="ma-2 position-relative"
                         width="200"
                         height="200"
                         elevation="2"
                         rounded="lg"
+                        @click="toggleImageSelection(img, 'fake')"
                       >
                         <v-img
                           :src="img.url"
                           cover
                           height="100%"
                         >
-                          <div class="image-overlay" v-if="isHovering">
-                            <div class="d-flex flex-column align-center">
+                          <div class="image-overlay" v-if="isHovering || img.selected">
+                            <div class="d-flex flex-column align-center gap-4">
+                              <v-checkbox
+                                v-model="img.selected"
+                                color="primary"
+                                class="image-checkbox"
+                              ></v-checkbox>
                               <v-btn
                                 icon="mdi-magnify"
                                 variant="text"
@@ -118,7 +132,6 @@
                                 size="large"
                                 @click.stop="viewImageDetail(img)"
                               ></v-btn>
-                              <div class="text-caption white--text mt-2">查看详情</div>
                             </div>
                           </div>
                         </v-img>
@@ -135,8 +148,15 @@
                 <div class="d-flex align-center">
                   <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
                   <span class="text-h6">正常图片</span>
-                  <v-chip color="success" class="ml-4" size="small">{{ detectionResult.realImages.length }}</v-chip>
+                  <v-chip color="success" class="ml-4" size="small">{{ selectedRealCount }}/{{ detectionResult.realImages.length }}</v-chip>
                 </div>
+                <v-btn
+                  color="success"
+                  variant="text"
+                  @click="selectAllReal"
+                >
+                  {{ isAllRealSelected ? '取消全选' : '全选' }}
+                </v-btn>
               </v-card-title>
               <v-card-text class="pa-6">
                 <v-sheet class="overflow-x-auto">
@@ -144,19 +164,25 @@
                     <v-hover v-for="(img, index) in detectionResult.realImages" :key="index" v-slot="{ isHovering, props }">
                       <v-card
                         v-bind="props"
-                        class="ma-2"
+                        class="ma-2 position-relative"
                         width="200"
                         height="200"
                         elevation="2"
                         rounded="lg"
+                        @click="toggleImageSelection(img, 'real')"
                       >
                         <v-img
                           :src="img.url"
                           cover
                           height="100%"
                         >
-                          <div class="image-overlay" v-if="isHovering">
-                            <div class="d-flex flex-column align-center">
+                          <div class="image-overlay" v-if="isHovering || img.selected">
+                            <div class="d-flex flex-column align-center gap-4">
+                              <v-checkbox
+                                v-model="img.selected"
+                                color="primary"
+                                class="image-checkbox"
+                              ></v-checkbox>
                               <v-btn
                                 icon="mdi-magnify"
                                 variant="text"
@@ -164,7 +190,6 @@
                                 size="large"
                                 @click.stop="viewImageDetail(img)"
                               ></v-btn>
-                              <div class="text-caption white--text mt-2">查看详情</div>
                             </div>
                           </div>
                         </v-img>
@@ -222,6 +247,7 @@ interface Image {
   url: string
   name: string
   type: string
+  selected?: boolean
 }
 
 interface DetectionResult {
@@ -342,6 +368,43 @@ const completeDetection = () => {
   // 触发完成事件
   emit('complete')
 }
+
+const selectedFakeCount = ref(0)
+const selectedRealCount = ref(0)
+const isAllFakeSelected = ref(false)
+const isAllRealSelected = ref(false)
+
+const selectAllFake = () => {
+  isAllFakeSelected.value = !isAllFakeSelected.value
+  detectionResult.value.fakeImages.forEach(img => img.selected = isAllFakeSelected.value)
+  selectedFakeCount.value = isAllFakeSelected.value ? detectionResult.value.fakeImages.length : 0
+}
+
+const selectAllReal = () => {
+  isAllRealSelected.value = !isAllRealSelected.value
+  detectionResult.value.realImages.forEach(img => img.selected = isAllRealSelected.value)
+  selectedRealCount.value = isAllRealSelected.value ? detectionResult.value.realImages.length : 0
+}
+
+const toggleImageSelection = (image: Image, type: string) => {
+  if (type === 'fake') {
+    image.selected = !image.selected
+    if (image.selected) {
+      selectedFakeCount.value++
+    } else {
+      selectedFakeCount.value--
+    }
+  } else {
+    image.selected = !image.selected
+    if (image.selected) {
+      selectedRealCount.value++
+    } else {
+      selectedRealCount.value--
+    }
+  }
+}
+
+const hasSelectedImages = computed(() => selectedFakeCount.value > 0 || selectedRealCount.value > 0)
 </script>
 
 <style scoped>

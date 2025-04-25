@@ -57,7 +57,7 @@
 
               <div class="preview-info pa-4">
                 <div class="text-h6">
-                  {{ `图片${selectedImage.image_id}` }}
+                  {{ `图片${currentIndex + 1}` }}
                 </div>
                 <div class="text-body-2">
                   {{ selectedImage.extracted_from_pdf ? 'PDF提取' : '上传图片' }}

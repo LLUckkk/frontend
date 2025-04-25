@@ -202,7 +202,7 @@
                 :loading="loading"
                 @click="handleSubmit"
               >
-                {{ loading ? '处理中...' : '提交检测' }}
+                {{ loading ? '处理中...' : '查看图片' }}
                 <template v-slot:loader>
                   <v-progress-circular
                     indeterminate
@@ -274,73 +274,27 @@
         <span class="text-h6 font-weight-medium">返回上传</span>
       </div>
 
-      <v-stepper v-model="currentStep">
-        <!-- 步骤指示器 -->
-        <v-stepper-header>
-          <v-stepper-item
-            :value="1"
-            title="选择图片"
-            :complete="currentStep > 1"
-          ></v-stepper-item>
-
-          <v-divider></v-divider>
-
-          <v-stepper-item
-            :value="2"
-            title="AI检测"
-            :complete="currentStep > 2"
-          ></v-stepper-item>
-
-          <v-divider></v-divider>
-
-          <v-stepper-item
-            :value="3"
-            title="发布审核"
-            :complete="currentStep > 3"
-          ></v-stepper-item>
-        </v-stepper-header>
-
-        <!-- 步骤内容 -->
-        <v-stepper-window>
-          <!-- 第一步：选择图片 -->
-          <v-stepper-window-item :value="1">
-            <ImageSelectionStep 
-              :images="extractedImages"
-              :fileId="fileId"
-              @update="updateSelectedImages"
-            />
-          </v-stepper-window-item>
-
-          <!-- 第二步：AI检测 -->
-          <v-stepper-window-item :value="2">
-            <DetectionStep />
-          </v-stepper-window-item>
-
-          <!-- 第三步：发布审核 -->
-          <v-stepper-window-item :value="3">
-            <ReviewStep @update="updateReviewData" />
-          </v-stepper-window-item>
-        </v-stepper-window>
-
-        <!-- 底部按钮 -->
+      <v-card>
+        <v-card-text>
+          <ImageSelectionStep 
+            :images="extractedImages"
+            :fileId="fileId"
+            @update="updateSelectedImages"
+          />
+        </v-card-text>
         <v-card-actions>
-          <v-btn
-            variant="text"
-            @click="previousStep"
-            :disabled="currentStep === 1"
-          >
-            上一步
-          </v-btn>
           <v-spacer></v-spacer>
           <v-btn
             color="primary"
-            @click="nextStep"
+            variant="elevated"
+            @click="handleNext"
             :disabled="!canProceed"
+            append-icon="mdi-arrow-right"
           >
-            {{ currentStep === 3 ? '完成' : '下一步' }}
+            提交检测
           </v-btn>
         </v-card-actions>
-      </v-stepper>
+      </v-card>
     </div>
 </template>
 
@@ -350,8 +304,6 @@ import { useRouter } from 'vue-router'
 import uploadApi from '@/api/upload'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
-import DetectionStep from '@/components/steps/DetectionStep.vue'
-import ReviewStep from '@/components/steps/ReviewStep.vue'
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -363,7 +315,6 @@ const snackbar = useSnackbarStore()
 
 // 进度页面相关状态
 const showProgress = ref(false)
-const currentStep = ref(1)
 const extractedImages = ref<Image[]>([])
 const selectedImages = ref<Image[]>([])
 
@@ -374,18 +325,6 @@ interface Image {
   extracted_from_pdf: boolean
   selected: boolean
 }
-
-interface ReviewData {
-  selectedFakeImages: any[]
-  selectedRealImages: any[]
-  selectedReviewers: any[]
-}
-
-const reviewData = ref<ReviewData>({
-  selectedFakeImages: [],
-  selectedRealImages: [],
-  selectedReviewers: []
-})
 
 const timelineItems = ref([
   {
@@ -492,9 +431,8 @@ const handleSubmit = async () => {
       selected: false
     }))
     
-    // 显示进度页面并重置为第一步
+    // 显示进度页面
     showProgress.value = true
-    currentStep.value = 1
   } catch (error) {
     console.error('Upload failed:', error)
     snackbar.showMessage('文件上传失败，请稍后重试', 'error')
@@ -509,39 +447,16 @@ const triggerFileInput = () => {
 
 // 进度页面相关方法
 const canProceed = computed(() => {
-  switch (currentStep.value) {
-    case 1:
-      return selectedImages.value.length > 0
-    case 3:
-      const { selectedFakeImages, selectedRealImages, selectedReviewers } = reviewData.value
-      const hasSelectedImages = selectedFakeImages.length > 0 || selectedRealImages.length > 0
-      return hasSelectedImages && selectedReviewers.length > 0
-    default:
-      return true
-  }
+  return selectedImages.value.length > 0
 })
 
 const updateSelectedImages = (images: typeof extractedImages.value) => {
   selectedImages.value = images
 }
 
-const updateReviewData = (data: ReviewData) => {
-  reviewData.value = data
-}
-
-const previousStep = () => {
-  if (currentStep.value > 1) {
-    currentStep.value--
-  }
-}
-
-const nextStep = () => {
-  if (currentStep.value < 3) {
-    currentStep.value++
-  } else {
-    if (canProceed.value) {
-      router.push(`/task/${fileId.value}`)
-    }
+const handleNext = () => {
+  if (canProceed.value) {
+    router.push(`/history`)
   }
 }
 
@@ -555,12 +470,6 @@ const returnToUpload = () => {
   fileId.value = ''
   extractedImages.value = []
   selectedImages.value = []
-  currentStep.value = 1
-  reviewData.value = {
-    selectedFakeImages: [],
-    selectedRealImages: [],
-    selectedReviewers: []
-  }
 }
 </script>
 

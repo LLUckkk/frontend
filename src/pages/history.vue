@@ -371,7 +371,7 @@ const getProgressColor = (progress: number) => {
 
 // 操作按钮处理函数
 const handleNext = (item: any) => {
-  router.push(`/task/${item.id}`)
+  router.push(`/step`)
 }
 
 const handleDelete = (item: any) => {
