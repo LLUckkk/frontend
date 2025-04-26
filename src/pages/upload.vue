@@ -421,7 +421,7 @@ const updateSelectedImages = (images: typeof extractedImages.value) => {
 const handleTag = async (tag: string) => {
   console.log("parent: " + tag)
   try {
-    await uploadApi.addTag({ fileId: fileId, tag: currentTag })
+    await uploadApi.addTag({ fileId: fileId.value, tag: currentTag.value })
     console.log('标签已保存')
   } catch (error) {
     console.error('保存失败:', error)

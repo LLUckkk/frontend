@@ -8,15 +8,11 @@
             <!-- 左侧进度环 -->
             <v-col cols="4" class="border-r">
               <div class="detection-summary">
-                <v-progress-circular
-                  :model-value="(detectionResult.fakeCount / detectionResult.totalCount) * 100"
-                  :size="160"
-                  :width="12"
-                  color="primary"
-                  class="custom-progress"
-                >
+                <v-progress-circular :model-value="(detectionResult.fakeCount / detectionResult.totalCount) * 100"
+                  :size="160" :width="12" color="primary" class="custom-progress">
                   <div class="progress-content">
-                    <div class="text-h4 font-weight-bold responsive-text">{{ detectionResult.fakeCount }}/{{ detectionResult.totalCount }}</div>
+                    <div class="text-h4 font-weight-bold responsive-text">{{ detectionResult.fakeCount }}/{{
+                      detectionResult.totalCount }}</div>
                     <div class="text-subtitle-2 mt-1 responsive-text">造假图片数量</div>
                   </div>
                 </v-progress-circular>
@@ -31,7 +27,8 @@
                   <div class="text-h6 mb-4">任务信息</div>
                   <div class="d-flex flex-column gap-2">
                     <div class="info-item d-flex align-center" :class="isDarkMode ? 'info-item-dark' : ''">
-                      <v-icon :color="isDarkMode ? 'grey-lighten-1' : 'grey-darken-2'" class="mr-2">mdi-clock-outline</v-icon>
+                      <v-icon :color="isDarkMode ? 'grey-lighten-1' : 'grey-darken-2'"
+                        class="mr-2">mdi-clock-outline</v-icon>
                       <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
                     </div>
                     <div class="info-item d-flex align-center" :class="isDarkMode ? 'info-item-dark' : ''">
@@ -43,14 +40,8 @@
 
                 <!-- 操作按钮 -->
                 <div class="d-flex flex-wrap gap-4">
-                  <v-btn
-                    color="primary"
-                    variant="elevated"
-                    class="px-8 py-2"
-                    rounded="pill"
-                    prepend-icon="mdi-file-document-outline"
-                    elevation="2"
-                  >
+                  <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
+                    prepend-icon="mdi-file-document-outline" elevation="2">
                     查看报告
                   </v-btn>
                   <!-- <v-btn
@@ -63,16 +54,9 @@
                   >
                     批量下载
                   </v-btn> -->
-                  <v-btn
-                    :color="isDarkMode ? 'green-darken-2' : 'success'"
-                    variant="elevated"
-                    class="px-8 py-2"
-                    rounded="pill"
-                    prepend-icon="mdi-check-circle"
-                    elevation="2"
-                    @click="completeDetection"
-                    :disabled="!hasSelectedImages"
-                  >
+                  <v-btn :color="isDarkMode ? 'green-darken-2' : 'success'" variant="elevated" class="px-8 py-2"
+                    rounded="pill" prepend-icon="mdi-check-circle" elevation="2" @click="completeDetection"
+                    :disabled="!hasSelectedImages">
                     完成检测
                   </v-btn>
                 </div>
@@ -90,48 +74,26 @@
                 <div class="d-flex align-center">
                   <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
                   <span class="text-h6">疑似造假图片</span>
-                  <v-chip color="error" class="ml-4" size="small">{{ selectedFakeCount }}/{{ detectionResult.fakeImages.length }}</v-chip>
+                  <v-chip color="error" class="ml-4" size="small">{{ selectedFakeCount }}/{{
+                    detectionResult.fakeImages.length }}</v-chip>
                 </div>
-                <v-btn
-                  color="error"
-                  variant="text"
-                  @click="selectAllFake"
-                >
+                <v-btn color="error" variant="text" @click="selectAllFake">
                   {{ isAllFakeSelected ? '取消全选' : '全选' }}
                 </v-btn>
               </v-card-title>
               <v-card-text class="pa-6">
                 <v-sheet class="overflow-x-auto">
                   <div class="d-flex image-grid">
-                    <v-hover v-for="(img, index) in detectionResult.fakeImages" :key="index" v-slot="{ isHovering, props }">
-                      <v-card
-                        v-bind="props"
-                        class="ma-2 position-relative"
-                        width="200"
-                        height="200"
-                        elevation="2"
-                        rounded="lg"
-                        @click="toggleImageSelection(img, 'fake')"
-                      >
-                        <v-img
-                          :src="img.url"
-                          cover
-                          height="100%"
-                        >
+                    <v-hover v-for="(img, index) in detectionResult.fakeImages" :key="index"
+                      v-slot="{ isHovering, props }">
+                      <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
+                        rounded="lg" @click="toggleImageSelection(img, 'fake')">
+                        <v-img :src="img.url" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
-                              <v-checkbox
-                                v-model="img.selected"
-                                color="primary"
-                                class="image-checkbox"
-                              ></v-checkbox>
-                              <v-btn
-                                icon="mdi-magnify"
-                                variant="text"
-                                color="white"
-                                size="large"
-                                @click.stop="viewImageDetail(img)"
-                              ></v-btn>
+                              <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
+                              <v-btn icon="mdi-magnify" variant="text" color="white" size="large"
+                                @click.stop="viewImageDetail(img)"></v-btn>
                             </div>
                           </div>
                         </v-img>
@@ -148,48 +110,26 @@
                 <div class="d-flex align-center">
                   <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
                   <span class="text-h6">正常图片</span>
-                  <v-chip color="success" class="ml-4" size="small">{{ selectedRealCount }}/{{ detectionResult.realImages.length }}</v-chip>
+                  <v-chip color="success" class="ml-4" size="small">{{ selectedRealCount }}/{{
+                    detectionResult.realImages.length }}</v-chip>
                 </div>
-                <v-btn
-                  color="success"
-                  variant="text"
-                  @click="selectAllReal"
-                >
+                <v-btn color="success" variant="text" @click="selectAllReal">
                   {{ isAllRealSelected ? '取消全选' : '全选' }}
                 </v-btn>
               </v-card-title>
               <v-card-text class="pa-6">
                 <v-sheet class="overflow-x-auto">
                   <div class="d-flex image-grid">
-                    <v-hover v-for="(img, index) in detectionResult.realImages" :key="index" v-slot="{ isHovering, props }">
-                      <v-card
-                        v-bind="props"
-                        class="ma-2 position-relative"
-                        width="200"
-                        height="200"
-                        elevation="2"
-                        rounded="lg"
-                        @click="toggleImageSelection(img, 'real')"
-                      >
-                        <v-img
-                          :src="img.url"
-                          cover
-                          height="100%"
-                        >
+                    <v-hover v-for="(img, index) in detectionResult.realImages" :key="index"
+                      v-slot="{ isHovering, props }">
+                      <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
+                        rounded="lg" @click="toggleImageSelection(img, 'real')">
+                        <v-img :src="img.url" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
-                              <v-checkbox
-                                v-model="img.selected"
-                                color="primary"
-                                class="image-checkbox"
-                              ></v-checkbox>
-                              <v-btn
-                                icon="mdi-magnify"
-                                variant="text"
-                                color="white"
-                                size="large"
-                                @click.stop="viewImageDetail(img)"
-                              ></v-btn>
+                              <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
+                              <v-btn icon="mdi-magnify" variant="text" color="white" size="large"
+                                @click.stop="viewImageDetail(img)"></v-btn>
                             </div>
                           </div>
                         </v-img>
@@ -205,33 +145,72 @@
     </v-row>
 
     <!-- 图片详情对话框 -->
-    <v-dialog v-model="showImageDetail" max-width="800">
+    <v-dialog v-model="showImageDetail" max-width="1000">
       <v-card rounded="lg">
-        <v-card-title class="pa-6">
-          <span class="text-h6">图片详情</span>
+        <v-card-title class="pa-6 d-flex">
+          <h1 class="text-h5">图片详情</h1>
           <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="showImageDetail = false"></v-btn>
+          <v-btn icon="mdi-close" variant="text"  @click="showImageDetail = false"></v-btn>
         </v-card-title>
+
         <v-card-text class="pa-6">
-          <v-img
-            :src="selectedImage?.url"
-            max-height="500"
-            contain
-            class="rounded-lg"
-          ></v-img>
-          <div class="mt-6">
-            <div class="text-h6 mb-4">{{ selectedImage?.name }}</div>
-            <div class="d-flex flex-column gap-2">
-              <div class="info-item d-flex align-center">
-                <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
-                <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
+          <v-row>
+            <!-- 左侧图片信息 (保持原有样式) -->
+            <v-col cols="12" md="6" class="pr-md-6">
+              <v-img :src="selectedImage?.url" max-height="500" contain class="rounded-lg"></v-img>
+              <div class="mt-6">
+                <div class="text-h6 mb-4">{{ selectedImage?.name }}</div>
+                <div class="d-flex flex-column gap-2">
+                  <div class="info-item d-flex align-center">
+                    <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
+                    <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
+                  </div>
+                  <div class="info-item d-flex align-center">
+                    <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
+                    <span class="text-body-1">检测编号：{{ detectionResult.detectionId }}</span>
+                  </div>
+                </div>
               </div>
-              <div class="info-item d-flex align-center">
-                <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
-                <span class="text-body-1">检测编号：{{ detectionResult.detectionId }}</span>
-              </div>
-            </div>
-          </div>
+            </v-col>
+
+            <!-- 右侧标签页 -->
+            <v-col cols="12" md="6" class="pl-md-6">
+              <v-tabs v-model="activeTab" color="primary">
+                <v-tab value="analysis">大模型</v-tab>
+                <v-tab value="history">深度学习</v-tab>
+                <v-tab value="comments">传统方法</v-tab>
+              </v-tabs>
+
+              <v-divider></v-divider>
+
+              <v-window v-model="activeTab" class="mt-4">
+                <v-window-item value="analysis">
+                  <div class="text-h6 mb-4">检测分析</div>
+                  <!-- 这里放分析结果内容 -->
+                  <!-- <v-chip v-for="(tag, i) in detectionResult.tags" :key="i" class="ma-1">
+                    {{ tag }}
+                  </v-chip> -->
+                </v-window-item>
+
+                <v-window-item value="history">
+                  <div class="text-h6 mb-4">检测历史</div>
+                  <!-- 这里放历史记录内容 -->
+                  <v-timeline side="end" density="compact">
+                    <v-timeline-item v-for="(item, i) in historyItems" :key="i" dot-color="primary" size="small">
+                      <div class="text-body-1">{{ item.date }} - {{ item.action }}</div>
+                    </v-timeline-item>
+                  </v-timeline>
+                </v-window-item>
+
+                <v-window-item value="comments">
+                  <div class="text-h6 mb-4">添加备注</div>
+                  <!-- 这里放备注信息内容 -->
+                  <v-textarea v-model="commentText" label="请输入备注" rows="3" variant="outlined"></v-textarea>
+                  <v-btn color="primary" @click="saveComment">保存备注</v-btn>
+                </v-window-item>
+              </v-window>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -260,9 +239,21 @@ interface DetectionResult {
 }
 
 const theme = useTheme()
-const router = useRouter()
 const emit = defineEmits(['complete'])
 const isDarkMode = computed(() => theme.global.current.value.dark)
+//
+const activeTab = ref('analysis')
+const commentText = ref('')
+
+const historyItems = ref([
+  {date: '2023-05-01', action: '首次检测'}
+])
+
+const saveComment = () => {
+  console.log('保存备注:', commentText.value)
+  // 这里添加保存逻辑
+}
+
 
 // 模拟检测结果数据
 const detectionResult = ref<DetectionResult>({
@@ -482,4 +473,4 @@ const hasSelectedImages = computed(() => selectedFakeCount.value > 0 || selected
 .text-subtitle-2.responsive-text {
   font-size: clamp(0.75rem, 1.5vw, 1rem);
 }
-</style> 
+</style>
