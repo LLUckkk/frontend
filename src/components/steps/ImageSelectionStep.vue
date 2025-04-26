@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12" class="mb-2">
       <v-select v-model="selectedTag" :items="tagOptions" label="为本批图片添加标签" clearable variant="outlined" hide-details
-        class="w-50" @change="handleChangedTag" />
+        class="w-50" />
     </v-col>
   </v-row>
 
@@ -236,6 +236,15 @@ onMounted(async () => {
 
 const tagOptions = ['Biology', 'Medicine', 'Chemistry', 'Graphics', 'Other']
 const selectedTag = ref(null)
+
+watch(selectedTag, (newVal) => {
+  if (newVal !== null) {
+    console.log('标签变为:', newVal)
+    emit('tagChanged', newVal)
+  } else {
+    console.log('标签被清除')
+  }
+})
 
 const handleChangedTag = (newTag: string) => {
   emit('tagChanged', newTag)

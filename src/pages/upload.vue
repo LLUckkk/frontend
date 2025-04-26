@@ -346,6 +346,7 @@ const handleFileSelect = (event: Event) => {
 }
 
 const handleSelectedTag = async (newTag: string) => {
+  console.log(newTag)
   currentTag.value = newTag
 }
 
@@ -418,14 +419,13 @@ const updateSelectedImages = (images: typeof extractedImages.value) => {
 }
 
 const handleTag = async (tag: string) => {
-  if (tag) {
-    try {
-      await uploadApi.addTag({ fileId: fileId, tag: currentTag })
-      console.log('标签已保存')
-    } catch(error){
-      console.error('保存失败:', error)
-      snackbar.showMessage("标签无效", "error")
-    } 
+  console.log("parent: " + tag)
+  try {
+    await uploadApi.addTag({ fileId: fileId, tag: currentTag })
+    console.log('标签已保存')
+  } catch (error) {
+    console.error('保存失败:', error)
+    snackbar.showMessage("标签无效", "error")
   }
 }
 
