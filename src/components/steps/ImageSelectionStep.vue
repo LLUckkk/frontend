@@ -1,81 +1,91 @@
 <template>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex align-center mb-4">
-          <span class="text-h6">已提取图片</span>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" prepend-icon="mdi-check-all" @click="selectAllImages">
-            全选
-          </v-btn>
-        </div>
-      </v-col>
-    </v-row>
+  <v-row>
+    <v-col cols="12" class="mb-2">
+      <v-select v-model="selectedTag" :items="tagOptions" label="为本批图片添加标签" clearable variant="outlined" hide-details
+        class="w-50" @change="handleSelectTag" />
+    </v-col>
+  </v-row>
 
-    <v-row class="h-100">
-      <!-- 左侧缩略图列表 -->
-      <v-col cols="4" class="thumbnail-list pa-0">
-        <v-card class="h-100">
-          <v-card-text class="pa-0 h-100">
-            <v-list lines="two" class="thumbnail-scroll h-100">
-              <v-list-item v-for="(image, index) in displayImages" :key="image.image_id"
-                :class="{ 'selected-item': image.selected }" @click="selectImage(image)">
-                <template v-slot:prepend>
-                  <v-avatar size="60" class="me-2">
-                    <v-img :src="image.image_url" cover class="bg-grey-lighten-2"></v-img>
-                  </v-avatar>
-                </template>
-                <v-list-item-title>
-                  {{ `图片${index + 1}` }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ image.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
-                </v-list-item-subtitle>
-                <template v-slot:append>
-                  <v-checkbox v-model="image.selected" hide-details density="compact" @click.stop
-                    @update:model-value="emitUpdate"></v-checkbox>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
+  <v-row>
+    <v-col cols="12">
+      <div class="d-flex align-center mb-4">
+        <span class="text-h6">已提取图片</span>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" prepend-icon="mdi-check-all" @click="selectAllImages">
+          全选
+        </v-btn>
+      </div>
+    </v-col>
+  </v-row>
 
-      <!-- 右侧大图预览 -->
-      <v-col cols="8" class="preview-section pa-0">
-        <v-card class="h-100">
-          <v-card-text class="pa-0 preview-wrapper h-100">
-            <div v-if="selectedImage" class="preview-container h-100">
-              <v-btn icon="mdi-chevron-left" variant="text" size="x-large" class="preview-nav-btn preview-nav-left"
-                :disabled="!canNavigatePrev" @click="navigatePrev"></v-btn>
+  <v-row class="h-100">
+    <!-- 左侧缩略图列表 -->
+    <v-col cols="4" class="thumbnail-list pa-0">
+      <v-card class="h-100">
+        <v-card-text class="pa-0 h-100">
+          <v-list lines="two" class="thumbnail-scroll h-100">
+            <v-list-item v-for="(image, index) in displayImages" :key="image.image_id"
+              :class="{ 'selected-item': image.selected }" @click="selectImage(image)">
+              <template v-slot:prepend>
+                <v-avatar size="60" class="me-2">
+                  <v-img :src="image.image_url" cover class="bg-grey-lighten-2"></v-img>
+                </v-avatar>
+              </template>
+              <v-list-item-title>
+                {{ `图片${index + 1}` }}
+              </v-list-item-title>
+              <v-list-item-subtitle>
+                {{ image.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
+              </v-list-item-subtitle>
+              <template v-slot:append>
+                <v-checkbox v-model="image.selected" hide-details density="compact" @click.stop
+                  @update:model-value="emitUpdate"></v-checkbox>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+      </v-card>
+    </v-col>
 
-              <div class="image-container">
-                <v-img :src="selectedImage.image_url" class="preview-image" cover></v-img>
+    <!-- 右侧大图预览 -->
+    <v-col cols="8" class="preview-section pa-0">
+      <v-card class="h-100">
+        <v-card-text class="pa-0 preview-wrapper h-100">
+          <div v-if="selectedImage" class="preview-container h-100">
+            <v-btn icon="mdi-chevron-left" variant="text" size="x-large" class="preview-nav-btn preview-nav-left"
+              :disabled="!canNavigatePrev" @click="navigatePrev"></v-btn>
+
+            <div class="image-container">
+              <v-img :src="selectedImage.image_url" class="preview-image" cover></v-img>
+            </div>
+
+            <v-btn icon="mdi-chevron-right" variant="text" size="x-large" class="preview-nav-btn preview-nav-right"
+              :disabled="!canNavigateNext" @click="navigateNext"></v-btn>
+
+            <div class="preview-info pa-4">
+              <div class="text-h6">
+                {{ `图片${currentIndex + 1}` }}
               </div>
-
-              <v-btn icon="mdi-chevron-right" variant="text" size="x-large" class="preview-nav-btn preview-nav-right"
-                :disabled="!canNavigateNext" @click="navigateNext"></v-btn>
-
-              <div class="preview-info pa-4">
-                <div class="text-h6">
-                  {{ `图片${currentIndex + 1}` }}
-                </div>
-                <div class="text-body-2">
-                  {{ selectedImage.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
-                </div>
+              <div class="text-body-2">
+                {{ selectedImage.extracted_from_pdf ? 'PDF提取' : '上传图片' }}
               </div>
             </div>
-            <div v-else class="d-flex align-center justify-center h-100">
-              <div class="text-h6 text-grey">请选择一张图片查看详情</div>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+          </div>
+          <div v-else class="d-flex align-center justify-center h-100">
+            <div class="text-h6 text-grey">请选择一张图片查看详情</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useSnackbarStore } from '@/stores/snackbar';
 import upload from '@/api/upload'
+
+const snackbar = useSnackbarStore()
 
 interface Image {
   image_id: number
@@ -170,6 +180,19 @@ const selectImage = (image: Image) => {
   currentIndex.value = displayImages.value.findIndex(img => img.image_id === image.image_id)
 }
 
+const handleSelectTag = async (tag: string) => {
+  if (tag) {
+    try {
+      await upload.addTag({ fileId: props.fileId, tag: tag })
+      console.log('标签已保存');
+    } catch (error) {
+      console.error('保存失败:', error);
+      snackbar.showMessage("标签无效", "error")
+    }
+  }
+}
+
+
 const canNavigatePrev = computed(() => currentIndex.value > 0)
 const canNavigateNext = computed(() => currentIndex.value < displayImages.value.length - 1)
 
@@ -217,6 +240,9 @@ onMounted(async () => {
     }
   }
 })
+
+const tagOptions = ['Biology', 'Medicine', 'Chemistry', 'Graphics', 'Other']
+const selectedTag = ref(null)
 </script>
 
 <style scoped>
