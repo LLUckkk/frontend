@@ -152,10 +152,6 @@
           {{ formatTime(item.registerTime) }}
         </template>
 
-        <template v-slot:item.lastLoginTime="{ item }">
-          {{ formatTime(item.lastLoginTime) }}
-        </template>
-
         <template v-slot:item.actions="{ item }">
           <v-btn
             icon
@@ -392,7 +388,7 @@ interface User {
   username: string
   email: string
   role: string
-  permission: number
+  permission: string
   registerTime: number
   lastLoginTime: number
 }
@@ -404,7 +400,6 @@ const headers = [
   { title: '角色', key: 'role', align: 'center' },
   { title: '权限', key: 'permission', align: 'center', sortable: false },
   { title: '注册时间', key: 'registerTime', align: 'center' },
-  { title: '最后登录', key: 'lastLoginTime', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
 ] as const
 
@@ -466,6 +461,7 @@ const formatTime = (timestamp: number) => {
 
 const openPermissionDialog = (user: User) => {
   selectedUser.value = user
+  // 只有非管理员和非根管理员才能修改权限
   if (user.role !== 'admin' && user.email !== ROOT_ADMIN_EMAIL) {
     editingPermissions.value = {
       uploadImage: getPermissionBit(user.permission, 3),
@@ -473,26 +469,30 @@ const openPermissionDialog = (user: User) => {
       publishReview: getPermissionBit(user.permission, 1),
       submitReview: getPermissionBit(user.permission, 0)
     }
+    showPermissionDialog.value = true
+  } else {
+    snackbar.showMessage('不能修改管理员权限', 'warning')
   }
-  showPermissionDialog.value = true
 }
 
 const updatePermissions = async () => {
   if (selectedUser.value && selectedUser.value.role !== 'admin' && selectedUser.value.email !== ROOT_ADMIN_EMAIL) {
     try {
-      // 计算权限值
+      // 计算权限值（4位二进制）
       const permissionValue = 
-        (editingPermissions.value.uploadImage ? 8 : 0) +
-        (editingPermissions.value.submitAI ? 4 : 0) +
-        (editingPermissions.value.publishReview ? 2 : 0) +
-        (editingPermissions.value.submitReview ? 1 : 0)
+        (editingPermissions.value.uploadImage ? 8 : 0) +  // 第3位：上传图像
+        (editingPermissions.value.submitAI ? 4 : 0) +     // 第2位：提交AI检测
+        (editingPermissions.value.publishReview ? 2 : 0) + // 第1位：发布人工审核
+        (editingPermissions.value.submitReview ? 1 : 0)    // 第0位：提交人工审核
 
-      await userApi.updateUserPermission(selectedUser.value.id, permissionValue.toString())
+      // 转换为4位二进制字符串
+      const permissionBinary = permissionValue.toString(2).padStart(4, '0')
+      await userApi.updateUserPermission(selectedUser.value.id, permissionBinary)
       
       // 更新本地数据
       const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
       if (userToUpdate) {
-        userToUpdate.permission = permissionValue
+        userToUpdate.permission = permissionBinary  // 使用二进制字符串
       }
       
       snackbar.showMessage('权限更新成功', 'success')
@@ -505,6 +505,11 @@ const updatePermissions = async () => {
 }
 
 const openDeleteDialog = (user: User) => {
+  // 根管理员不能被删除
+  if (user.email === ROOT_ADMIN_EMAIL) {
+    snackbar.showMessage('不能删除根管理员', 'warning')
+    return
+  }
   selectedUser.value = user
   showDeleteDialog.value = true
 }
@@ -520,6 +525,9 @@ const deleteUser = async () => {
       snackbar.showMessage('删除用户失败', 'error')
     }
   }
+  currentPage.value=1
+  pageSize.value=10
+  fetchUsers(currentPage.value, pageSize.value)
   showDeleteDialog.value = false
 }
 
@@ -681,9 +689,11 @@ const getRoleName = (role: string) => {
   }
 }
 
-const getPermissionBit = (permission: number | null, bit: number) => {
+const getPermissionBit = (permission: string | null, bit: number) => {
   if (permission === null) return false
-  return ((permission >> bit) & 1) === 1
+  // 将二进制字符串转换为数字，然后进行位运算
+  const permissionNum = parseInt(permission, 2)
+  return ((permissionNum >> bit) & 1) === 1
 }
 
 // 创建管理员相关
@@ -704,12 +714,13 @@ const fetchUsers = async (page: number, pageSize: number) => {
     let permissionFilter = ''
     const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
     if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
+      // 修改权限值计算逻辑，确保四位权限正确
       let value = 0
-      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }
-      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }
-      if (publishReview !== null) { value |= (publishReview ? 2 : 0) }
-      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }
-      permissionFilter = value.toString()
+      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }  // 第3位：上传图像
+      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }       // 第2位：提交AI检测
+      if (publishReview !== null) { value |= (publishReview ? 2 : 0) } // 第1位：发布人工审核
+      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }   // 第0位：提交人工审核
+      permissionFilter = value.toString(2).padStart(4, '0')  // 转换为4位二进制字符串
     }
 
     // 计算时间筛选
@@ -737,7 +748,7 @@ const fetchUsers = async (page: number, pageSize: number) => {
       page_size: pageSize,
       query: searchQuery.value || '',
       role: filters.value.role || '',
-      permission: permissionFilter,
+      permission: permissionFilter || '',  // 使用4位二进制字符串
       startTime: startTimeFilter,
       endTime: endTimeFilter
     }
@@ -750,10 +761,10 @@ const fetchUsers = async (page: number, pageSize: number) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      permission: user.permission,
+      permission: user.permission, // 直接使用后端返回的二进制字符串
       registerTime: new Date(user.date_joined).getTime(),
-      lastLoginTime: new Date(user.date_joined).getTime(),
-      avatar: 'http://122.9.45.122/media/'+user.avatar || ''
+      //lastLoginTime: new Date(user.date_joined).getTime(),
+      avatar: 'http://122.9.45.122'+user.avatar || ''
     }))
     
     currentPage.value = current_page

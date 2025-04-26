@@ -199,7 +199,7 @@
     const response = await user.login({
       email: email.value,
       password: password.value,
-      role: 'reviewer'//admin
+      role: 'reviewer'//TODO：admin
     }).then(async (res: { data: { access: string; refresh: string } }) => {
       localStorage.setItem("token", res.data.access)
       localStorage.setItem("refresh", res.data.refresh)

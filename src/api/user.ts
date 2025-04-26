@@ -73,5 +73,6 @@ export default {
     role?: string;
   }) {
     return http.post('/create-admin/', data)
-  }
+  },
+
 }
