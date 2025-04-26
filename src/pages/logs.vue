@@ -9,14 +9,46 @@
   <!-- 搜索和筛选区域 -->
   <v-row class="mb-4">
     <v-col cols="12" sm="8" md="6">
-      <v-text-field v-model="searchQuery" label="搜索出版社名" append-inner-icon="mdi-magnify" clearable density="compact"
-        hide-details class="search-input" @keyup.enter="fetchLogs(currentPage, pageSize)"
-        @click:append-inner="fetchLogs(currentPage, pageSize)" @click:clear="fetchLogs(currentPage, pageSize)"
-        placeholder="请输入出版社名"></v-text-field>
+      <v-autocomplete
+        v-model="searchSelectedUser"
+        :items="searchUsersList"
+        :loading="loadingSearchUsers"
+        v-model:search="searchQuery"
+        item-title="username"
+        item-value="id"
+        label="搜索出版社名"
+        prepend-icon="mdi-magnify"
+        return-object
+        clearable
+        hide-details
+        @update:search="searchUsersForTable"
+        @update:model-value="handleSearchSelection"
+      >
+        <template v-slot:selection="{ item }">
+          <v-chip class="ma-1">
+            {{ item.raw.username }}
+            <v-avatar start size="24" class="mr-2">
+              <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+            </v-avatar>
+          </v-chip>
+        </template>
+        <template v-slot:item="{ props, item }">
+          <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
+            <template v-slot:prepend>
+              <v-avatar size="24" class="mr-2">
+                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+              </v-avatar>
+            </template>
+          </v-list-item>
+        </template>
+      </v-autocomplete>
     </v-col>
     <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
       <v-btn color="primary" class="text-none mr-2" prepend-icon="mdi-filter-variant" @click="showFilterDialog = true">
         筛选
+      </v-btn>
+      <v-btn color="success" class="text-none" prepend-icon="mdi-download" @click="showDownloadDialog = true">
+        下载日志
       </v-btn>
     </v-col>
   </v-row>
@@ -86,12 +118,82 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- 下载对话框 -->
+  <v-dialog v-model="showDownloadDialog" max-width="500">
+    <v-card class="elevation-4">
+      <v-card-title class="text-h6 font-weight-bold">下载日志</v-card-title>
+      <v-card-text>
+        <div class="d-flex flex-column gap-4">
+          <v-autocomplete
+            v-model="downloadSelectedUsers"
+            :items="downloadUsersList"
+            :loading="loadingDownloadUsers"
+            v-model:search="downloadUserSearch"
+            item-title="username"
+            item-value="id"
+            label="选择出版社"
+            prepend-icon="mdi-account"
+            return-object
+            multiple
+            clearable
+            hide-details
+            @update:search="searchUsersForDownload"
+            @update:model-value="downloadUserSearch = ''"
+          >
+            <template v-slot:selection="{ item, index }">
+              
+            <v-chip v-if="index < 6" class="ma-1">
+              {{ item.raw.username }}
+              <v-avatar start size="24" class="mr-2">
+                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+              </v-avatar>
+            </v-chip>
+              <span v-if="index === 6" class="text-grey text-caption align-self-center">
+                (+{{ downloadSelectedUsers.length - 6 }} others)
+              </span>
+            </template>
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
+                <template v-slot:prepend>
+                  <v-avatar size="24" class="mr-2">
+                    <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                  </v-avatar>
+                </template>
+              </v-list-item>
+            </template>
+          </v-autocomplete>
+
+          <v-select v-model="downloadFilters.operationType" :items="operationTypeOptions" label="操作类型" clearable
+            hide-details></v-select>
+
+          <v-select v-model="downloadFilters.status" :items="statusOptions" label="任务状态" clearable hide-details></v-select>
+
+          <v-select v-model="downloadFilters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
+            @update:model-value="handleDownloadTimeRangeChange"></v-select>
+
+          <div class="d-flex align-center gap-4">
+            <v-text-field v-model="downloadFilters.startDate" label="开始时间" type="datetime-local" hide-details density="compact"
+              :error-messages="downloadTimeError" @update:model-value="handleDownloadCustomTimeChange"></v-text-field>
+            <v-text-field v-model="downloadFilters.endDate" label="结束时间" type="datetime-local" hide-details density="compact"
+              :error-messages="downloadTimeError" @update:model-value="handleDownloadCustomTimeChange"></v-text-field>
+          </div>
+        </div>
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="grey" variant="text" @click="resetDownloadFilters">重置</v-btn>
+        <v-btn color="success" @click="downloadLogs">下载</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import logApi from '@/api/log'
+import userApi from '@/api/user'
 import axios from 'axios'
 
 const snackbar = useSnackbarStore()
@@ -103,6 +205,13 @@ interface Log {
   related_model: string
   related_id: number
   operation_time: string
+}
+
+interface User {
+  id: number
+  username: string
+  email: string
+  avatar: string
 }
 
 const headers = [
@@ -121,7 +230,10 @@ const pageSize = ref(10)
 const totalLogs = ref(0)
 const totalPages = ref(1)
 
-// 搜索相关
+// 表格搜索相关
+const searchSelectedUser = ref<User | null>(null)
+const searchUsersList = ref<User[]>([])
+const loadingSearchUsers = ref(false)
 const searchQuery = ref('')
 
 // 筛选相关
@@ -200,6 +312,7 @@ const resetFilters = () => {
     startDate: null,
     endDate: null
   }
+  searchSelectedUser.value = null
   timeError.value = ''
   currentPage.value = 1
   pageSize.value = 10
@@ -246,7 +359,7 @@ const fetchLogs = async (page: number, pageSize: number) => {
     const params = {
       page,
       page_size: pageSize,
-      query: searchQuery.value || '',
+      query: searchSelectedUser.value?.username || '',
       operation_type: filters.value.operationType || '',
       status: filters.value.status || '',
       startTime: startTimeFilter,
@@ -364,6 +477,170 @@ const getModelColor = (model: string) => {
 onMounted(() => {
   fetchLogs(currentPage.value, pageSize.value)
 })
+
+const showDownloadDialog = ref(false)
+const downloadFilters = ref<{
+  operationType: string | null
+  status: string | null
+  timeRange: string | null
+  startDate: string | null
+  endDate: string | null
+}>({
+  operationType: null,
+  status: null,
+  timeRange: null,
+  startDate: null,
+  endDate: null
+})
+
+const downloadTimeError = ref('')
+
+// 处理下载时间范围变化
+const handleDownloadTimeRangeChange = (value: string | null) => {
+  if (value) {
+    downloadFilters.value.startDate = null
+    downloadFilters.value.endDate = null
+    downloadTimeError.value = ''
+  }
+}
+
+// 处理下载自定义时间变化
+const handleDownloadCustomTimeChange = () => {
+  downloadFilters.value.timeRange = null
+
+  if (!downloadFilters.value.startDate || !downloadFilters.value.endDate) {
+    downloadTimeError.value = '开始时间和结束时间不能为空'
+    return
+  }
+
+  const startTime = new Date(downloadFilters.value.startDate).getTime()
+  const endTime = new Date(downloadFilters.value.endDate).getTime()
+
+  if (startTime >= endTime) {
+    downloadTimeError.value = '开始时间必须早于结束时间'
+  } else {
+    downloadTimeError.value = ''
+  }
+}
+
+// 重置下载筛选条件
+const resetDownloadFilters = () => {
+  downloadFilters.value = {
+    operationType: null,
+    status: null,
+    timeRange: null,
+    startDate: null,
+    endDate: null
+  }
+  downloadSelectedUsers.value = []
+  downloadTimeError.value = ''
+  showDownloadDialog.value = false
+}
+
+// 下载相关
+const downloadSelectedUsers = ref<User[]>([])
+const downloadUsersList = ref<User[]>([])
+const loadingDownloadUsers = ref(false)
+const downloadUserSearch = ref('')
+
+// 搜索用户（用于下载）
+const searchUsersForDownload = async (query: string) => {
+  if (!query) {
+    downloadUsersList.value = []
+    return
+  }
+  
+  loadingDownloadUsers.value = true
+  try {
+    const response = await userApi.getUsers({ query, page: 1, page_size: 10,  role: 'publisher' })
+    downloadUsersList.value = response.data.users || []
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    snackbar.showMessage('搜索用户失败', 'error')
+  } finally {
+    loadingDownloadUsers.value = false
+  }
+}
+
+// 下载日志
+const downloadLogs = async () => {
+  if (downloadTimeError.value) {
+    return
+  }
+
+  try {
+    // 计算时间筛选
+    let startTimeFilter: string | undefined
+    let endTimeFilter: string | undefined
+    if (downloadFilters.value.timeRange) {
+      const now = Date.now()
+      const ranges: Record<string, number> = {
+        '1d': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+        '90d': 90 * 24 * 60 * 60 * 1000,
+        '365d': 365 * 24 * 60 * 60 * 1000
+      }
+      const rangeMs = ranges[downloadFilters.value.timeRange as keyof typeof ranges]
+      startTimeFilter = formatDateFilter(now - rangeMs)
+      endTimeFilter = formatDateFilter(now)
+    } else if (downloadFilters.value.startDate && downloadFilters.value.endDate) {
+      startTimeFilter = formatDateFilter(new Date(downloadFilters.value.startDate).getTime())
+      endTimeFilter = formatDateFilter(new Date(downloadFilters.value.endDate).getTime())
+    }
+
+    const params = {
+      query: downloadSelectedUsers.value.map(user => user.id),
+      status: downloadFilters.value.status || '',
+      operation_type: downloadFilters.value.operationType || '',
+      startTime: startTimeFilter,
+      endTime: endTimeFilter
+    }
+
+    const response = await logApi.downloadLogs(params)
+    
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `logs_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    snackbar.showMessage('日志下载成功', 'success')
+    showDownloadDialog.value = false
+  } catch (error) {
+    console.error('下载日志失败:', error)
+    snackbar.showMessage('下载日志失败', 'error')
+  }
+}
+
+// 处理搜索选择
+const handleSearchSelection = () => {
+  searchQuery.value = ''
+  fetchLogs(currentPage.value, pageSize.value)
+}
+
+// 搜索用户（用于表格）
+const searchUsersForTable = async (query: string) => {
+  if (!query) {
+    searchUsersList.value = []
+    return
+  }
+  
+  loadingSearchUsers.value = true
+  try {
+    const response = await userApi.getUsers({ query, page: 1, page_size: 10,  role: 'publisher' })
+    searchUsersList.value = response.data.users || []
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    snackbar.showMessage('搜索用户失败', 'error')
+  } finally {
+    loadingSearchUsers.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -430,5 +707,20 @@ onMounted(() => {
 
 :deep(.v-select .v-field__append-inner) {
   padding-top: 0;
+}
+
+.rounded-circle {
+  border-radius: 50% !important;
+}
+
+:deep(.v-avatar) {
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+:deep(.v-avatar .v-img) {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
 </style>

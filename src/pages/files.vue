@@ -9,19 +9,39 @@
     <!-- 搜索和筛选区域 -->
     <v-row class="mb-4">
       <v-col cols="12" sm="8" md="6">
-        <v-text-field
-          v-model="searchQuery"
+        <v-autocomplete
+          v-model="searchSelectedUser"
+          :items="searchUsersList"
+          :loading="loadingSearchUsers"
+          v-model:search="searchQuery"
+          item-title="username"
+          item-value="id"
           label="搜索出版社名"
-          append-inner-icon="mdi-magnify"
+          prepend-icon="mdi-magnify"
+          return-object
           clearable
-          density="compact"
           hide-details
-          class="search-input"
-          @keyup.enter="handleSearch"
-          @click:append-inner="handleSearch"
-          @click:clear="handleSearch"
-          placeholder="请输入出版社名"
-        ></v-text-field>
+          @update:search="searchUsersForTable"
+          @update:model-value="handleSearchSelection"
+        >
+          <template v-slot:selection="{ item }">
+            <v-chip class="ma-1">
+              {{ item.raw.username }}
+              <v-avatar start size="24" class="mr-2">
+                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+              </v-avatar>
+            </v-chip>
+          </template>
+          <template v-slot:item="{ props, item }">
+            <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
+              <template v-slot:prepend>
+                <v-avatar size="24" class="mr-2">
+                  <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
       </v-col>
       <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
         <v-btn 
@@ -359,6 +379,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import fileApi from '@/api/file'
+import userApi from '@/api/user'
 
 const snackbar = useSnackbarStore()
 
@@ -378,6 +399,13 @@ interface Image {
   result: boolean
 }
 
+interface User {
+  id: number
+  username: string
+  email: string
+  avatar: string
+}
+
 const headers = [
   // { title: '编号', key: 'id', align: 'center' },
   { title: '出版社名', key: 'username', align: 'start' },
@@ -395,6 +423,9 @@ const totalFiles = ref(0)
 const totalPages = ref(1)
 
 // 搜索相关
+const searchSelectedUser = ref<User | null>(null)
+const searchUsersList = ref<User[]>([])
+const loadingSearchUsers = ref(false)
 const searchQuery = ref('')
 
 // 筛选相关
@@ -443,6 +474,31 @@ const detailFilters = ref<{
 // 图片查看相关
 const showImageDialog = ref(false)
 const selectedImage = ref<Image | null>(null)
+
+// 处理搜索选择
+const handleSearchSelection = () => {
+  searchQuery.value = ''
+  fetchFiles(currentPage.value, pageSize.value)
+}
+
+// 搜索用户（用于表格）
+const searchUsersForTable = async (query: string) => {
+  if (!query) {
+    searchUsersList.value = []
+    return
+  }
+  
+  loadingSearchUsers.value = true
+  try {
+    const response = await userApi.getUsers({ query, page: 1, page_size: 10, role: 'publisher' })
+    searchUsersList.value = response.data.users || []
+  } catch (error) {
+    console.error('搜索用户失败:', error)
+    snackbar.showMessage('搜索用户失败', 'error')
+  } finally {
+    loadingSearchUsers.value = false
+  }
+}
 
 // 处理搜索
 const handleSearch = () => {
@@ -643,7 +699,7 @@ const fetchFiles = async (page: number, pageSize: number) => {
     const params = {
       page,
       page_size: pageSize,
-      query: searchQuery.value || '',
+      query: searchSelectedUser.value?.username || '',
       categories: filters.value.subject || '',
       startTime: startTimeFilter,
       endTime: endTimeFilter
@@ -667,8 +723,6 @@ const fetchFiles = async (page: number, pageSize: number) => {
         }
       ]
     }))
-
-
     
     currentPage.value = current_page
     totalPages.value = total_pages
@@ -803,5 +857,16 @@ const getSubjectName = (subject: string) => {
 
 .image-thumbnail {
   border-radius: 8px;
+}
+
+:deep(.v-avatar) {
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+:deep(.v-avatar .v-img) {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
 }
 </style>

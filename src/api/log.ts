@@ -18,13 +18,17 @@ export default {
   },
 
   downloadLogs(params: {
-    role?: string;
+    query?: number[];
+    status?: string;
     operation_type?: string;
     startTime?: string;
     endTime?: string;
   }) {
     return http.get('/user_action_log/download/', { 
-      params,
+      params: {
+        ...params,
+        query: params.query?.join(',')
+      },
       responseType: 'blob'
     });
   }
