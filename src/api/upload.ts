@@ -17,6 +17,6 @@ export default {
 
   addTag(data: any) {
     console.log(data)
-    return http.post(`/upload/${data.fileId}/addTag`, {tag:data.tag})
+    return http.post(`/upload/${data.fileId}/addTag/`, {tag:data.tag})
   }
 }

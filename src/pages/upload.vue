@@ -280,6 +280,7 @@
             :images="extractedImages"
             :fileId="fileId"
             @update="updateSelectedImages"
+            @tagChanged="handleSelectedTag"
           />
         </v-card-text>
         <v-card-actions>
@@ -317,6 +318,7 @@ const snackbar = useSnackbarStore()
 const showProgress = ref(false)
 const extractedImages = ref<Image[]>([])
 const selectedImages = ref<Image[]>([])
+const currentTag = ref(null)
 
 interface Image {
   image_id: number
@@ -382,6 +384,18 @@ const handleFileSelect = (event: Event) => {
       selectedFiles.value = [file]
     } else {
       snackbar.showMessage('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
+    }
+  }
+}
+
+const handleSelectedTag = async () => {
+  if (currentTag) {
+    try {
+      await uploadApi.addTag({ fileId: fileId, tag: currentTag })
+      console.log('标签已保存');
+    } catch (error) {
+      console.error('保存失败:', error);
+      snackbar.showMessage("标签无效", "error")
     }
   }
 }

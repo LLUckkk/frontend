@@ -2,7 +2,7 @@
   <v-row>
     <v-col cols="12" class="mb-2">
       <v-select v-model="selectedTag" :items="tagOptions" label="为本批图片添加标签" clearable variant="outlined" hide-details
-        class="w-50" @change="handleSelectTag" />
+        class="w-50" />
     </v-col>
   </v-row>
 
@@ -105,7 +105,12 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (e: 'update', selectedImages: Image[]): void
+  (e: 'tagChanged', tag: string | null): void
 }>()
+
+
+
+
 
 // 使用响应式变量存储图片
 const localImages = ref<Image[]>([])
@@ -180,18 +185,6 @@ const selectImage = (image: Image) => {
   currentIndex.value = displayImages.value.findIndex(img => img.image_id === image.image_id)
 }
 
-const handleSelectTag = async (tag: string) => {
-  if (tag) {
-    try {
-      await upload.addTag({ fileId: props.fileId, tag: tag })
-      console.log('标签已保存');
-    } catch (error) {
-      console.error('保存失败:', error);
-      snackbar.showMessage("标签无效", "error")
-    }
-  }
-}
-
 
 const canNavigatePrev = computed(() => currentIndex.value > 0)
 const canNavigateNext = computed(() => currentIndex.value < displayImages.value.length - 1)
@@ -243,6 +236,10 @@ onMounted(async () => {
 
 const tagOptions = ['Biology', 'Medicine', 'Chemistry', 'Graphics', 'Other']
 const selectedTag = ref(null)
+
+watch(selectedTag, (newTag) => {
+  emit('tagChanged', newTag)
+})
 </script>
 
 <style scoped>
