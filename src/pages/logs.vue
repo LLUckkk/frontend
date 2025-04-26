@@ -9,43 +9,21 @@
   <!-- 搜索和筛选区域 -->
   <v-row class="mb-4">
     <v-col cols="12" sm="8" md="6">
-      <v-text-field
-        v-model="searchQuery"
-        label="搜索出版社名"
-        append-inner-icon="mdi-magnify"
-        clearable
-        density="compact"
-        hide-details
-        class="search-input"
-        @keyup.enter="fetchLogs(currentPage, pageSize)"
-        @click:append-inner="fetchLogs(currentPage, pageSize)"
-        @click:clear="fetchLogs(currentPage, pageSize)"
-        placeholder="请输入出版社名"
-      ></v-text-field>
+      <v-text-field v-model="searchQuery" label="搜索出版社名" append-inner-icon="mdi-magnify" clearable density="compact"
+        hide-details class="search-input" @keyup.enter="fetchLogs(currentPage, pageSize)"
+        @click:append-inner="fetchLogs(currentPage, pageSize)" @click:clear="fetchLogs(currentPage, pageSize)"
+        placeholder="请输入出版社名"></v-text-field>
     </v-col>
     <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
-      <v-btn 
-        color="primary" 
-        class="text-none mr-2" 
-        prepend-icon="mdi-filter-variant"
-        @click="showFilterDialog = true"
-      >
+      <v-btn color="primary" class="text-none mr-2" prepend-icon="mdi-filter-variant" @click="showFilterDialog = true">
         筛选
       </v-btn>
     </v-col>
   </v-row>
 
   <v-card class="elevation-2">
-    <v-data-table
-      :headers="headers"
-      :items="logs"
-      class="elevation-0"
-      :items-per-page="pageSize"
-      hover
-      :width="'100%'"
-      :loading="loading"
-      hide-default-footer
-    >
+    <v-data-table :headers="headers" :items="logs" class="elevation-0" :items-per-page="pageSize" hover :width="'100%'"
+      :loading="loading" hide-default-footer>
       <template v-slot:top>
         <div class="d-flex align-center pa-4">
           <div class="text-caption text-medium-emphasis">
@@ -55,47 +33,27 @@
       </template>
 
       <template v-slot:item.operation_type="{ item }">
-        <v-chip
-          :color="getOperationTypeColor(item.operation_type)"
-          size="small"
-          class="operation-chip"
-        >
-          {{ item.operation_type }}
+        <v-chip :color="getOperationTypeColor(item.operation_type)" size="small" class="operation-chip">
+          {{ getOperationType(item.operation_type) }}
         </v-chip>
       </template>
 
       <template v-slot:item.related_model="{ item }">
-        <v-chip
-          :color="getModelColor(item.related_model)"
-          size="small"
-          class="model-chip"
-        >
-          {{ item.related_model }}
+        <v-chip :color="getModelColor(item.related_model)" size="small" class="model-chip">
+          {{ getRelatedModel(item.related_model) }}
         </v-chip>
       </template>
     </v-data-table>
-    
+
     <div class="d-flex align-center justify-center pa-4">
       <div class="d-flex align-center">
         <span class="text-caption mr-2">每页显示</span>
-        <v-select
-          v-model="pageSize"
-          :items="[5, 10, 20, 50, 100]"
-          density="compact"
-          variant="outlined"
-          hide-details
-          style="width: 100px"
-          @update:model-value="handlePageSizeChange"
-        ></v-select>
+        <v-select v-model="pageSize" :items="[5, 10, 20, 50, 100]" density="compact" variant="outlined" hide-details
+          style="width: 100px" @update:model-value="handlePageSizeChange"></v-select>
         <span class="text-caption ml-2">条</span>
       </div>
-      <v-pagination
-        v-model="currentPage"
-        :length="totalPages"
-        :total-visible="7"
-        class="ml-4"
-        @update:model-value="handlePageChange"
-      ></v-pagination>
+      <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" class="ml-4"
+        @update:model-value="handlePageChange"></v-pagination>
     </div>
   </v-card>
 
@@ -105,50 +63,19 @@
       <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
       <v-card-text>
         <div class="d-flex flex-column gap-4">
-          <v-select
-            v-model="filters.operationType"
-            :items="operationTypeOptions"
-            label="操作类型"
-            clearable
-            hide-details
-          ></v-select>
-          
-          <v-select
-            v-model="filters.status"
-            :items="statusOptions"
-            label="任务状态"
-            clearable
-            hide-details
-          ></v-select>
-          
-          <v-select
-            v-model="filters.timeRange"
-            :items="timeRangeOptions"
-            label="快速选择时间范围"
-            clearable
-            hide-details
-            @update:model-value="handleTimeRangeChange"
-          ></v-select>
+          <v-select v-model="filters.operationType" :items="operationTypeOptions" label="操作类型" clearable
+            hide-details></v-select>
+
+          <v-select v-model="filters.status" :items="statusOptions" label="任务状态" clearable hide-details></v-select>
+
+          <v-select v-model="filters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
+            @update:model-value="handleTimeRangeChange"></v-select>
 
           <div class="d-flex align-center gap-4">
-            <v-text-field
-              v-model="filters.startDate"
-              label="开始时间"
-              type="datetime-local"
-              hide-details
-              density="compact"
-              :error-messages="timeError"
-              @update:model-value="handleCustomTimeChange"
-            ></v-text-field>
-            <v-text-field
-              v-model="filters.endDate"
-              label="结束时间"
-              type="datetime-local"
-              hide-details
-              density="compact"
-              :error-messages="timeError"
-              @update:model-value="handleCustomTimeChange"
-            ></v-text-field>
+            <v-text-field v-model="filters.startDate" label="开始时间" type="datetime-local" hide-details density="compact"
+              :error-messages="timeError" @update:model-value="handleCustomTimeChange"></v-text-field>
+            <v-text-field v-model="filters.endDate" label="结束时间" type="datetime-local" hide-details density="compact"
+              :error-messages="timeError" @update:model-value="handleCustomTimeChange"></v-text-field>
           </div>
         </div>
       </v-card-text>
@@ -216,8 +143,8 @@ const filters = ref<{
 const operationTypeOptions = [
   { title: '上传图像', value: 'upload' },
   { title: 'AI检测', value: 'detection' },
-  { title: '审核请求', value: 'review_request' },
-  { title: '人工审核', value: 'manual_review' }
+  { title: '发布审核', value: 'review_request' },
+  { title: '提交审核', value: 'manual_review' }
 ]
 
 const statusOptions = [
@@ -248,7 +175,7 @@ const handleTimeRangeChange = (value: string | null) => {
 // 处理自定义时间变化
 const handleCustomTimeChange = () => {
   filters.value.timeRange = null
-  
+
   if (!filters.value.startDate || !filters.value.endDate) {
     timeError.value = '开始时间和结束时间不能为空'
     return
@@ -256,7 +183,7 @@ const handleCustomTimeChange = () => {
 
   const startTime = new Date(filters.value.startDate).getTime()
   const endTime = new Date(filters.value.endDate).getTime()
-  
+
   if (startTime >= endTime) {
     timeError.value = '开始时间必须早于结束时间'
   } else {
@@ -285,7 +212,7 @@ const applyFilters = () => {
   if (timeError.value) {
     return
   }
-  
+
   currentPage.value = 1
   pageSize.value = 10
   fetchLogs(1, 10)
@@ -327,7 +254,7 @@ const fetchLogs = async (page: number, pageSize: number) => {
     }
     const response = await logApi.getLogs(params)
     const { data } = response
-    
+
     if (data && data.logs) {
       logs.value = data.logs.map((log: any) => ({
         id: log.id,
@@ -337,7 +264,7 @@ const fetchLogs = async (page: number, pageSize: number) => {
         related_id: log.related_id,
         operation_time: log.operation_time
       }))
-      
+
       currentPage.value = data.current_page
       totalPages.value = data.total_pages
       totalLogs.value = data.total_logs
@@ -380,6 +307,33 @@ const formatDateFilter = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
+
+const getOperationType = (type: string) => {
+  switch (type) {
+    case 'upload':
+      return '上传图像'
+    case 'detection':
+      return 'AI检测'
+    case 'review_request':
+      return '发布审核'
+    case 'manual_review':
+      return '提交审核'
+    default:
+      return '未知'
+  }
+}
+
+const getRelatedModel = (model: string) => {
+  switch (model) {
+    case 'DetectionTask':
+      return "检测任务"
+    case 'FileManagement':
+      return "文件管理"
+    default:
+      return '未知'
+  }
+}
+
 const getOperationTypeColor = (type: string) => {
   switch (type) {
     case 'upload':
@@ -399,7 +353,7 @@ const getModelColor = (model: string) => {
   switch (model) {
     case 'DetectionTask':
       return 'info'
-    case 'User':
+    case 'FileManagement':
       return 'primary'
     default:
       return 'grey'

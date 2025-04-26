@@ -655,7 +655,7 @@ const fetchFiles = async (page: number, pageSize: number) => {
     files.value = fileList.map((file: any) => ({
       id: file.id,
       username: file.username,
-      subject: file.categories,
+      subject: file.tag,
       uploadTime: new Date(file.upload_time).getTime(),
       images: [
         {
@@ -667,6 +667,8 @@ const fetchFiles = async (page: number, pageSize: number) => {
         }
       ]
     }))
+
+
     
     currentPage.value = current_page
     totalPages.value = total_pages
