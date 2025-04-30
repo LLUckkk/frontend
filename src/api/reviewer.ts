@@ -1,5 +1,7 @@
 import http from './request'
 
-export default{
-  
+export default {
+  submitReview(data: any) {
+    return http.post(`/submit_review_result/${data.task_id}/`, data)
+  }
 }

@@ -20,6 +20,15 @@ export default {
   //返回特定审核员对特定任务的审核结果
   getReviewerDetail(data: any) {
     return http.get(`/get_task_reviewer_detail/${data.taskId}/${data.reviewer_id}`)
+  },
+
+  getAllReviewers(){
+    return http.get('/get_all_reviewers/')
+  },
+
+  //获取某个出版社所有检测的任务
+  getAllDetectionTask(){
+    return http.get('/all-user-tasks/')
   }
 
 }

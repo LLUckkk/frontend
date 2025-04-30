@@ -10,11 +10,7 @@
               <span class="text-h6">疑似造假图片</span>
               <v-chip color="error" class="ml-4" size="small">{{ selectedFakeCount }}/{{ fakeImages.length }}</v-chip>
             </div>
-            <v-btn
-              color="error"
-              variant="text"
-              @click="selectAllFake"
-            >
+            <v-btn color="error" variant="text" @click="selectAllFake">
               {{ isAllFakeSelected ? '取消全选' : '全选' }}
             </v-btn>
           </v-card-title>
@@ -22,34 +18,14 @@
             <v-sheet class="overflow-x-auto">
               <div class="d-flex image-grid">
                 <v-hover v-for="(img, index) in fakeImages" :key="index" v-slot="{ isHovering, props }">
-                  <v-card
-                    v-bind="props"
-                    class="ma-2 position-relative"
-                    width="200"
-                    height="200"
-                    elevation="2"
-                    rounded="lg"
-                    @click="toggleImageSelection(img, 'fake')"
-                  >
-                    <v-img
-                      :src="img.url"
-                      cover
-                      height="100%"
-                    >
+                  <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
+                    rounded="lg" @click="toggleImageSelection(img, 'fake')">
+                    <v-img :src="img.url" cover height="100%">
                       <div class="image-overlay" v-if="isHovering || img.selected">
                         <div class="d-flex flex-column align-center gap-4">
-                          <v-checkbox
-                            v-model="img.selected"
-                            color="primary"
-                            class="image-checkbox"
-                          ></v-checkbox>
-                          <v-btn
-                            icon="mdi-magnify"
-                            variant="text"
-                            color="white"
-                            size="large"
-                            @click.stop="viewImageDetail(img)"
-                          ></v-btn>
+                          <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
+                          <v-btn icon="mdi-magnify" variant="text" color="white" size="large"
+                            @click.stop="viewImageDetail(img)"></v-btn>
                         </div>
                       </div>
                     </v-img>
@@ -68,11 +44,7 @@
               <span class="text-h6">正常图片</span>
               <v-chip color="success" class="ml-4" size="small">{{ selectedRealCount }}/{{ realImages.length }}</v-chip>
             </div>
-            <v-btn
-              color="success"
-              variant="text"
-              @click="selectAllReal"
-            >
+            <v-btn color="success" variant="text" @click="selectAllReal">
               {{ isAllRealSelected ? '取消全选' : '全选' }}
             </v-btn>
           </v-card-title>
@@ -80,34 +52,14 @@
             <v-sheet class="overflow-x-auto">
               <div class="d-flex image-grid">
                 <v-hover v-for="(img, index) in realImages" :key="index" v-slot="{ isHovering, props }">
-                  <v-card
-                    v-bind="props"
-                    class="ma-2 position-relative"
-                    width="200"
-                    height="200"
-                    elevation="2"
-                    rounded="lg"
-                    @click="toggleImageSelection(img, 'real')"
-                  >
-                    <v-img
-                      :src="img.url"
-                      cover
-                      height="100%"
-                    >
+                  <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
+                    rounded="lg" @click="toggleImageSelection(img, 'real')">
+                    <v-img :src="img.url" cover height="100%">
                       <div class="image-overlay" v-if="isHovering || img.selected">
                         <div class="d-flex flex-column align-center gap-4">
-                          <v-checkbox
-                            v-model="img.selected"
-                            color="primary"
-                            class="image-checkbox"
-                          ></v-checkbox>
-                          <v-btn
-                            icon="mdi-magnify"
-                            variant="text"
-                            color="white"
-                            size="large"
-                            @click.stop="viewImageDetail(img)"
-                          ></v-btn>
+                          <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
+                          <v-btn icon="mdi-magnify" variant="text" color="white" size="large"
+                            @click.stop="viewImageDetail(img)"></v-btn>
                         </div>
                       </div>
                     </v-img>
@@ -125,36 +77,16 @@
             <v-chip class="ml-4" size="small">{{ selectedPeople }}</v-chip>
           </v-card-title>
           <v-card-text class="pa-6">
-            <v-autocomplete
-              v-model="selectedPeopleList"
-              :items="filteredPeople"
-              :loading="isSearching"
-              :search-input.sync="searchQuery"
-              item-title="name"
-              item-value="id"
-              label="搜索审核人员"
-              multiple
-              chips
-              closable-chips
-              hide-details
-              variant="outlined"
-              @update:search="searchPeople"
-            >
+            <v-autocomplete v-model="selectedPeopleList" :items="filteredPeople" :loading="isSearching"
+              :search-input.sync="searchQuery" item-title="name" item-value="id" label="搜索审核人员" multiple chips
+              closable-chips hide-details variant="outlined" @update:search="searchPeople">
               <template v-slot:chip="{ props, item }">
-                <v-chip
-                  v-bind="props"
-                  :prepend-avatar="item.raw.avatar"
-                >
-                  {{ item.raw.name }}
+                <v-chip v-bind="props" :prepend-avatar="getAvatar(item.raw.avatar)">
+                  {{ item.raw.username }}
                 </v-chip>
               </template>
               <template v-slot:item="{ props, item }">
-                <v-list-item
-                  v-bind="props"
-                  :prepend-avatar="item.raw.avatar"
-                  :title="item.raw.name"
-                  :subtitle="item.raw.department"
-                ></v-list-item>
+                <v-list-item v-bind="props" :prepend-avatar="getAvatar(item.raw.avatar)" :title="item.raw.username"></v-list-item>
               </template>
             </v-autocomplete>
           </v-card-text>
@@ -171,12 +103,7 @@
           <v-btn icon="mdi-close" variant="text" @click="showImageDetail = false"></v-btn>
         </v-card-title>
         <v-card-text class="pa-6">
-          <v-img
-            :src="selectedImage?.url"
-            max-height="500"
-            contain
-            class="rounded-lg"
-          ></v-img>
+          <v-img :src="selectedImage?.url" max-height="500" contain class="rounded-lg"></v-img>
           <div class="mt-6">
             <div class="text-h6 mb-4">{{ selectedImage?.name }}</div>
             <div class="d-flex flex-column gap-2">
@@ -198,9 +125,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useTheme } from 'vuetify'
+import publisher from '@/api/publisher'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 interface Image {
+  id:string
   url: string
   name: string
   type: string
@@ -210,16 +139,17 @@ interface Image {
 
 interface Person {
   id: string
-  name: string
+  username: string
   avatar: string
-  department: string
 }
 
 const emit = defineEmits(['update'])
+const snackbar = useSnackbarStore()
 
 // 模拟图片数据
 const fakeImages = ref<Image[]>([
   {
+    
     url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
     name: '造假图片1.jpg',
     type: 'image/jpeg',
@@ -312,25 +242,40 @@ const realImages = ref<Image[]>([
 const searchQuery = ref('')
 const isSearching = ref(false)
 const allPeople = ref<Person[]>([
-  { 
-    id: '1', 
-    name: '张三', 
-    avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    department: '技术部'
-  },
-  { 
-    id: '2', 
-    name: '李四', 
-    avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    department: '设计部'
-  },
-  { 
-    id: '3', 
-    name: '王五', 
-    avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-    department: '产品部'
-  }
+  // { 
+  //   id: '1', 
+  //   name: '张三', 
+  //   avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+  //   department: '技术部'
+  // },
+  // { 
+  //   id: '2', 
+  //   name: '李四', 
+  //   avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+  //   department: '设计部'
+  // },
+  // { 
+  //   id: '3', 
+  //   name: '王五', 
+  //   avatar: 'https://seafoodfat1ger.github.io/img/toux.jpg',
+  //   department: '产品部'
+  // }
 ])
+
+onMounted(async () => {
+  // 从本地存储加载主题设置
+  try {
+    allPeople.value = (await publisher.getAllReviewers()).data
+    console.log('成功获取审核人员')
+    console.log(allPeople.value)
+  } catch (error) {
+    snackbar.showMessage('获取审核人员失败', 'error')
+  }
+})
+
+const getAvatar = (url:string) => {
+  return import.meta.env.VITE_API_URL + url
+}
 
 const selectedPeopleList = ref<Person[]>([])
 
@@ -348,9 +293,8 @@ const isAllRealSelected = computed(() => realImages.value.every(img => img.selec
 const filteredPeople = computed(() => {
   if (!searchQuery.value) return allPeople.value
   const query = searchQuery.value.toLowerCase()
-  return allPeople.value.filter(person => 
-    person.name.toLowerCase().includes(query) || 
-    person.department.toLowerCase().includes(query)
+  return allPeople.value.filter(person =>
+    person.username.toLowerCase().includes(query)
   )
 })
 
@@ -386,9 +330,9 @@ const searchPeople = async (query: string) => {
 
 const emitUpdate = () => {
   emit('update', {
-    selectedFakeImages: fakeImages.value.filter(img => img.selected),
-    selectedRealImages: realImages.value.filter(img => img.selected),
-    selectedReviewers: selectedPeopleList.value
+    selectedFakeImages: fakeImages.value.map(img => img.id),
+    selectedRealImages: realImages.value.map(img => img.id),
+    selectedReviewers: selectedPeopleList.value.map(person => person.id)
   })
 }
 
@@ -454,4 +398,4 @@ watch([selectedPeopleList], () => {
 .gap-4 {
   gap: 1rem;
 }
-</style> 
+</style>

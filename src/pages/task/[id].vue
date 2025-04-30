@@ -233,7 +233,7 @@
         <result-component 
           v-if="showDetailDialog"
           :task-id="taskData?.id"
-          :image-index="currentImageIndex"
+          :imageUrl="images[currentImageIndex].url"
         />
       </v-card>
     </v-dialog>
@@ -247,6 +247,7 @@ import { useTheme } from 'vuetify'
 import { useUserStore } from '@/stores/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ResultComponent from '@/components/result.vue'
+import reviewer from '@/api/reviewer'
 
 const router = useRouter()
 const route = useRoute()

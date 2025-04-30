@@ -31,7 +31,7 @@
           <!-- 图片预览区域 -->
           <div class="preview-section">
             <div class="preview-box">
-              <v-img v-if="currentImage" :src="currentImage.url" contain height="100%" class="rounded-lg"></v-img>
+              <v-img v-if="currentImage" :src="props.imageUrl" contain height="100%" class="rounded-lg"></v-img>
               <span v-else class="text-h4">PIC</span>
             </div>
           </div>
@@ -95,9 +95,21 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import publisher from '@/api/publisher';
+import reviewer from '@/api/reviewer';
 
-const router = useRouter()
-const taskProgress = [70, 85, 30]
+const props = defineProps({
+  taskId: {
+    type: String, // 或 Number，取决于 taskData?.id 的类型
+    required: false, // 如果可选，设为 false
+    default: null, // 默认值
+  },
+  imageUrl: {
+    type: String,
+    required: false,
+    default: "",
+  },
+});
 
 // 图片相关数据
 const currentImage = ref({
@@ -123,41 +135,46 @@ const dimensions = ref<Dimension[]>([
   },
   {
     name: '亮度/对比度调节',
-    value: null,
+    value: 1,
     reason: '',
     showFakeArea: false
   },
   {
     name: '智能修复',
-    value: null,
+    value: 3,
     reason: '',
     showFakeArea: false
   },
   {
     name: '暴力覆盖',
-    value: null,
+    value: 2,
     reason: '',
     showFakeArea: false
   },
   {
     name: '同图复制',
-    value: null,
+    value: 1,
     reason: '',
     showFakeArea: false
   },
   {
     name: '重叠切割',
-    value: null,
+    value: 2,
     reason: '',
     showFakeArea: false
   },
   {
     name: '跨图拼接',
-    value: null,
+    value: 1,
     reason: '',
     showFakeArea: false
   }
 ])
+
+const getAnnualDetail = async () => {
+  // const response = await publisher.getAnnualDetail()
+  //组件通信告诉一下是哪个reviewer和task？？还得是图片吧
+}
 
 const degreeOptions = [
   { value: 1, label: '很差' },

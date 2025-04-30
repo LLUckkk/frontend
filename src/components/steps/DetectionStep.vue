@@ -150,7 +150,7 @@
         <v-card-title class="pa-6 d-flex">
           <h1 class="text-h5">图片详情</h1>
           <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text"  @click="showImageDetail = false"></v-btn>
+          <v-btn icon="mdi-close" variant="text" @click="showImageDetail = false"></v-btn>
         </v-card-title>
 
         <v-card-text class="pa-6">
@@ -176,16 +176,16 @@
             <!-- 右侧标签页 -->
             <v-col cols="12" md="6" class="pl-md-6">
               <v-tabs v-model="activeTab" color="primary">
-                <v-tab value="analysis">大模型</v-tab>
-                <v-tab value="history">深度学习</v-tab>
-                <v-tab value="comments">传统方法</v-tab>
+                <v-tab value="analysis" style="font-size: 16px;">大模型</v-tab>
+                <v-tab value="history" style="font-size: 16px;">深度学习</v-tab>
+                <v-tab value="comments" style="font-size: 16px;">传统方法</v-tab>
               </v-tabs>
 
               <v-divider></v-divider>
 
               <v-window v-model="activeTab" class="mt-4">
                 <v-window-item value="analysis">
-                  <div class="text-h6 mb-4">检测分析</div>
+                  <div class="text-h6 mb-4">大模型意见</div>
                   <!-- 这里放分析结果内容 -->
                   <!-- <v-chip v-for="(tag, i) in detectionResult.tags" :key="i" class="ma-1">
                     {{ tag }}
@@ -193,20 +193,11 @@
                 </v-window-item>
 
                 <v-window-item value="history">
-                  <div class="text-h6 mb-4">检测历史</div>
-                  <!-- 这里放历史记录内容 -->
-                  <v-timeline side="end" density="compact">
-                    <v-timeline-item v-for="(item, i) in historyItems" :key="i" dot-color="primary" size="small">
-                      <div class="text-body-1">{{ item.date }} - {{ item.action }}</div>
-                    </v-timeline-item>
-                  </v-timeline>
+                  <div class="text-h6 mb-4">深度学习模型结果</div>
                 </v-window-item>
 
                 <v-window-item value="comments">
-                  <div class="text-h6 mb-4">添加备注</div>
-                  <!-- 这里放备注信息内容 -->
-                  <v-textarea v-model="commentText" label="请输入备注" rows="3" variant="outlined"></v-textarea>
-                  <v-btn color="primary" @click="saveComment">保存备注</v-btn>
+                  <div class="text-h6 mb-4">传统方法结果</div>
                 </v-window-item>
               </v-window>
             </v-col>
@@ -246,7 +237,7 @@ const activeTab = ref('analysis')
 const commentText = ref('')
 
 const historyItems = ref([
-  {date: '2023-05-01', action: '首次检测'}
+  { date: '2023-05-01', action: '首次检测' }
 ])
 
 const saveComment = () => {

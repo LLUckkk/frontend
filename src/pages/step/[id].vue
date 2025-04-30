@@ -3,19 +3,11 @@
     <v-card-text class="pa-0 mt-4">
       <v-stepper v-model="currentStep">
         <v-stepper-header>
-          <v-stepper-item
-            :value="1"
-            title="AI检测"
-            :complete="currentStep > 1"
-          ></v-stepper-item>
+          <v-stepper-item :value="1" title="AI检测" :complete="currentStep > 1"></v-stepper-item>
 
           <v-divider></v-divider>
 
-          <v-stepper-item
-            :value="2"
-            title="发布审核"
-            :complete="currentStep > 2"
-          ></v-stepper-item>
+          <v-stepper-item :value="2" title="发布审核" :complete="currentStep > 2"></v-stepper-item>
         </v-stepper-header>
 
         <!-- 步骤内容 -->
@@ -33,19 +25,11 @@
 
         <!-- 底部按钮 -->
         <v-card-actions>
-          <v-btn
-            variant="text"
-            @click="previousStep"
-            v-if="currentStep !== 1"
-          >
+          <v-btn variant="text" @click="previousStep" v-if="currentStep !== 1">
             上一步
           </v-btn>
           <v-spacer></v-spacer>
-          <v-btn
-            color="primary"
-            @click="nextStep"
-            :disabled="!canProceed"
-          >
+          <v-btn color="primary" @click="nextStep" :disabled="!canProceed">
             {{ currentStep === 2 ? '完成' : '下一步' }}
           </v-btn>
         </v-card-actions>
@@ -55,12 +39,14 @@
 </template>
 
 <script setup lang="ts">
+//注意鉴权！！！
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { RouteParams } from 'vue-router'
 import DetectionStep from '@/components/steps/DetectionStep.vue'
 import ReviewStep from '@/components/steps/ReviewStep.vue'
 import { useSnackbarStore } from '@/stores/snackbar';
+import publisher from '@/api/publisher'
 const snackbar = useSnackbarStore();
 
 const router = useRouter()
@@ -68,7 +54,6 @@ const route = useRoute()
 
 // 获取任务ID
 const taskId = computed(() => (route.params as RouteParams & { id: string }).id)
-
 // 步骤相关状态
 const currentStep = ref(1)
 const detectionComplete = ref(false)
@@ -81,6 +66,7 @@ const reviewData = ref({
 // 组件挂载时获取任务数据
 onMounted(async () => {
   currentStep.value = 1
+  console.log('挂载成功')
   if (taskId.value) {
     // TODO: 根据taskId获取任务数据
     console.log('获取任务数据:', taskId.value)
@@ -125,6 +111,13 @@ const nextStep = () => {
   } else {
     if (canProceed.value) {
       // TODO: 处理完成逻辑
+      try {
+        publisher.dispatchAnnual({ task_id: taskId, reviewers: reviewData.value.selectedReviewers })
+        snackbar.showMessage('已提交人工复查任务，请等待管理员审核', 'success')
+      } catch (error) {
+        console.log(error)
+        snackbar.showMessage('提交人工复查任务失败')
+      }
       snackbar.showMessage('人工审核任务发布成功！', 'success')
       router.push('/history')
     }

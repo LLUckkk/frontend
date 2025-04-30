@@ -2,12 +2,7 @@
   <div class="task-detail pa-4">
     <!-- 返回按钮 -->
     <div class="d-flex align-center mb-6">
-      <v-btn 
-        icon="mdi-arrow-left" 
-        variant="text" 
-        @click="router.back()" 
-        class="mr-2 return-btn"
-      >
+      <v-btn icon="mdi-arrow-left" variant="text" @click="router.back()" class="mr-2 return-btn">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
       <span class="text-h6 font-weight-medium">返回我的任务</span>
@@ -26,50 +21,19 @@
                   <span class="text-h5 font-weight-bold primary--text">90%</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <v-chip 
-                  color="primary" 
-                  variant="outlined" 
-                  size="x-large" 
-                  class="font-weight-medium px-3"
-                  elevation="1"
-                >
+                <v-chip color="primary" variant="outlined" size="x-large" class="font-weight-medium px-3" elevation="1">
                   查看AI检测结果
                 </v-chip>
               </div>
-
-              <!-- 任务列表 -->
-              <!-- <div class="task-list">
-                <div class="d-flex flex-column">
-                  <div class="task-item" v-for="i in 3" :key="i">
-                    <div class="d-flex align-center">
-                      <span class="text-h6 mr-3 font-weight-medium" style="min-width: 56px">任务{{ i }}</span>
-                      <v-progress-linear
-                        :model-value="taskProgress[i-1]"
-                        height="10"
-                        class="flex-grow-1 rounded-lg"
-                        color="primary"
-                        rounded
-                      ></v-progress-linear>
-                    </div>
-                  </div>
-                </div>
-              </div> -->
 
               <!-- 右侧任务信息 -->
               <div class="task-stats d-flex align-center">
                 <div class="answer-card">
                   <div class="text-h6 font-weight-medium mb-4">答题卡</div>
                   <div class="answer-grid">
-                    <v-btn
-                      v-for="(image, index) in images"
-                      :key="index"
-                      :color="getAnswerButtonColor(index)"
-                      variant="outlined"
-                      size="small"
-                      class="answer-btn"
-                      density="compact"
-                      @click="handleImageSelect(index)"
-                    >
+                    <v-btn v-for="(image, index) in images" :key="index" :color="getAnswerButtonColor(index)"
+                      variant="outlined" size="small" class="answer-btn" density="compact"
+                      @click="handleImageSelect(index)">
                       {{ index + 1 }}
                     </v-btn>
                   </div>
@@ -87,23 +51,13 @@
       <div class="content-wrapper d-flex pa-2 justify-center">
         <div class="content-container d-flex" style="gap: 12px;">
           <!-- 图片列表 -->
-          <div class="image-list rounded-lg elevation-1" style="background-color: rgb(var(--v-theme-surface)); padding: 20px;">
+          <div class="image-list rounded-lg elevation-1"
+            style="background-color: rgb(var(--v-theme-surface)); padding: 20px;">
             <div class="text-h6 font-weight-medium text-center mb-4" style="white-space: nowrap;">图片列表</div>
             <div class="image-grid">
-              <div
-                v-for="(image, index) in images"
-                :key="index"
-                class="image-grid-item"
-                :class="{ 'active': currentImageIndex === index }"
-                @click="handleImageSelect(index)"
-              >
-                <v-img
-                  :src="image.thumbnail"
-                  cover
-                  width="100%"
-                  height="100%"
-                  class="rounded-lg"
-                ></v-img>
+              <div v-for="(image, index) in images" :key="index" class="image-grid-item"
+                :class="{ 'active': currentImageIndex === index }" @click="handleImageSelect(index)">
+                <v-img :src="image.thumbnail" cover width="100%" height="100%" class="rounded-lg"></v-img>
               </div>
             </div>
           </div>
@@ -111,33 +65,14 @@
           <!-- 图片预览区域 -->
           <div class="preview-section">
             <div class="preview-box">
-              <v-img
-                v-if="currentImage"
-                :src="currentImage.url"
-                contain
-                height="100%"
-                class="rounded-lg"
-              ></v-img>
+              <v-img v-if="currentImage" :src="currentImage.url" contain height="100%" class="rounded-lg"></v-img>
               <span v-else class="text-h4">PIC</span>
               <div class="preview-controls">
-                <v-btn 
-                  icon="mdi-chevron-left" 
-                  variant="flat"
-                  @click="handlePrevImage"
-                  :disabled="currentImageIndex <= 0"
-                  class="control-btn"
-                  color="black"
-                  size="x-large"
-                ></v-btn>
-                <v-btn 
-                  icon="mdi-chevron-right" 
-                  variant="flat"
-                  @click="handleNextImage"
-                  :disabled="currentImageIndex >= images.length - 1"
-                  class="control-btn"
-                  color="black"
-                  size="x-large"
-                ></v-btn>
+                <v-btn icon="mdi-chevron-left" variant="flat" @click="handlePrevImage"
+                  :disabled="currentImageIndex <= 0" class="control-btn" color="black" size="x-large"></v-btn>
+                <v-btn icon="mdi-chevron-right" variant="flat" @click="handleNextImage"
+                  :disabled="currentImageIndex >= images.length - 1" class="control-btn" color="black"
+                  size="x-large"></v-btn>
               </div>
             </div>
           </div>
@@ -146,70 +81,40 @@
           <div class="dimension-section rounded-lg elevation-1">
             <div class="text-h6 font-weight-medium mb-4">评分维度</div>
             <div class="dimension-list">
-              <div 
-                v-for="(dimension, index) in dimensions" 
-                :key="index"
-                class="dimension-item mb-6"
-              >
+              <div v-for="(dimension, index) in dimensions" :key="index" class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <v-btn
-                    size="small"
-                    :color="dimension.showFakeArea ? 'error' : 'grey'"
-                    variant="tonal"
-                    @click="dimension.showFakeArea = !dimension.showFakeArea"
-                    class="fake-area-btn ml-4"
-                  >
-                    <v-icon size="small" :icon="dimension.showFakeArea ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
+                  <v-btn size="small" :color="dimension.showFakeArea ? 'error' : 'grey'" variant="tonal"
+                    @click="dimension.showFakeArea = !dimension.showFakeArea" class="fake-area-btn ml-4">
+                    <v-icon size="small" :icon="dimension.showFakeArea ? 'mdi-eye-off' : 'mdi-eye'"
+                      class="mr-1"></v-icon>
                     {{ dimension.showFakeArea ? '隐藏造假区域' : '显示造假区域' }}
                   </v-btn>
                 </div>
                 <div class="degree-buttons mb-2">
-                  <v-btn-group
-                    variant="outlined"
-                    class="d-flex"
-                  >
-                    <v-btn
-                      v-for="option in degreeOptions"
-                      :key="option.value"
+                  <v-btn-group variant="outlined" class="d-flex">
+                    <v-btn v-for="option in degreeOptions" :key="option.value"
                       :color="dimension.value === option.value ? getDegreeColor(option.value) : 'grey'"
-                      :variant="dimension.value === option.value ? 'flat' : 'outlined'"
-                      class="flex-grow-1"
-                      @click="dimension.value = option.value"
-                      size="small"
-                    >
+                      :variant="dimension.value === option.value ? 'flat' : 'outlined'" class="flex-grow-1"
+                      @click="dimension.value = option.value" size="small">
                       {{ option.label }}
                     </v-btn>
                   </v-btn-group>
                 </div>
-                <v-text-field
-                  v-model="dimension.reason"
-                  :label="'请输入' + dimension.name + '的理由'"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  class="mt-2"
-                ></v-text-field>
+                <v-text-field v-model="dimension.reason" :label="'请输入' + dimension.name + '的理由'" variant="outlined"
+                  density="compact" hide-details class="mt-2"></v-text-field>
               </div>
 
               <!-- 造假判定按钮组 -->
               <div class="fake-judge-section mt-4 pt-4">
                 <div class="text-subtitle-1 mb-4">造假判定</div>
                 <div class="d-flex justify-space-between">
-                  <v-btn
-                    :color="imageJudgements[currentImageIndex] === true ? 'error' : 'grey-lighten-1'"
-                    variant="tonal"
-                    class="flex-grow-1 mr-2"
-                    @click="handleJudgement(true)"
-                  >
+                  <v-btn :color="imageJudgements[currentImageIndex] === true ? 'error' : 'grey-lighten-1'"
+                    variant="tonal" class="flex-grow-1 mr-2" @click="handleJudgement(true)">
                     造假图片
                   </v-btn>
-                  <v-btn
-                    :color="imageJudgements[currentImageIndex] === false ? 'success' : 'grey-lighten-1'"
-                    variant="tonal"
-                    class="flex-grow-1"
-                    @click="handleJudgement(false)"
-                  >
+                  <v-btn :color="imageJudgements[currentImageIndex] === false ? 'success' : 'grey-lighten-1'"
+                    variant="tonal" class="flex-grow-1" @click="handleJudgement(false)">
                     真实图片
                   </v-btn>
                 </div>
@@ -221,10 +126,7 @@
 
       <!-- 底部操作按钮 -->
       <div class="d-flex justify-end pa-4">
-        <v-btn 
-          color="primary"
-          @click="handleSubmit"
-        >
+        <v-btn color="primary" @click="handleSubmit">
           提交
         </v-btn>
       </div>
@@ -237,11 +139,7 @@
           <div class="text-center">{{ alertMessage }}</div>
         </v-card-text>
         <v-card-actions class="justify-center pb-4">
-          <v-btn
-            color="primary"
-            variant="text"
-            @click="showAlert = false"
-          >
+          <v-btn color="primary" variant="text" @click="showAlert = false">
             确定
           </v-btn>
         </v-card-actions>
@@ -253,9 +151,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import reviewer from '@/api/reviewer'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 const router = useRouter()
 const taskProgress = [70, 85, 30]
+const snackbar = useSnackbarStore()
 
 // 图片相关数据和方法
 const currentImageIndex = ref(0)
@@ -414,7 +315,7 @@ const checkAnswerCompletion = () => {
         message: `第 ${i + 1} 张图片尚未进行造假判定`
       }
     }
-    
+
     // 检查所有维度是否都已评分
     const hasUnratedDimension = dimensions.value.some(dim => dim.value === null)
     if (hasUnratedDimension) {
@@ -423,7 +324,7 @@ const checkAnswerCompletion = () => {
         message: `第 ${i + 1} 张图片的评分维度尚未评分完整`
       }
     }
-    
+
     // 检查所有维度是否都填写了理由
     const hasEmptyReason = dimensions.value.some(dim => !dim.reason)
     if (hasEmptyReason) {
@@ -433,23 +334,29 @@ const checkAnswerCompletion = () => {
       }
     }
   }
-  
+
   return {
     complete: true,
     message: '所有图片已完成评分'
   }
 }
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   const result = checkAnswerCompletion()
   if (!result.complete) {
     // 显示错误提示
     alert(result.message)
     return
+    // } else {
+    //   try {
+    //     await reviewer.submitReview({dimension_scores: dimensions})
+    //   } catch (error) {
+    //     snackbar.showMessage('提交失败', 'error')
+    //   }
   }
-  
+
   // TODO: 处理提交逻辑
-  console.log('提交成功')
+  //console.log('提交成功')
 }
 </script>
 
@@ -567,11 +474,11 @@ const handleSubmit = () => {
   .task-stats {
     min-width: clamp(280px, 25vw, 320px);
   }
-  
+
   .answer-card {
     padding: 12px;
   }
-  
+
   .answer-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -694,7 +601,7 @@ const handleSubmit = () => {
   .answer-card {
     padding: 12px;
   }
-  
+
   .answer-grid {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -745,6 +652,7 @@ const handleSubmit = () => {
   font-size: 0.75rem;
   text-transform: none;
   letter-spacing: 0;
-  min-width: 120px;  /* 确保按钮有固定的最小宽度 */
+  min-width: 120px;
+  /* 确保按钮有固定的最小宽度 */
 }
-</style> 
+</style>
