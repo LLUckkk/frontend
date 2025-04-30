@@ -47,7 +47,7 @@
             </v-col>
             <v-col cols="12">
               <div class="text-subtitle-1 mb-2">完成情况</div>
-              <v-select v-model="filters.progress" :items="progressOptions" variant="outlined" density="compact"
+              <v-select v-model="filters.status" :items="statusOptions" variant="outlined" density="compact"
                 hide-details clearable></v-select>
             </v-col>
           </v-row>
@@ -70,13 +70,21 @@
           <span>{{ item.task_id }}</span>
         </template>
 
-        <!-- <template v-slot:item.status="{ item }">
+        <template v-slot:item.upload_time="{ item }">
+          <span>{{ formatDateTime(item.upload_time) }}</span>
+        </template>
+
+        <template v-slot:item.completion_time="{ item }">
+          <span>{{ formatDateTime(item.completion_time) }}</span>
+        </template>
+
+        <template v-slot:item.status="{ item }">
           <div class="d-flex justify-center">
             <v-chip :color="getStatusColor(item.status)" size="small" class="operation-chip">
               {{ getStatus(item.status) }}
             </v-chip>
           </div>
-        </template> -->
+        </template>
 
         <!-- 操作列自定义 -->
         <template v-slot:item.actions="{ item }">
@@ -152,29 +160,24 @@ const headers = [
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const, width: '350px' }
 ]
 
+interface Task {
+  task_id: string
+  upload_time: string
+  completion_time: string
+  status: 'pending' | 'in_progress' | 'completed'
+}
+
 // 任务数据
-const tasks = ref<any>([])
+const tasks = ref<Task[]>([])
 
 // 从后端获取任务数据
 const fetchTasks = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    // 计算时间筛选
     let startTimeFilter: string | undefined
     let endTimeFilter: string | undefined
-    if (filters.value.timeRange) {
-      const now = Date.now()
-      const ranges: Record<string, number> = {
-        '1d': 24 * 60 * 60 * 1000,
-        '7d': 7 * 24 * 60 * 60 * 1000,
-        '30d': 30 * 24 * 60 * 60 * 1000,
-        '90d': 90 * 24 * 60 * 60 * 1000,
-        '365d': 365 * 24 * 60 * 60 * 1000
-      }
-      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
-      startTimeFilter = formatDateFilter(now - rangeMs)
-      endTimeFilter = formatDateFilter(now)
-    } else if (filters.value.startDate && filters.value.endDate) {
+
+    if (filters.value.startDate && filters.value.endDate) {
       startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
       endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
     }
@@ -276,62 +279,27 @@ const showFilter = ref(false)
 const filters = ref({
   startDate: '',
   endDate: '',
-  progress: null as number | null
+  status: null as string | null
 })
 
 const dateError = ref('')
 
-const progressOptions = [
-  { title: '未开始', value: 0 },
-  { title: '进行中', value: 1 },
-  { title: '已完成', value: 2 }
+const statusOptions = [
+  { title: '排队中', value: 'pending' },
+  { title: '进行中', value: 'in_progress' },
+  { title: '已完成', value: 'completed' }
 ] as const
 
 // 判断是否有激活的筛选条件
 const hasActiveFilters = computed(() => {
   return filters.value.startDate ||
     filters.value.endDate ||
-    filters.value.progress !== null
+    filters.value.status !== null
 })
 
 // 筛选后的任务列表
 const filteredTasks = computed(() => {
-  let result = [tasks.value]
-
-  // 应用日期筛选
-  if (filters.value.startDate) {
-    result = result.filter(task => {
-      const taskDate = new Date(task.publishTime)
-      const startDate = new Date(filters.value.startDate)
-      return taskDate >= startDate
-    })
-  }
-
-  if (filters.value.endDate) {
-    result = result.filter(task => {
-      const taskDate = new Date(task.publishTime)
-      const endDate = new Date(filters.value.endDate)
-      return taskDate <= endDate
-    })
-  }
-
-  // 应用完成情况筛选
-  if (filters.value.progress !== null) {
-    result = result.filter(task => {
-      switch (filters.value.progress) {
-        case 0: // 未开始
-          return task.progress === 0
-        case 1: // 进行中
-          return task.progress > 0 && task.progress < 100
-        case 2: // 已完成
-          return task.progress === 100
-        default:
-          return true
-      }
-    })
-  }
-
-  return result
+  return tasks.value
 })
 
 const validateDateRange = () => {
@@ -353,14 +321,20 @@ const applyFilters = () => {
     return
   }
   showFilter.value = false
+  // 重置到第一页并重新获取数据
+  currentPage.value = 1
+  fetchTasks(1, pageSize.value)
 }
 
 const resetFilters = () => {
   filters.value = {
     startDate: '',
     endDate: '',
-    progress: null
+    status: null
   }
+  // 重置到第一页并重新获取数据
+  currentPage.value = 1
+  fetchTasks(1, pageSize.value)
 }
 
 // 获取进度条颜色
@@ -371,15 +345,27 @@ const getProgressColor = (progress: number) => {
 }
 
 // 操作按钮处理函数
-const handleNext = (item: any) => {
+const handleNext = (item: Task) => {
   console.log(item.task_id)
   router.push(`/step/${item.task_id}`)
 }
 
-const handleDelete = (item: any) => {
+const handleDelete = (item: Task) => {
   console.log('删除', item)
 }
 
+// 时间格式化函数
+const formatDateTime = (dateTime: string) => {
+  if (!dateTime) return ''
+  const date = new Date(dateTime)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
 
 </script>
 

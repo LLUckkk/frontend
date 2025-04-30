@@ -28,8 +28,8 @@ export default {
   },
 
   //获取某个出版社所有检测的任务
-  getAllDetectionTask() {
-    return http.get('/user-tasks/')
+  getAllDetectionTask(data:any) {
+    return http.get('/user-tasks/',{data})
   },
 
   //提交AI检测任务
