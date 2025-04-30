@@ -1,6 +1,5 @@
 <template>
   <div class="review-page">
-    <v-container>
       <!-- 标题 -->
       <v-row class="mb-6">
         <v-col>
@@ -13,46 +12,23 @@
         <v-col cols="12" sm="8" md="6">
           <v-text-field
             v-model="searchQuery"
-            :label="selectedHeader ? selectedHeader.title : '请选择检索项'"
+            label="搜索出版社"
             append-inner-icon="mdi-magnify"
+            clearable
             density="compact"
             hide-details
             class="search-input"
             @keyup.enter="handleSearch"
             @click:append-inner="handleSearch"
-            :readonly="!selectedHeader"
-            :placeholder="selectedHeader ? '请输入检索内容' : ''"
-          >
-            <template v-slot:append>
-              <v-menu>
-                <template v-slot:activator="{ props }">
-                  <v-btn 
-                    variant="outlined"
-                    color="default" 
-                    v-bind="props"
-                    :append-icon="'mdi-chevron-down'"
-                  >
-                    检索方式
-                  </v-btn>
-                </template>
-                <v-list>
-                  <v-list-item
-                    v-for="header in headers"
-                    :key="header.key"
-                    :value="header.key"
-                    @click="selectHeader(header)"
-                  >
-                    <v-list-item-title>{{ header.title }}</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </template>
-          </v-text-field>
+            @click:clear="handleSearch"
+            placeholder="请输入出版社名称"
+          ></v-text-field>
         </v-col>
         <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-filter"
+          <v-btn 
+            color="primary" 
+            class="text-none mr-2" 
+            prepend-icon="mdi-filter-variant"
             @click="showFilterDialog = true"
           >
             筛选
@@ -60,108 +36,128 @@
         </v-col>
       </v-row>
 
-      <!-- 数据表格 -->
-      <v-data-table
-        :headers="fullHeaders"
-        :items="filteredBookData"
-        class="elevation-1"
-        no-data-text="未检索到相关内容"
-      >
-        <template v-slot:item.status="{ item }">
-          <v-chip
-            :color="getStatusColor(item.status)"
-            size="small"
-          >
-            {{ item.status }}
-          </v-chip>
-        </template>
+      <v-card class="elevation-2">
+        <v-data-table
+          :headers="headers"
+          :items="tasks"
+          class="elevation-0"
+          :items-per-page="pageSize"
+          hover
+          :width="'100%'"
+          :loading="loading"
+          hide-default-footer
+        >
+          <template v-slot:top>
+            <div class="d-flex align-center pa-4">
+              <div class="text-caption text-medium-emphasis">
+                共 {{ totalTasks }} 条记录
+              </div>
+            </div>
+          </template>
 
-        <template v-slot:item.operation="{ item }">
-          <v-btn
-            size="small"
-            :color="item.status === '未完成' ? 'primary' : 'info'"
-            variant="text"
-            @click="goToTaskDetail(item)"
-          >
-            {{ item.operation }}
-          </v-btn>
-        </template>
-      </v-data-table>
-    </v-container>
+          <template v-slot:item.publisher_avatar="{ item }">
+            <v-avatar size="40">
+              <v-img :src="item.publisher_avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'" :alt="item.publisher_username"></v-img>
+            </v-avatar>
+          </template>
+
+          <template v-slot:item.status="{ item }">
+            <v-chip
+              :color="getStatusColor(item.status)"
+              size="small"
+              class="status-chip"
+            >
+              {{ getStatusName(item.status) }}
+            </v-chip>
+          </template>
+
+          <template v-slot:item.actions="{ item }">
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              color="primary"
+              class="mr-2"
+              @click="goToTaskDetail(item)"
+            >
+              <v-icon>mdi-eye</v-icon>
+            </v-btn>
+          </template>
+        </v-data-table>
+        
+        <div class="d-flex align-center justify-center pa-4">
+          <div class="d-flex align-center">
+            <span class="text-caption mr-2">每页显示</span>
+            <v-select
+              v-model="pageSize"
+              :items="[5, 10, 20, 50, 100]"
+              density="compact"
+              variant="outlined"
+              hide-details
+              style="width: 100px"
+              @update:model-value="handlePageSizeChange"
+            ></v-select>
+            <span class="text-caption ml-2">条</span>
+          </div>
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="7"
+            class="ml-4"
+            @update:model-value="handlePageChange"
+          ></v-pagination>
+        </div>
+      </v-card>
 
     <!-- 筛选对话框 -->
-    <v-dialog v-model="showFilterDialog" max-width="500px">
-      <v-card>
-        <v-card-title class="text-h5 d-flex align-center">
-          筛选条件
-          <v-spacer></v-spacer>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            class="ml-2"
-            @click="showFilterDialog = false"
-          >
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
+    <v-dialog v-model="showFilterDialog" max-width="500">
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
         <v-card-text>
-          <v-container>
-            <v-row>
-              <v-col cols="12">
-                <v-select
-                  v-model="filters.status"
-                  :items="['全部', '未完成', '已完成']"
-                  label="状态"
-                  clearable
-                ></v-select>
-              </v-col>
-              <v-col cols="12">
-                <v-select
-                  v-model="filters.publisher"
-                  :items="[...new Set(bookData.map(item => item.publisher))]"
-                  label="出版社"
-                  clearable
-                ></v-select>
-              </v-col>
-              <v-col cols="12">
-                <v-row>
-                  <v-col cols="6">
-                    <v-text-field
-                      v-model="filters.dateRange.start"
-                      label="开始日期"
-                      type="date"
-                      clearable
-                      @update:model-value="validateDateRange"
-                    ></v-text-field>
-                  </v-col>
-                  <v-col cols="6">
-                    <v-text-field
-                      v-model="filters.dateRange.end"
-                      label="结束日期"
-                      type="date"
-                      clearable
-                      @update:model-value="validateDateRange"
-                    ></v-text-field>
-                  </v-col>
-                </v-row>
-                <v-alert
-                  v-if="dateError"
-                  type="error"
-                  density="compact"
-                  class="mt-2"
-                >
-                  {{ dateError }}
-                </v-alert>
-              </v-col>
-            </v-row>
-          </v-container>
+          <div class="d-flex flex-column gap-4">
+            <v-select
+              v-model="filters.status"
+              :items="statusOptions"
+              label="任务状态"
+              clearable
+              hide-details
+            ></v-select>
+            
+            <v-select
+              v-model="filters.timeRange"
+              :items="timeRangeOptions"
+              label="快速选择时间范围"
+              clearable
+              hide-details
+              @update:model-value="handleTimeRangeChange"
+            ></v-select>
+
+            <div class="d-flex align-center gap-4">
+              <v-text-field
+                v-model="filters.startDate"
+                label="开始时间"
+                type="datetime-local"
+                hide-details
+                density="compact"
+                :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"
+              ></v-text-field>
+              <v-text-field
+                v-model="filters.endDate"
+                label="结束时间"
+                type="datetime-local"
+                hide-details
+                density="compact"
+                :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"
+              ></v-text-field>
+            </div>
+          </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="applyFilters">应用筛选</v-btn>
-          <v-btn color="error" @click="resetFilters">重置</v-btn>
+          <v-btn color="grey" variant="text" @click="resetFilters">重置</v-btn>
+          <v-btn color="primary" @click="applyFilters">应用</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -169,175 +165,349 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import reviewerApi from '@/api/reviewer'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 const router = useRouter()
-const searchQuery = ref('')
-const selectedHeader = ref<typeof headers[0] | null>(null)
-const showFilterDialog = ref(false)
+const snackbar = useSnackbarStore()
+
+interface Task {
+  maual_review_id: number
+  maual_review_time: string
+  publisher_username: string
+  publisher_avatar: string
+  image_count: number
+  status: string
+}
 
 const headers = [
-  { title: '任务', key: 'code', align: 'start' as const },
-  { title: '发布时间', key: 'date', align: 'start' as const },
-  { title: '出版社', key: 'publisher', align: 'start' as const },
-  { title: '图片数量', key: 'amount', align: 'start' as const },
-  { title: '状态', key: 'status', align: 'start' as const },
-]
+  { title: '头像', key: 'publisher_avatar', align: 'center', sortable: false },
+  { title: '出版社', key: 'publisher_username', align: 'start' },
+  { title: '图片数量', key: 'image_count', align: 'start' },
+  { title: '状态', key: 'status', align: 'center' },
+  { title: '提交时间', key: 'maual_review_time', align: 'center' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false },
+] as const
 
-// 完整的表头（包含操作列）
-const fullHeaders = [
-  ...headers,
-  { title: '操作', key: 'operation', align: 'start' as const },
-]
+// 分页相关
+const tasks = ref<Task[]>([])
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalTasks = ref(0)
+const totalPages = ref(1)
 
-const bookData = [
-  {
-    code: 'crc',
-    date: '2011.11',
-    publisher: 'JCLR',
-    amount: 20,
-    status: '未完成',
-    operation: '任务详情'
-  },
-  {
-    code: 'cvf',
-    date: '2025.1.1',
-    publisher: 'QNMD',
-    amount: 50,
-    status: '已完成',
-    operation: '任务详情'
-  }
-]
+// 搜索相关
+const searchQuery = ref('')
 
-const selectHeader = (header: typeof headers[0]) => {
-  selectedHeader.value = header
-  searchQuery.value = '' // 清空搜索框
-}
-
-const handleSearch = () => {
-  if (!selectedHeader.value || !searchQuery.value) return
-}
-
-// 筛选条件
-const filters = ref({
+// 筛选相关
+const showFilterDialog = ref(false)
+const filters = ref<{
+  status: string | null
+  timeRange: string | null
+  startDate: string | null
+  endDate: string | null
+}>({
   status: null,
-  publisher: null,
-  amount: null,
-  dateRange: {
-    start: null,
-    end: null
-  }
+  timeRange: null,
+  startDate: null,
+  endDate: null
 })
 
-const dateError = ref('')
+const statusOptions = [
+  { title: '未完成', value: 'undo' },
+  { title: '已完成', value: 'completed' },
+]
 
-const validateDateRange = () => {
-  if (filters.value.dateRange.start && filters.value.dateRange.end) {
-    const startDate = new Date(filters.value.dateRange.start)
-    const endDate = new Date(filters.value.dateRange.end)
-    
-    if (startDate > endDate) {
-      dateError.value = '开始日期不能大于结束日期'
-      return false
-    }
-  }
-  dateError.value = ''
-  return true
-}
-
-const filteredBookData = computed(() => {
-  let filtered = bookData
-
-  // 应用搜索过滤
-  if (selectedHeader.value && searchQuery.value) {
-    const key = selectedHeader.value.key
-    filtered = filtered.filter(item => {
-      const value = item[key as keyof typeof item]
-      if (typeof value === 'number') {
-        return value.toString().includes(searchQuery.value)
-      }
-      return value.toString().toLowerCase().includes(searchQuery.value.toLowerCase())
-    })
-  }
-
-  // 应用筛选条件
-  if (filters.value.status && filters.value.status !== '全部') {
-    filtered = filtered.filter(item => item.status === filters.value.status)
-  }
-  if (filters.value.publisher) {
-    filtered = filtered.filter(item => item.publisher === filters.value.publisher)
-  }
-  if (filters.value.amount) {
-    filtered = filtered.filter(item => item.amount >= Number(filters.value.amount))
-  }
-  
-  // 应用日期范围筛选
-  if (filters.value.dateRange.start || filters.value.dateRange.end) {
-    filtered = filtered.filter(item => {
-      const itemDate = new Date(item.date)
-      const startDate = filters.value.dateRange.start ? new Date(filters.value.dateRange.start) : null
-      const endDate = filters.value.dateRange.end ? new Date(filters.value.dateRange.end) : null
-      
-      if (startDate && endDate) {
-        return itemDate >= startDate && itemDate <= endDate
-      } else if (startDate) {
-        return itemDate >= startDate
-      } else if (endDate) {
-        return itemDate <= endDate
-      }
-      return true
-    })
-  }
-
-  return filtered
-})
+const timeRangeOptions = [
+  { title: '最近一天', value: '1d' },
+  { title: '最近一周', value: '7d' },
+  { title: '最近一月', value: '30d' },
+  { title: '最近三月', value: '90d' },
+  { title: '最近一年', value: '365d' }
+]
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case '未完成':
+    case 'undo':
       return 'error'
-    case '已完成':
+    case 'completed':
       return 'success'
     default:
       return 'grey'
   }
 }
 
-const goToTaskDetail = (item: any) => {
+const getStatusName = (status: string) => {
+  switch (status) {
+    case 'undo':
+      return '未完成'
+    case 'completed':
+      return '已完成'
+    default:
+      return status
+  }
+}
+
+const formatTime = (timestamp: string) => {
+  return timestamp // 后端返回的时间格式已经是正确的，直接显示
+}
+
+const goToTaskDetail = (task: Task) => {
+  //router.push(`/task/detail/${task.maual_review_id}`)
   router.push(`/task/detail`)
 }
 
-const applyFilters = () => {
-  if (!validateDateRange()) {
-    return
+// 时间验证相关
+const timeError = ref('')
+
+// 处理快速选择时间范围变化
+const handleTimeRangeChange = (value: string | null) => {
+  if (value) {
+    filters.value.startDate = null
+    filters.value.endDate = null
+    timeError.value = ''
   }
-  showFilterDialog.value = false
 }
 
+// 处理自定义时间变化
+const handleCustomTimeChange = () => {
+  filters.value.timeRange = null
+  
+  if (!filters.value.startDate || !filters.value.endDate) {
+    timeError.value = '开始时间和结束时间不能为空'
+    return
+  }
+
+  const startTime = new Date(filters.value.startDate).getTime()
+  const endTime = new Date(filters.value.endDate).getTime()
+  
+  if (startTime >= endTime) {
+    timeError.value = '开始时间必须早于结束时间'
+  } else {
+    timeError.value = ''
+  }
+}
+
+// 重置筛选条件
 const resetFilters = () => {
   filters.value = {
     status: null,
-    publisher: null,
-    amount: null,
-    dateRange: {
-      start: null,
-      end: null
+    timeRange: null,
+    startDate: null,
+    endDate: null
+  }
+  timeError.value = ''
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchTasks(1, 10)
+  showFilterDialog.value = false
+}
+
+// 应用筛选条件
+const applyFilters = () => {
+  if (timeError.value) {
+    return
+  }
+  
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchTasks(1, 10)
+  showFilterDialog.value = false
+}
+
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  pageSize.value = 10
+  fetchTasks(1, 10)
+}
+
+// 从后端获取任务数据
+const fetchTasks = async (page: number, pageSize: number) => {
+  loading.value = true
+  try {
+    // 计算时间筛选
+    let startTimeFilter: string | undefined
+    let endTimeFilter: string | undefined
+    if (filters.value.timeRange) {
+      const now = Date.now()
+      const ranges: Record<string, number> = {
+        '1d': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+        '90d': 90 * 24 * 60 * 60 * 1000,
+        '365d': 365 * 24 * 60 * 60 * 1000
+      }
+      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+      startTimeFilter = formatDateFilter(now - rangeMs)
+      endTimeFilter = formatDateFilter(now)
+    } else if (filters.value.startDate && filters.value.endDate) {
+      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
+      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
     }
+
+    const params = {
+      page,
+      page_size: pageSize,
+      query: searchQuery.value || '',
+      status: filters.value.status || '',
+      start_time: startTimeFilter,
+      end_time: endTimeFilter
+    }
+    const response = await reviewerApi.getReviewerTasks(params)
+    const { results: taskList, current_page, total_pages, total_users } = response.data
+    
+    tasks.value = taskList.map((task: any) => ({
+      maual_review_id: task.maual_review_id,
+      maual_review_time: task.maual_review_time,
+      publisher_username: task.publisher_username,
+      publisher_avatar: 'http://122.9.45.122' + task.publisher_avatar || '',
+      image_count: task.image_count,
+      status: task.status
+    }))
+    
+    currentPage.value = current_page
+    totalPages.value = total_pages
+    totalTasks.value = total_users
+  } catch (error) {
+    console.error('获取任务列表失败:', error)
+    snackbar.showMessage('获取任务列表失败', 'error')
+  } finally {
+    loading.value = false
   }
 }
+
+// 处理页码变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchTasks(page, pageSize.value)
+}
+
+// 处理每页数量变化
+const handlePageSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  fetchTasks(1, size)
+}
+
+// 时间格式化，用于筛选条件
+const formatDateFilter = (timestamp: number) => {
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+// 初始化
+onMounted(() => {
+  // 以下为测试数据
+  tasks.value = [
+    {
+      maual_review_id: 1,
+      maual_review_time: '2023-09-01 10:00:00',
+      publisher_username: '出版社A',
+      publisher_avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
+      image_count: 12,
+      status: 'undo'
+    },
+    {
+      maual_review_id: 2,
+      maual_review_time: '2023-09-02 11:30:00',
+      publisher_username: '出版社B',
+      publisher_avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
+      image_count: 8,
+      status: 'completed'
+    },
+    {
+      maual_review_id: 3,
+      maual_review_time: '2023-09-03 14:20:00',
+      publisher_username: '出版社C',
+      publisher_avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
+      image_count: 20,
+      status: 'completed'
+    }
+  ]
+  totalTasks.value = tasks.value.length
+  totalPages.value = 1
+  // fetchTasks(currentPage.value, pageSize.value)
+})
 </script>
 
 <style scoped>
-.review-page {
-  padding: 20px;
+.v-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.status-chip {
+  font-size: 12px;
+  padding: 0 12px;
+  font-weight: 500;
+}
+
+.v-btn.v-btn--size-small {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.v-btn--icon.v-btn--size-small .v-icon {
+  font-size: 18px;
+}
+
+:deep(.v-data-table) {
+  border-radius: 12px;
+  width: 100%;
+}
+
+:deep(.v-data-table-header) {
+  background-color: rgb(var(--v-theme-surface-variant));
+}
+
+:deep(.v-data-table-header th) {
+  font-weight: 600;
+  font-size: 14px;
+  color: rgb(var(--v-theme-on-surface));
+  white-space: nowrap;
+}
+
+:deep(.v-data-table__tr td) {
+  white-space: nowrap;
+}
+
+:deep(.v-data-table__tr:hover) {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+:deep(.v-chip) {
+  font-weight: 500;
 }
 
 .search-input {
-  max-width: 500px;
+  max-width: 400px;
 }
 
-.ml-2 {
-  margin-left: 8px;
+:deep(.v-text-field .v-field__input) {
+  min-height: 40px;
+}
+
+:deep(.v-btn--variant-outlined) {
+  border-color: rgb(var(--v-theme-outline));
+}
+
+:deep(.v-select .v-field__input) {
+  min-height: 40px;
+}
+
+:deep(.v-select .v-field__append-inner) {
+  padding-top: 0;
 }
 </style>
