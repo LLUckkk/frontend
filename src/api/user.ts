@@ -6,7 +6,7 @@ export const isLoggedIn = ref(localStorage.getItem("isLoggedIn") === "true")
 
 export default {
   login(data: any) {
-    return http.post('/login/', data).then(res => {
+    return http.post('/admin-login/', data).then(res => {
       isLoggedIn.value = true
       localStorage.setItem("isLoggedIn", "true")
       return res

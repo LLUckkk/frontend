@@ -199,11 +199,69 @@
                 {{ getStateName(selectedRequest.state) }}
               </v-chip>
             </div>
+
+            <v-divider></v-divider>
+
+            <div v-if="reviewDetails" class="d-flex flex-column gap-4">
+              <div class="d-flex flex-column gap-2">
+                <div class="text-subtitle-1 font-weight-bold">相关图片</div>
+                <div class="d-flex flex-wrap gap-2">
+                  <v-img
+                    v-for="img in reviewDetails.imgs"
+                    :key="img.id"
+                    :src="img.url"
+                    width="200"
+                    height="200"
+                    cover
+                    class="rounded-lg"
+                  ></v-img>
+                </div>
+              </div>
+
+              <div class="d-flex flex-column gap-2">
+                <div class="text-subtitle-1 font-weight-bold">审核人列表</div>
+                <div class="d-flex flex-wrap gap-4">
+                  <div v-for="person in reviewDetails.persons" :key="person.id" class="d-flex align-center">
+                    <v-avatar size="32" class="mr-2">
+                      <v-img :src="person.avatar" :alt="person.username"></v-img>
+                    </v-avatar>
+                    <span>{{ person.username }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="reviewDetails.reason" class="d-flex flex-column gap-2">
+                <div class="text-subtitle-1 font-weight-bold">申请理由</div>
+                <div class="text-body-1">{{ reviewDetails.reason }}</div>
+              </div>
+            </div>
           </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="showReviewDialog = false">关闭</v-btn>
+          <v-btn color="error" variant="text" :disabled="!selectedRequest || selectedRequest.state !== 'pending'" @click="handleReviewRequest(0)">拒绝</v-btn>
+          <v-btn color="success" :disabled="!selectedRequest || selectedRequest.state !== 'pending'" @click="handleReviewRequest(1)">通过</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 拒绝理由对话框 -->
+    <v-dialog v-model="showRejectDialog" max-width="500">
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">拒绝理由</v-card-title>
+        <v-card-text>
+          <v-textarea
+            v-model="rejectReason"
+            label="请输入拒绝理由"
+            rows="3"
+            hide-details
+            variant="outlined"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="showRejectDialog = false">取消</v-btn>
+          <v-btn color="error" @click="handleReviewRequest(0)">确认拒绝</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -276,6 +334,13 @@ const timeRangeOptions = [
 // 审核详情对话框相关
 const showReviewDialog = ref(false)
 const selectedRequest = ref<ReviewRequest | null>(null)
+const reviewDetails = ref<{
+  imgs: Array<{ id: number, url: string }>
+  persons: Array<{ id: number, username: string, avatar: string }>
+  reason: string
+} | null>(null)
+const rejectReason = ref('')
+const showRejectDialog = ref(false)
 
 const getStateColor = (state: string) => {
   switch (state) {
@@ -307,9 +372,38 @@ const formatTime = (timestamp: string) => {
   return timestamp // 后端返回的时间格式已经是正确的，直接显示
 }
 
-const openReviewDialog = (request: ReviewRequest) => {
+const openReviewDialog = async (request: ReviewRequest) => {
   selectedRequest.value = request
-  showReviewDialog.value = true
+  try {
+    const response = await reviewApi.getReviewRequestDetails(request.id)
+    reviewDetails.value = response.data
+    showReviewDialog.value = true
+  } catch (error) {
+    console.error('获取审核详情失败:', error)
+    snackbar.showMessage('获取审核详情失败', 'error')
+  }
+}
+
+const handleReviewRequest = async (choice: number) => {
+  if (choice === 0 && !rejectReason.value) {
+    showRejectDialog.value = true
+    return
+  }
+
+  try {
+    await reviewApi.handleReviewRequest(selectedRequest.value!.id, {
+      choice,
+      reason: rejectReason.value
+    })
+    snackbar.showMessage(choice === 1 ? '已通过审核' : '已拒绝审核', 'success')
+    showReviewDialog.value = false
+    showRejectDialog.value = false
+    rejectReason.value = ''
+    fetchRequests(currentPage.value, pageSize.value)
+  } catch (error) {
+    console.error('处理审核请求失败:', error)
+    snackbar.showMessage('处理审核请求失败', 'error')
+  }
 }
 
 // 时间验证相关
