@@ -94,7 +94,7 @@
         <template v-slot:item.permission="{ item }">
           <div class="d-flex flex-column align-center">
             <v-chip
-              v-if="item.role === 'admin'"
+              v-if="item.role === 'admin'||item.email === ROOT_ADMIN_EMAIL"
               size="x-small"
               color="error"
               class="mb-1"
