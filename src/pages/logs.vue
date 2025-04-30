@@ -98,7 +98,6 @@
           <v-select v-model="filters.operationType" :items="operationTypeOptions" label="操作类型" clearable
             hide-details></v-select>
 
-          <v-select v-model="filters.status" :items="statusOptions" label="任务状态" clearable hide-details></v-select>
 
           <v-select v-model="filters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
             @update:model-value="handleTimeRangeChange"></v-select>
@@ -166,8 +165,6 @@
 
           <v-select v-model="downloadFilters.operationType" :items="operationTypeOptions" label="操作类型" clearable
             hide-details></v-select>
-
-          <v-select v-model="downloadFilters.status" :items="statusOptions" label="任务状态" clearable hide-details></v-select>
 
           <v-select v-model="downloadFilters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
             @update:model-value="handleDownloadTimeRangeChange"></v-select>
@@ -240,13 +237,11 @@ const searchQuery = ref('')
 const showFilterDialog = ref(false)
 const filters = ref<{
   operationType: string | null
-  status: string | null
   timeRange: string | null
   startDate: string | null
   endDate: string | null
 }>({
   operationType: null,
-  status: null,
   timeRange: null,
   startDate: null,
   endDate: null
@@ -259,10 +254,7 @@ const operationTypeOptions = [
   { title: '提交审核', value: 'manual_review' }
 ]
 
-const statusOptions = [
-  { title: '已完成', value: 'completed' },
-  { title: '待处理', value: 'pending' }
-]
+
 
 const timeRangeOptions = [
   { title: '最近一天', value: '1d' },
@@ -307,7 +299,6 @@ const handleCustomTimeChange = () => {
 const resetFilters = () => {
   filters.value = {
     operationType: null,
-    status: null,
     timeRange: null,
     startDate: null,
     endDate: null
@@ -361,7 +352,6 @@ const fetchLogs = async (page: number, pageSize: number) => {
       page_size: pageSize,
       query: searchSelectedUser.value?.username || '',
       operation_type: filters.value.operationType || '',
-      status: filters.value.status || '',
       startTime: startTimeFilter,
       endTime: endTimeFilter
     }
@@ -481,13 +471,11 @@ onMounted(() => {
 const showDownloadDialog = ref(false)
 const downloadFilters = ref<{
   operationType: string | null
-  status: string | null
   timeRange: string | null
   startDate: string | null
   endDate: string | null
 }>({
   operationType: null,
-  status: null,
   timeRange: null,
   startDate: null,
   endDate: null
@@ -527,7 +515,6 @@ const handleDownloadCustomTimeChange = () => {
 const resetDownloadFilters = () => {
   downloadFilters.value = {
     operationType: null,
-    status: null,
     timeRange: null,
     startDate: null,
     endDate: null
@@ -591,7 +578,6 @@ const downloadLogs = async () => {
 
     const params = {
       query: downloadSelectedUsers.value.map(user => user.id),
-      status: downloadFilters.value.status || '',
       operation_type: downloadFilters.value.operationType || '',
       startTime: startTimeFilter,
       endTime: endTimeFilter
@@ -603,7 +589,7 @@ const downloadLogs = async () => {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `logs_${new Date().toISOString().split('T')[0]}.csv`)
+    link.setAttribute('download', `logs.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

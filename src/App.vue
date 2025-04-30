@@ -31,6 +31,7 @@
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="文件管理" value="files" @click="goToFiles"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users" @click="goToUsers"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs" @click="goToLogs"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核请求" value="reviewRequests" @click="goToReviews"></v-list-item>
         <v-divider class="my-2"></v-divider>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>
         <v-list-item 
@@ -85,6 +86,10 @@
       <v-btn v-if="isLoggedIn" to="/logs" value="logs">
         <v-icon>mdi-clipboard-text-clock</v-icon>
         <span>日志记录</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/reviews" value="reviews">
+        <v-icon>mdi-gavel</v-icon>
+        <span>人工审核请求</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" @click="handleLogout" value="logout">
         <v-icon>mdi-logout</v-icon>
@@ -200,6 +205,10 @@ const goToUsers = () => {
 
 const goToLogs = () => {
   router.push('/logs')
+}
+
+const goToReviews = () => {
+  router.push('/reviews')
 }
 
 onMounted(async () => {

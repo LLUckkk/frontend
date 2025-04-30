@@ -1,15 +1,7 @@
 import http from './request'
 
 export default {
-  getLogs(params: {
-    page: number;
-    page_size: number;
-    query?: string;
-    role?: string;
-    operation_type?: string;
-    startTime?: string;
-    endTime?: string;
-  }) {
+  getLogs(params: any) {
     return http.get('/user_action_log/', { params });
   },
 
