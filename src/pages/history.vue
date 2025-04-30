@@ -73,8 +73,8 @@
         <template v-slot:item.status="{ item }">
           <div class="d-flex justify-center">
             <v-chip :color="getStatusColor(item.status)" size="small" class="operation-chip">
-          {{ getStatus(item.status) }}
-        </v-chip>
+              {{ getStatus(item.status) }}
+            </v-chip>
           </div>
         </template>
 
@@ -123,6 +123,7 @@ const snackbar = useSnackbarStore()
 const headers = [
   { title: '任务ID', key: 'task_id', align: 'center' as const, width: '120px' },
   { title: '上传时间', key: 'upload_time', align: 'center' as const, width: '180px' },
+  { title: '完成时间', key: 'completion_time', align: 'center' as const, width: '180px' },
   { title: '检测状态', key: 'status', align: 'center' as const, width: '200px' },
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const, width: '350px' }
 ]
@@ -230,8 +231,8 @@ onMounted(async () => {
   }
 })
 
-const getStatus = (status:string) => {
-  switch(status){
+const getStatus = (status: string) => {
+  switch (status) {
     case 'pending':
       return '排队中'
     case 'in_progress':
@@ -243,8 +244,8 @@ const getStatus = (status:string) => {
   }
 }
 
-const getStatusColor = (status:string) => {
-  switch(status){
+const getStatusColor = (status: string) => {
+  switch (status) {
     case 'pending':
       return 'yellow'
     case 'in_progress':
@@ -290,7 +291,7 @@ const hasActiveFilters = computed(() => {
 
 // 筛选后的任务列表
 const filteredTasks = computed(() => {
-  let result = [...tasks.value]
+  let result = [tasks.value]
 
   // 应用日期筛选
   if (filters.value.startDate) {
@@ -366,7 +367,8 @@ const getProgressColor = (progress: number) => {
 
 // 操作按钮处理函数
 const handleNext = (item: any) => {
-  router.push(`/step/${item.id}`)
+  console.log(item.task_id)
+  router.push(`/step/${item.task_id}`)
 }
 
 const handleDelete = (item: any) => {
