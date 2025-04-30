@@ -133,7 +133,7 @@ interface Image {
 }
 
 interface Person {
-  id: string
+  id: number
   username: string
   avatar: string
 }
@@ -195,8 +195,8 @@ const selectedFakeCount = computed(() => fakeImages.value.filter(img => img.sele
 const selectedRealCount = computed(() => realImages.value.filter(img => img.selected).length)
 
 const reviewImages = computed(() => [
-  fakeImages.value.filter(img => img.selected),
-  realImages.value.filter(img => img.selected)
+  ...fakeImages.value.filter((img: Image) => img.selected).map((img: Image) => img.image_id),
+  ...realImages.value.filter((img: Image) => img.selected).map((img: Image) => img.image_id)
 ]);
 
 const selectedPeople = computed(() => selectedPeopleList.value.length)
@@ -244,7 +244,7 @@ const searchPeople = async (query: string) => {
 const emitUpdate = () => {
   emit('update', {
     reviewImages,
-    selectedReviewers: selectedPeopleList.value.map(person => person.id)
+    selectedReviewers: selectedPeopleList.value
   })
 }
 
