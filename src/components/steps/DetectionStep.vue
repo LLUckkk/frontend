@@ -88,7 +88,7 @@
                       v-slot="{ isHovering, props }">
                       <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
                         rounded="lg" @click="toggleImageSelection(img, 'fake')">
-                        <v-img :src="img.image_url" cover height="100%">
+                        <v-img :src="getImageUrl(img.image_url)" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
                               <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
@@ -124,7 +124,7 @@
                       v-slot="{ isHovering, props }">
                       <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
                         rounded="lg" @click="toggleImageSelection(img, 'real')">
-                        <v-img :src="img.image_url" cover height="100%">
+                        <v-img :src="getImageUrl(img.image_url)" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
                               <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
@@ -157,16 +157,16 @@
           <v-row>
             <!-- 左侧图片信息 (保持原有样式) -->
             <v-col cols="12" md="6" class="pr-md-6">
-              <v-img :src="selectedImage?.image_url" max-height="500" contain class="rounded-lg"></v-img>
+              <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"></v-img>
               <div class="mt-6">
                 <div class="d-flex flex-column gap-2">
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
-                    <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
+                    <span class="text-body-1">检测时间：{{ props.detection_time }}</span>
                   </div>
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
-                    <span class="text-body-1">检测编号：{{ detectionResult.detectionId }}</span>
+                    <span class="text-body-1">检测编号：{{ props.task_id }}</span>
                   </div>
                 </div>
               </div>
@@ -248,8 +248,10 @@ const detectionResult = ref<DetectionResult>({
 
 const props = withDefaults(defineProps<{
   task_id?: string
+  detection_time?: string
 }>(), {
-  task_id: ''
+  task_id: '',
+  detection_time: ''
 })
 
 const include_image = 1
@@ -272,6 +274,20 @@ const selectedImage = ref<Image | null>(null)
 const viewImageDetail = (image: Image) => {
   selectedImage.value = image
   showImageDetail.value = true
+}
+
+const getSelectedImageUrl = (selectedImage: Image | null) => {
+  if (selectedImage) {
+    console.log(import.meta.env.VITE_API_URL + selectedImage.image_url)
+    return import.meta.env.VITE_API_URL + selectedImage.image_url
+  } else {
+    console.log('no selected')
+    return ''
+  }
+}
+
+const getImageUrl = (url: string) => {
+  return import.meta.env.VITE_API_URL + url
 }
 
 const completeDetection = () => {

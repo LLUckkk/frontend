@@ -291,7 +291,7 @@ const hasActiveFilters = computed(() => {
 
 // 筛选后的任务列表
 const filteredTasks = computed(() => {
-  let result = [...tasks.value]
+  let result = [tasks.value]
 
   // 应用日期筛选
   if (filters.value.startDate) {

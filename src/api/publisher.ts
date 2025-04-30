@@ -56,9 +56,6 @@ export default {
 
   downloadReport(data: any) {
     return http.get(`/tasks/${data}/report/`)
-  }
-  getAllDetectionTask(){
-    return http.get('/all-user-tasks/')
   },
 
   getPublisherReviewTasks(params: {

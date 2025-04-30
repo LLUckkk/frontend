@@ -19,7 +19,7 @@
 
           <!-- 第二步：发布审核 -->
           <v-stepper-window-item :value="2">
-            <ReviewStep @update="handleReviewUpdate" />
+            <ReviewStep @update="handleReviewUpdate" :task_id="taskId" />
           </v-stepper-window-item>
         </v-stepper-window>
 
@@ -58,8 +58,7 @@ const taskId = computed(() => (route.params as RouteParams & { id: string }).id)
 const currentStep = ref(1)
 const detectionComplete = ref(false)
 const reviewData = ref({
-  selectedFakeImages: [],
-  selectedRealImages: [],
+  reviewImages:[],
   selectedReviewers: []
 })
 
@@ -80,8 +79,8 @@ const canProceed = computed(() => {
     case 1:
       return detectionComplete.value
     case 2:
-      const { selectedFakeImages, selectedRealImages, selectedReviewers } = reviewData.value
-      const hasSelectedImages = selectedFakeImages.length > 0 || selectedRealImages.length > 0
+      const { reviewImages, selectedReviewers } = reviewData.value
+      const hasSelectedImages = reviewImages.length > 0
       return hasSelectedImages && selectedReviewers.length > 0
     default:
       return true
@@ -113,14 +112,14 @@ const nextStep = () => {
     if (canProceed.value) {
       // TODO: 处理完成逻辑
       try {
-        publisher.dispatchAnnual({ task_id: taskId, reviewers: reviewData.value.selectedReviewers })
+        publisher.dispatchAnnual({ image_ids:reviewData.value.reviewImages, reviewers: reviewData.value.selectedReviewers })
         snackbar.showMessage('已提交人工复查任务，请等待管理员审核', 'success')
       } catch (error) {
         console.log(error)
         snackbar.showMessage('提交人工复查任务失败')
       }
       snackbar.showMessage('人工审核任务发布成功！', 'success')
-      router.push('/history')
+      router.push('/annual')
     }
   }
 }
