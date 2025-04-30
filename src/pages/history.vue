@@ -13,10 +13,6 @@
         <v-icon class="mr-2">mdi-filter</v-icon>
         筛选
       </v-btn>
-      <v-btn variant="outlined" class="mr-2" @click="showSelection = !showSelection"
-        :color="showSelection ? 'primary' : undefined">
-        {{ showSelection ? '取消选择' : '批量选择' }}
-      </v-btn>
       <!-- <v-btn variant="outlined">新建</v-btn> -->
     </v-card-title>
 
@@ -68,15 +64,19 @@
 
     <v-card-text class="pa-0 mt-4">
       <v-data-table v-model="selected" :headers="headers" :items="filteredTasks" :items-per-page="10"
-        class="elevation-1" :show-select="showSelection" item-value="id">
+        class="elevation-1" :show-select="showSelection" item-value="id" hide-default-footer>
         <!-- 任务状态列自定义 -->
-        <template v-slot:item.status="{ item }">
+        <template v-slot:item.task_id="{ item }">
+          <span>{{ item.task_id }}</span>
+        </template>
+
+        <!-- <template v-slot:item.status="{ item }">
           <div class="d-flex justify-center">
             <v-chip :color="getStatusColor(item.status)" size="small" class="operation-chip">
               {{ getStatus(item.status) }}
             </v-chip>
           </div>
-        </template>
+        </template> -->
 
         <!-- 操作列自定义 -->
         <template v-slot:item.actions="{ item }">
@@ -90,34 +90,58 @@
             </v-btn>
           </div>
         </template>
+
+        <template v-slot:top>
+          <div class="d-flex align-center pa-4">
+            <div class="text-caption text-medium-emphasis">
+              共 {{ totalTasks }} 条记录
+            </div>
+          </div>
+        </template>
       </v-data-table>
 
-      <!-- 批量操作按钮 -->
-      <v-fade-transition>
-        <v-card v-if="showSelection && selected.length > 0" class="batch-actions" elevation="2">
-          <v-card-text class="d-flex align-center">
-            <span class="mr-4">已选择 {{ selected.length }} 项</span>
-            <v-btn color="primary" variant="text" @click="handleBatchDownload">
-              批量下载
-            </v-btn>
-            <v-btn color="error" variant="text" @click="handleBatchDelete">
-              批量删除
-            </v-btn>
-          </v-card-text>
-        </v-card>
-      </v-fade-transition>
+      <div class="d-flex align-center justify-center pa-4">
+        <div class="d-flex align-center">
+          <span class="text-caption mr-2">每页显示</span>
+          <v-select
+            v-model="pageSize"
+            :items="[5, 10, 20, 50, 100]"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="width: 100px"
+            @update:model-value="handlePageSizeChange"
+          ></v-select>
+          <span class="text-caption ml-2">条</span>
+        </div>
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          :total-visible="7"
+          class="ml-4"
+          @update:model-value="handlePageChange"
+        ></v-pagination>
+      </div>
+
     </v-card-text>
   </v-card>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
 
 const router = useRouter()
 const snackbar = useSnackbarStore()
+
+// 分页相关
+const pageSize = ref(10)
+const currentPage = ref(1)
+const totalTasks = ref(0)
+const totalPages = ref(1)
+const loading = ref(false)
 
 // 表格列定义
 const headers = [
@@ -128,107 +152,89 @@ const headers = [
   { title: '操作', key: 'actions', sortable: false, align: 'center' as const, width: '350px' }
 ]
 
-// 模拟任务数据
-// const tasks = ref([
-//   {
-//     id: 'TASK2024001',
-//     publishTime: '2024-01-01 12:00:00',
-//     reviewer: '张三',
-//     progress: 0,
-//   },
-//   {
-//     id: 'TASK2024002',
-//     publishTime: '2024-01-01 13:00:00',
-//     reviewer: '李四',
-//     progress: 100,
-//   },
-//   {
-//     id: 'TASK2024003',
-//     publishTime: '2024-01-01 14:30:00',
-//     reviewer: '王五',
-//     progress: 35,
-//   },
-//   {
-//     id: 'TASK2024004',
-//     publishTime: '2024-01-01 15:45:00',
-//     reviewer: '赵六',
-//     progress: 100,
-//   },
-//   {
-//     id: 'TASK2024005',
-//     publishTime: '2024-01-02 09:15:00',
-//     reviewer: '张三',
-//     progress: 80,
-//   },
-//   {
-//     id: 'TASK2024006',
-//     publishTime: '2024-01-02 10:30:00',
-//     reviewer: '李四',
-//     progress: 0,
-//   },
-//   {
-//     id: 'TASK2024007',
-//     publishTime: '2024-01-02 11:45:00',
-//     reviewer: '王五',
-//     progress: 60,
-//   },
-//   {
-//     id: 'TASK2024008',
-//     publishTime: '2024-01-02 14:20:00',
-//     reviewer: '赵六',
-//     progress: 100,
-//   },
-//   {
-//     id: 'TASK2024009',
-//     publishTime: '2024-01-03 09:00:00',
-//     reviewer: '张三',
-//     progress: 25,
-//   },
-//   {
-//     id: 'TASK2024010',
-//     publishTime: '2024-01-03 10:15:00',
-//     reviewer: '李四',
-//     progress: 100,
-//   },
-//   {
-//     id: 'TASK2024011',
-//     publishTime: '2024-01-03 11:30:00',
-//     reviewer: '王五',
-//     progress: 45,
-//   },
-//   {
-//     id: 'TASK2024012',
-//     publishTime: '2024-01-03 14:00:00',
-//     reviewer: '赵六',
-//     progress: 0,
-//   },
-//   {
-//     id: 'TASK2024013',
-//     publishTime: '2024-01-04 09:30:00',
-//     reviewer: '张三',
-//     progress: 90,
-//   },
-//   {
-//     id: 'TASK2024014',
-//     publishTime: '2024-01-04 10:45:00',
-//     reviewer: '李四',
-//     progress: 100,
-//   },
-//   {
-//     id: 'TASK2024015',
-//     publishTime: '2024-01-04 13:15:00',
-//     reviewer: '王五',
-//     progress: 70,
-//   }
-// ])
+// 任务数据
 const tasks = ref<any>([])
-onMounted(async () => {
+
+// 从后端获取任务数据
+const fetchTasks = async (page: number, pageSize: number) => {
+  loading.value = true
   try {
-    tasks.value = (await publisher.getAllDetectionTask()).data
-    console.log(tasks.value)
+    // 计算时间筛选
+    let startTimeFilter: string | undefined
+    let endTimeFilter: string | undefined
+    if (filters.value.timeRange) {
+      const now = Date.now()
+      const ranges: Record<string, number> = {
+        '1d': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+        '90d': 90 * 24 * 60 * 60 * 1000,
+        '365d': 365 * 24 * 60 * 60 * 1000
+      }
+      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+      startTimeFilter = formatDateFilter(now - rangeMs)
+      endTimeFilter = formatDateFilter(now)
+    } else if (filters.value.startDate && filters.value.endDate) {
+      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
+      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
+    }
+
+    const params = {
+      page,
+      page_size: pageSize,
+      status: filters.value.status || '',
+      startTime: startTimeFilter,
+      endTime: endTimeFilter
+    }
+    const response = await publisher.getAllDetectionTask(params)
+    const { tasks: taskList, current_page, total_pages, total_count } = response.data
+    
+    tasks.value = taskList.map((task: any) => ({
+      task_id: task.task_id,
+      upload_time: task.upload_time,
+      completion_time: task.completion_time,
+      status: task.status
+    }))
+    
+    currentPage.value = current_page
+    totalPages.value = total_pages
+    totalTasks.value = total_count
   } catch (error) {
-    snackbar.showMessage('获取检测任务失败', 'error')
+    console.error('获取任务列表失败:', error)
+    snackbar.showMessage('获取任务列表失败', 'error')
+  } finally {
+    loading.value = false
   }
+}
+
+// 处理页码变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchTasks(page, pageSize.value)
+}
+
+// 处理每页数量变化
+const handlePageSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1 // 重置到第一页
+  fetchTasks(1, size)
+}
+
+// 时间格式化，用于筛选条件
+const formatDateFilter = (timestamp: number) => {
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+// 初始化
+onMounted(() => {
+  fetchTasks(currentPage.value, pageSize.value)
 })
 
 const getStatus = (status: string) => {
@@ -256,7 +262,6 @@ const getStatusColor = (status: string) => {
       return 'grey'
   }
 }
-
 
 // 选择相关状态
 const showSelection = ref(false)
@@ -375,14 +380,7 @@ const handleDelete = (item: any) => {
   console.log('删除', item)
 }
 
-// 批量操作处理函数
-const handleBatchDownload = () => {
-  console.log('批量下载', selected.value)
-}
 
-const handleBatchDelete = () => {
-  console.log('批量删除', selected.value)
-}
 </script>
 
 <style scoped>
