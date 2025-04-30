@@ -6,5 +6,8 @@ export default {
   },
   getReviewerTasks(params: any) {
     return http.get('/get_reviewer_tasks/', { params })
-}
+  },
+  getReviewRequest(params: any) {
+    return http.get('/get_publisher_review_tasks/',{ params })
+  },
 }

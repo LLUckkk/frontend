@@ -29,6 +29,15 @@ export default {
   //获取某个出版社所有检测的任务
   getAllDetectionTask(){
     return http.get('/all-user-tasks/')
-  }
+  },
 
+  getPublisherReviewTasks(params: {
+    page?: number
+    page_size?: number
+    status?: string
+    startTime?: string
+    endTime?: string
+  }) {
+    return http.get('/get_publisher_review_tasks/', { params })
+  }
 }
