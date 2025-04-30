@@ -88,7 +88,7 @@
                       v-slot="{ isHovering, props }">
                       <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
                         rounded="lg" @click="toggleImageSelection(img, 'fake')">
-                        <v-img :src="img.url" cover height="100%">
+                        <v-img :src="img.image_url" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
                               <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
@@ -124,7 +124,7 @@
                       v-slot="{ isHovering, props }">
                       <v-card v-bind="props" class="ma-2 position-relative" width="200" height="200" elevation="2"
                         rounded="lg" @click="toggleImageSelection(img, 'real')">
-                        <v-img :src="img.url" cover height="100%">
+                        <v-img :src="img.image_url" cover height="100%">
                           <div class="image-overlay" v-if="isHovering || img.selected">
                             <div class="d-flex flex-column align-center gap-4">
                               <v-checkbox v-model="img.selected" color="primary" class="image-checkbox"></v-checkbox>
@@ -157,9 +157,8 @@
           <v-row>
             <!-- 左侧图片信息 (保持原有样式) -->
             <v-col cols="12" md="6" class="pr-md-6">
-              <v-img :src="selectedImage?.url" max-height="500" contain class="rounded-lg"></v-img>
+              <v-img :src="selectedImage?.image_url" max-height="500" contain class="rounded-lg"></v-img>
               <div class="mt-6">
-                <div class="text-h6 mb-4">{{ selectedImage?.name }}</div>
                 <div class="d-flex flex-column gap-2">
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
@@ -211,12 +210,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useTheme } from 'vuetify'
-import { useRouter } from 'vue-router'
+import { useSnackbarStore } from '@/stores/snackbar'
+import publisher from '@/api/publisher'
 
 interface Image {
-  url: string
-  name: string
-  type: string
+  result_id: string
+  image_url: string
   selected?: boolean
 }
 
@@ -229,113 +228,42 @@ interface DetectionResult {
   realImages: Image[]
 }
 
+const snackbar = useSnackbarStore()
 const theme = useTheme()
 const emit = defineEmits(['complete'])
 const isDarkMode = computed(() => theme.global.current.value.dark)
 //
 const activeTab = ref('analysis')
-const commentText = ref('')
-
-const historyItems = ref([
-  { date: '2023-05-01', action: '首次检测' }
-])
-
-const saveComment = () => {
-  console.log('保存备注:', commentText.value)
-  // 这里添加保存逻辑
-}
 
 
 // 模拟检测结果数据
 const detectionResult = ref<DetectionResult>({
-  detectionTime: '2025.1.28',
-  detectionId: 'abcdefg',
-  totalCount: 25,
-  fakeCount: 20,
-  fakeImages: [
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '造假图片2.jpg',
-      type: 'image/jpeg',
-    }
-  ],
-  realImages: [
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '真实图片1.jpg',
-      type: 'image/jpeg',
-    },
-    {
-      url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      name: '真实图片2.jpg',
-      type: 'image/jpeg',
-    }
-  ]
+  detectionTime: '',
+  detectionId: '',
+  totalCount: 0,
+  fakeCount: 0,
+  fakeImages: [],
+  realImages: []
+})
+
+const props = withDefaults(defineProps<{
+  task_id?: string
+}>(), {
+  task_id: ''
+})
+
+const include_image = 1
+
+onMounted(async () => {
+  // 从本地存储加载主题设置
+  try {
+    detectionResult.value.fakeImages = (await publisher.getFakeImage({ task_id: props.task_id, include_image: 1 })).data.results
+    detectionResult.value.realImages = (await publisher.getNormalImage({ task_id: props.task_id, include_image: 1 })).data.results
+    detectionResult.value.fakeCount = detectionResult.value.fakeImages.length
+    detectionResult.value.totalCount = detectionResult.value.realImages.length + detectionResult.value.fakeCount
+  } catch (error) {
+    snackbar.showMessage('获取检测结果失败', 'error')
+  }
 })
 
 const showImageDetail = ref(false)

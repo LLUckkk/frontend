@@ -14,7 +14,7 @@
         <v-stepper-window>
           <!-- 第一步：AI检测 -->
           <v-stepper-window-item :value="1">
-            <DetectionStep @complete="handleDetectionComplete" />
+            <DetectionStep @complete="handleDetectionComplete" :task_id="taskId"/>
           </v-stepper-window-item>
 
           <!-- 第二步：发布审核 -->
@@ -66,10 +66,11 @@ const reviewData = ref({
 // 组件挂载时获取任务数据
 onMounted(async () => {
   currentStep.value = 1
+  console.log(taskId)
   console.log('挂载成功')
-  if (taskId.value) {
+  if (taskId) {
     // TODO: 根据taskId获取任务数据
-    console.log('获取任务数据:', taskId.value)
+    console.log('获取任务数据:', taskId)
   }
 })
 

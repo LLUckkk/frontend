@@ -1,10 +1,13 @@
 <template>
   <v-row>
-    <v-col cols="12" class="mb-2">
-      <v-select v-model="selectedTag" :items="mappedTag" label="为本批图片添加标签" clearable variant="outlined" hide-details
-        class="w-50" />
+    <v-col cols="6" class="mb-2">
+      <v-select v-model="selectedTag" :items="mappedTag" label="为本批图片添加标签" clearable variant="outlined" hide-details/>
+    </v-col>
+    <v-col cols="6" class="mb-2">
+      <v-text-field v-model="task_name" label="为该检测任务添加名称" @update:modelValue="handleName" variant="outlined"></v-text-field>
     </v-col>
   </v-row>
+
 
   <v-row>
     <v-col cols="12">
@@ -86,6 +89,7 @@ import { useSnackbarStore } from '@/stores/snackbar';
 import upload from '@/api/upload'
 
 const snackbar = useSnackbarStore()
+const task_name = ref('')
 
 interface Image {
   image_id: number
@@ -106,6 +110,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   (e: 'update', selectedImages: Image[]): void
   (e: 'tagChanged', tag: string): void
+  (e: 'addName', task_name: string): void
 }>()
 
 
@@ -211,6 +216,10 @@ const selectAllImages = () => {
   emitUpdate()
 }
 
+const handleName = () => {
+  emit('addName', task_name.value)
+}
+
 const emitUpdate = () => {
   emit('update', displayImages.value.filter(img => img.selected))
 }
@@ -234,13 +243,12 @@ onMounted(async () => {
   }
 })
 
-const tagOptions = ['Biology', 'Medicine', 'Chemistry', 'Graphics', 'Other']
-const mappedTag =[
-  {title: '医学', value: 'Medicine'},
-  {title: '生物', value: 'Biology'},
-  {title: '化学', value:'Chemistry'},
-  {title: '图形学', value: 'Graphics'},
-  {title: '其他', value: 'Other'}
+const mappedTag = [
+  { title: '医学', value: 'Medicine' },
+  { title: '生物', value: 'Biology' },
+  { title: '化学', value: 'Chemistry' },
+  { title: '图形学', value: 'Graphics' },
+  { title: '其他', value: 'Other' }
 ]
 const selectedTag = ref(null)
 
@@ -254,9 +262,6 @@ watch(selectedTag, (newVal) => {
   }
 })
 
-const handleChangedTag = (newTag: string) => {
-  emit('tagChanged', newTag)
-}
 </script>
 
 <style scoped>

@@ -243,7 +243,7 @@
     <v-card>
       <v-card-text>
         <ImageSelectionStep :images="extractedImages" :fileId="fileId" @update="updateSelectedImages"
-          @tagChanged="handleSelectedTag" />
+          @tagChanged="handleSelectedTag" @add-name="handleName"/>
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -262,6 +262,7 @@ import { useRouter } from 'vue-router'
 import uploadApi from '@/api/upload'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
+import publisher from '@/api/publisher'
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -276,6 +277,7 @@ const showProgress = ref(false)
 const extractedImages = ref<Image[]>([])
 const selectedImages = ref<Image[]>([])
 const currentTag = ref<string>('')
+const currentTaskName = ref('')
 
 interface Image {
   image_id: number
@@ -343,6 +345,11 @@ const handleFileSelect = (event: Event) => {
       snackbar.showMessage('不支持的文件格式，请上传 JPG、PNG 、PDF或 ZIP 文件', 'error')
     }
   }
+}
+
+const handleName = async (newName: string) => {
+  console.log(newName)
+  currentTaskName.value = newName
 }
 
 const handleSelectedTag = async (newTag: string) => {
@@ -430,10 +437,20 @@ const handleTag = async (tag: string) => {
 }
 
 
-const handleNext = () => {
+
+
+const handleNext = async () => {
   handleTag(currentTag.value)
   if (canProceed.value) {
-    router.push(`/history`)
+    try{
+      console.log(selectedImages.value)
+      console.log(currentTaskName.value)
+      const task_id = (await publisher.submitDetection({image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName})).data.task_id
+      router.push(`/history`)
+    } catch(error){
+      snackbar.showMessage('提交失败','error')
+    }
+    
   }
 }
 
