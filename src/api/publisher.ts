@@ -28,8 +28,8 @@ export default {
   },
 
   //获取某个出版社所有检测的任务
-  getAllDetectionTask(data:any) {
-    return http.get('/user-tasks/',{data})
+  getAllDetectionTask(data: any) {
+    return http.get('/user-tasks/', { data })
   },
 
   //提交AI检测任务
@@ -47,7 +47,7 @@ export default {
   },
 
   getNormalImage(data: any) {
-    return http.get(`/tasks/${data.task_id}/normal_results/?include_image=${data.include_image}`, )
+    return http.get(`/tasks/${data.task_id}/normal_results/?include_image=${data.include_image}`,)
   },
 
   getSingleImageResult(data: any) {
@@ -55,7 +55,9 @@ export default {
   },
 
   downloadReport(data: any) {
-    return http.get(`/tasks/${data}/report/`)
+    return http.get(`/tasks/${data}/report/`, {
+      responseType: 'blob'
+    })
   },
 
   getPublisherReviewTasks(params: {

@@ -96,23 +96,58 @@
     </v-row>
 
     <!-- 图片详情对话框 -->
-    <v-dialog v-model="showImageDetail" max-width="800">
+    <v-dialog v-model="showImageDetail" max-width="1000">
       <v-card rounded="lg">
-        <v-card-title class="pa-6">
-          <span class="text-h6">图片详情</span>
+        <v-card-title class="pa-6 d-flex">
+          <h1 class="text-h5">图片详情</h1>
           <v-spacer></v-spacer>
           <v-btn icon="mdi-close" variant="text" @click="showImageDetail = false"></v-btn>
         </v-card-title>
+
         <v-card-text class="pa-6">
-          <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"></v-img>
-          <div class="mt-6">
-            <div class="d-flex flex-column gap-2">
-              <div class="info-item d-flex align-center">
-                <v-icon color="grey" class="mr-2">mdi-check-circle</v-icon>
-                <span class="text-body-1">检测结果：{{ selectedImage?.isFake ? '疑似造假' : '正常' }}</span>
+          <v-row>
+            <!-- 左侧图片信息 (保持原有样式) -->
+            <v-col cols="12" md="6" class="pr-md-6">
+              <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"></v-img>
+              <div class="mt-6">
+                <div class="d-flex flex-column gap-2">
+                  <div class="info-item d-flex align-center">
+                    <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
+                    <span class="text-body-1">检测编号：{{ props.task_id }}</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </v-col>
+
+            <!-- 右侧标签页 -->
+            <v-col cols="12" md="6" class="pl-md-6">
+              <v-tabs v-model="activeTab" color="primary">
+                <v-tab value="analysis" style="font-size: 16px;">大模型</v-tab>
+                <v-tab value="history" style="font-size: 16px;">深度学习</v-tab>
+                <v-tab value="comments" style="font-size: 16px;">传统方法</v-tab>
+              </v-tabs>
+
+              <v-divider></v-divider>
+
+              <v-window v-model="activeTab" class="mt-4">
+                <v-window-item value="analysis">
+                  <div class="text-h6 mb-4">大模型意见</div>
+                  <!-- 这里放分析结果内容 -->
+                  <!-- <v-chip v-for="(tag, i) in detectionResult.tags" :key="i" class="ma-1">
+                    {{ tag }}
+                  </v-chip> -->
+                </v-window-item>
+
+                <v-window-item value="history">
+                  <div class="text-h6 mb-4">深度学习模型结果</div>
+                </v-window-item>
+
+                <v-window-item value="comments">
+                  <div class="text-h6 mb-4">传统方法结果</div>
+                </v-window-item>
+              </v-window>
+            </v-col>
+          </v-row>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -123,6 +158,7 @@
 import { ref, computed, watch } from 'vue'
 import publisher from '@/api/publisher'
 import { useSnackbarStore } from '@/stores/snackbar'
+const activeTab = ref('analysis')
 
 interface Image {
   image_id: string
@@ -144,7 +180,8 @@ const snackbar = useSnackbarStore()
 const props = withDefaults(defineProps<{
   task_id?: string
 }>(), {
-  task_id: ''
+  task_id: '',
+  detection_time:''
 })
 
 // 模拟图片数据

@@ -41,7 +41,7 @@
                 <!-- 操作按钮 -->
                 <div class="d-flex flex-wrap gap-4">
                   <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
-                    prepend-icon="mdi-file-document-outline" elevation="2">
+                    prepend-icon="mdi-file-document-outline" elevation="2" @click="downloadReport">
                     查看报告
                   </v-btn>
                   <!-- <v-btn
@@ -232,9 +232,33 @@ const snackbar = useSnackbarStore()
 const theme = useTheme()
 const emit = defineEmits(['complete'])
 const isDarkMode = computed(() => theme.global.current.value.dark)
-//
 const activeTab = ref('analysis')
 
+
+const downloadReport = async () => {
+  try {
+    const response = await publisher.downloadReport(props.task_id)
+    const contentDisposition = response.headers['content-disposition']
+
+    let fileName = `task_${props.task_id}_report.pdf`
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) fileName = match[1];
+    }
+
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url); // 释放内存 
+  } catch (error) {
+    snackbar.showMessage('报告下载失败', 'error')
+  }
+}
 
 // 模拟检测结果数据
 const detectionResult = ref<DetectionResult>({
@@ -254,7 +278,7 @@ const props = withDefaults(defineProps<{
   detection_time: ''
 })
 
-const include_image = 1
+
 
 onMounted(async () => {
   // 从本地存储加载主题设置
