@@ -269,6 +269,7 @@ const selectAllReal = () => {
 const viewImageDetail = (img: Image) => {
   selectedImage.value = img
   showImageDetail.value = true
+  
 }
 
 const searchPeople = async (query: string) => {

@@ -156,13 +156,23 @@
         <v-card-text class="pa-6">
           <v-row>
             <!-- 左侧图片信息 (保持原有样式) -->
+            <!-- 图片展示区域 -->
             <v-col cols="12" md="6" class="pr-md-6">
-              <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"></v-img>
+              <div style="position: relative;">
+                <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"></v-img>
+
+                <!-- 检测覆盖层 -->
+                <transition name="fade">
+                  <v-img v-if="activeOverlay" :src="activeOverlay" max-height="500" contain
+                    class="rounded-lg overlay-image"></v-img>
+                </transition>
+              </div>
+
               <div class="mt-6">
                 <div class="d-flex flex-column gap-2">
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
-                    <span class="text-body-1">检测时间：{{ props.detection_time }}</span>
+                    <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
                   </div>
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
@@ -186,17 +196,88 @@
                 <v-window-item value="analysis">
                   <div class="text-h6 mb-4">大模型意见</div>
                   <!-- 这里放分析结果内容 -->
-                  <!-- <v-chip v-for="(tag, i) in detectionResult.tags" :key="i" class="ma-1">
-                    {{ tag }}
-                  </v-chip> -->
+                  <v-card>
+                    <v-card-text>{{ llm }}</v-card-text>
+                  </v-card>
+                  <!-- <v-text-field>{{ llm }}</v-text-field> -->
                 </v-window-item>
 
                 <v-window-item value="history">
                   <div class="text-h6 mb-4">深度学习模型结果</div>
+                  <!-- 检测维度列表 -->
+                  <v-list class="elevation-1 rounded-lg">
+                    <v-list-item-group>
+                      <template v-for="(dimension, index) in urn" :key="dimension.method">
+                        <v-list-item class="py-2 px-3">
+                          <div class="d-flex align-center" style="gap: 24px; width: 100%;">
+                            <!-- 名称 -->
+                            <div class="text-body-1 font-weight-medium" style="min-width: 100px;">
+                              {{ dimension.method }}
+                            </div>
+
+                            <!-- 圆形进度条 -->
+                            <v-progress-circular :model-value="dimension.probability * 100"
+                              :color="getProbabilityColor(dimension.probability)" size="40" width="5">
+                              <span class="text-caption">{{ (dimension.probability * 100).toFixed(0) }}%</span>
+                            </v-progress-circular>
+
+                            <!-- 操作按钮 -->
+                            <v-btn size="small" color="primary" variant="text"
+                              @click.stop="showOverlay(dimension.mask_image)">
+                              <v-icon left>mdi-image-filter-center-focus</v-icon>
+                              显示
+                            </v-btn>
+                          </div>
+                        </v-list-item>
+
+                        <v-divider v-if="index < urn.length - 1"></v-divider>
+                      </template>
+                    </v-list-item-group>
+                  </v-list>
+
+
                 </v-window-item>
 
                 <v-window-item value="comments">
                   <div class="text-h6 mb-4">传统方法结果</div>
+                  <!-- 检测结果卡片 -->
+                  <v-card class="mb-4" elevation="2">
+                    <v-card-text>
+                      <v-list-item>
+                        <v-list-item-icon>
+                          <v-icon :color="exif.photoshop_edited ? 'error' : 'success'">
+                            {{ exif.photoshop_edited ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                          </v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                          <v-list-item-title>是否经过PS处理</v-list-item-title>
+                          <v-list-item-subtitle>
+                            <span :class="exif.photoshop_edited ? 'error--text' : 'success--text'">
+                              {{ exif.photoshop_edited ? '检测到PS痕迹' : '未检测到PS痕迹' }}
+                            </span>
+                          </v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                      <v-divider class="my-2"></v-divider>
+
+                      <v-list-item>
+                        <v-list-item-icon>
+                          <v-icon :color="exif.time_modified ? 'error' : 'success'">
+                            {{ exif.time_modified ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                          </v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                          <v-list-item-title>是否经过时间修改</v-list-item-title>
+                          <v-list-item-subtitle>
+                            <span :class="exif.time_modified ? 'error--text' : 'success--text'">
+                              {{ exif.time_modified ? '检测到时间篡改' : '未检测到时间修改' }}
+                            </span>
+                          </v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+                    </v-card-text>
+                  </v-card>
                 </v-window-item>
               </v-window>
             </v-col>
@@ -233,7 +314,11 @@ const theme = useTheme()
 const emit = defineEmits(['complete'])
 const isDarkMode = computed(() => theme.global.current.value.dark)
 const activeTab = ref('analysis')
-
+const llm = ref('')
+const ela = ref()
+const urn = ref()
+const exif = ref()
+const activeOverlay = ref()
 
 const downloadReport = async () => {
   try {
@@ -278,8 +363,6 @@ const props = withDefaults(defineProps<{
   detection_time: ''
 })
 
-
-
 onMounted(async () => {
   // 从本地存储加载主题设置
   try {
@@ -295,9 +378,35 @@ onMounted(async () => {
 const showImageDetail = ref(false)
 const selectedImage = ref<Image | null>(null)
 
+
+const fetchImageDetection = async (result_id: string) => {
+  try {
+    const responese = (await publisher.getSingleImageResult(result_id)).data
+    llm.value = responese.llm
+    ela.value = responese.ela_image
+    urn.value = responese.sub_methods
+    detectionResult.value.detectionTime = responese.timestamps
+    exif.value = responese.exif
+    console.log(urn.value)
+  } catch (error) {
+    snackbar.showMessage('获取图片检测结果失败', 'error')
+  }
+}
+
 const viewImageDetail = (image: Image) => {
   selectedImage.value = image
   showImageDetail.value = true
+  fetchImageDetection(image.result_id)
+}
+
+const showOverlay = (imageUrl: string) => {
+  activeOverlay.value = imageUrl
+}
+
+const getProbabilityColor = (probability: number): string => {
+  if (probability > 0.8) return "red"
+  if (probability > 0.5) return "orange"
+  return "green"
 }
 
 const getSelectedImageUrl = (selectedImage: Image | null) => {
@@ -358,6 +467,45 @@ const hasSelectedImages = computed(() => selectedFakeCount.value > 0 || selected
 </script>
 
 <style scoped>
+.v-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 调整各列宽度 */
+.dimension-name {
+  min-width: 120px;
+}
+
+.dimension-probability {
+  min-width: 200px;
+}
+
+/* 进度条内部文字样式 */
+.v-progress-linear__content {
+  font-size: 0.75rem;
+}
+
+.overlay-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 .detection-summary {
   position: relative;
   display: flex;
