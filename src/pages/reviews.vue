@@ -180,16 +180,6 @@
             <v-divider></v-divider>
 
             <div class="d-flex flex-column gap-2">
-              <div class="text-subtitle-1 font-weight-bold">文件信息</div>
-              <div class="d-flex align-center">
-                <v-icon class="mr-2">mdi-file</v-icon>
-                <span>文件类型：{{ selectedRequest.file_type }}</span>
-              </div>
-            </div>
-
-            <v-divider></v-divider>
-
-            <div class="d-flex flex-column gap-2">
               <div class="text-subtitle-1 font-weight-bold">审核状态</div>
               <v-chip
                 :color="getStateColor(selectedRequest.state)"
@@ -209,7 +199,7 @@
                   <v-img
                     v-for="img in reviewDetails.imgs"
                     :key="img.id"
-                    :src="img.url"
+                    :src="getImageUrl(img.url)"
                     width="200"
                     height="200"
                     cover
@@ -223,7 +213,7 @@
                 <div class="d-flex flex-wrap gap-4">
                   <div v-for="person in reviewDetails.persons" :key="person.id" class="d-flex align-center">
                     <v-avatar size="32" class="mr-2">
-                      <v-img :src="person.avatar" :alt="person.username"></v-img>
+                      <v-img :src="getImageUrl(person.avatar)" :alt="person.username"></v-img>
                     </v-avatar>
                     <span>{{ person.username }}</span>
                   </div>
@@ -286,7 +276,6 @@ interface ReviewRequest {
 const headers = [
   { title: '头像', key: 'avatar', align: 'center', sortable: false },
   { title: '出版社', key: 'username', align: 'start' },
-  { title: '文件类型', key: 'file_type', align: 'start' },
   { title: '审核状态', key: 'state', align: 'center' },
   { title: '提交时间', key: 'time', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
@@ -330,6 +319,11 @@ const timeRangeOptions = [
   { title: '最近三月', value: '90d' },
   { title: '最近一年', value: '365d' }
 ]
+
+
+const getImageUrl =(url:string)=>{
+  return import.meta.env.VITE_API_URL + url
+}
 
 // 审核详情对话框相关
 const showReviewDialog = ref(false)

@@ -205,122 +205,130 @@
       </v-card>
     </v-dialog>
 
-    <!-- 详情对话框 -->
-    <v-dialog v-model="showDetailDialog" max-width="1200">
-      <v-card class="elevation-4">
-        <v-card-title class="text-h6 font-weight-bold">上传详情</v-card-title>
-        <v-card-text>
-          <div class="d-flex flex-column gap-4">
-            <!-- 筛选条件 -->
-            <div class="d-flex align-center gap-4">
-              <v-select
-                v-model="detailFilters.aiChecked"
-                :items="[
-                  { title: '全部', value: null },
-                  { title: '已检测', value: true },
-                  { title: '未检测', value: false }
-                ]"
-                label="AI检测状态"
-                density="compact"
-                hide-details
-                style="width: 150px"
-              ></v-select>
-              <v-select
-                v-model="detailFilters.manuallyChecked"
-                :items="[
-                  { title: '全部', value: null },
-                  { title: '已审核', value: true },
-                  { title: '未审核', value: false }
-                ]"
-                label="人工审核状态"
-                density="compact"
-                hide-details
-                style="width: 150px"
-              ></v-select>
-              <v-select
-                v-model="detailFilters.result"
-                :items="[
-                  { title: '全部', value: null },
-                  { title: '真实', value: true },
-                  { title: '虚假', value: false }
-                ]"
-                label="检测结果"
-                density="compact"
-                hide-details
-                style="width: 150px"
-              ></v-select>
-            </div>
+    <!-- 详情抽屉 -->
+    <v-navigation-drawer
+      v-model="showDetailDialog"
+      temporary
+      location="right"
+      width="800"
+    >
+      <v-card-title class="d-flex justify-space-between align-center">
+        <span class="text-h5 font-weight-bold">图片详情</span>
+        <v-btn icon @click="showDetailDialog = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
 
-            <!-- 图片网格 -->
-            <v-row>
-              <v-col
-                v-for="(image, index) in filteredDetailImages"
-                :key="index"
-                cols="12"
-                sm="6"
-                md="4"
-                lg="3"
+      <v-card-text>
+        <!-- 筛选区域 -->
+        <v-row class="mb-4">
+          <v-col cols="12" sm="6" md="3">
+            <v-select
+              v-model="detailFilters.isDetect"
+              :items="[
+                { title: '全部', value: 'all' },
+                { title: '已检测', value: 'true' },
+                { title: '未检测', value: 'false' }
+              ]"
+              item-title="title"
+              item-value="value"
+              label="AI检测状态"
+              hide-details
+              @update:model-value="handleDetailFilterChange"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <v-select
+              v-model="detailFilters.isReview"
+              :items="[
+                { title: '全部', value: 'all' },
+                { title: '已审核', value: 'true' },
+                { title: '未审核', value: 'false' }
+              ]"
+              item-title="title"
+              item-value="value"
+              label="人工审核状态"
+              hide-details
+              @update:model-value="handleDetailFilterChange"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <v-select
+              v-model="detailFilters.detectResult"
+              :disabled="detailFilters.isDetect !== 'true'"
+              :items="[
+                { title: '全部', value: 'all' },
+                { title: '真实', value: 'true' },
+                { title: '虚假', value: 'false' },
+                { title: '未检测', value: 'null' }
+              ]"
+              item-title="title"
+              item-value="value"
+              label="检测结果"
+              hide-details
+              @update:model-value="handleDetailFilterChange"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" sm="6" md="3">
+            <v-select
+              v-model="detailFilters.reviewResult"
+              :disabled="detailFilters.isReview !== 'true'"
+              :items="[
+                { title: '全部', value: 'all' },
+                { title: '真实', value: 'true' },
+                { title: '虚假', value: 'false' },
+                { title: '未审核', value: 'null' }
+              ]"
+              item-title="title"
+              item-value="value"
+              label="审核结果"
+              hide-details
+              @update:model-value="handleDetailFilterChange"
+            ></v-select>
+          </v-col>
+        </v-row>
+
+        <!-- 图片网格 -->
+        <v-row>
+          <v-col
+            v-for="(image, index) in detailImages"
+            :key="index"
+            cols="12"
+            sm="6"
+            md="4"
+            lg="3"
+          >
+            <v-card class="image-card" @click="openImageDialog(image)">
+              <v-img
+                :src="image.url"
+                aspect-ratio="1"
+                cover
+                class="image-thumbnail"
               >
-                <v-card class="image-card" @click="openImageDialog(image)">
-                  <v-img
-                    :src="image.url"
-                    aspect-ratio="1"
-                    cover
-                    class="image-thumbnail"
-                  >
-                    <template v-slot:placeholder>
-                      <v-row class="fill-height ma-0" align="center" justify="center">
-                        <v-progress-circular indeterminate color="grey-lighten-5"></v-progress-circular>
-                      </v-row>
-                    </template>
-                  </v-img>
-                  <v-card-text class="pt-2">
-                    <div class="d-flex justify-space-between align-center">
-                      <div class="text-caption">
-                        <v-icon
-                          :color="image.aiChecked ? 'success' : 'error'"
-                          size="small"
-                          class="mr-1"
-                        >
-                          {{ image.aiChecked ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                        </v-icon>
-                        AI检测
-                      </div>
-                      <div class="text-caption">
-                        <v-icon
-                          :color="image.manuallyChecked ? 'success' : 'error'"
-                          size="small"
-                          class="mr-1"
-                        >
-                          {{ image.manuallyChecked ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                        </v-icon>
-                        人工审核
-                      </div>
-                    </div>
-                    <div class="text-caption mt-1">
-                      <v-icon
-                        :color="image.result ? 'success' : 'error'"
-                        size="small"
-                        class="mr-1"
-                      >
-                        {{ image.result ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                      </v-icon>
-                      {{ image.result ? '真实' : '虚假' }}
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="showDetailDialog = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+                <template v-slot:placeholder>
+                  <v-row class="fill-height ma-0" align="center" justify="center">
+                    <v-progress-circular indeterminate color="grey-lighten-5"></v-progress-circular>
+                  </v-row>
+                </template>
+              </v-img>
+            </v-card>
+          </v-col>
+        </v-row>
 
-    <!-- 图片查看对话框 -->
+        <!-- 加载更多按钮 -->
+        <div v-if="hasMoreImages" class="text-center mt-4">
+          <v-btn
+            color="primary"
+            :loading="loadingMoreImages"
+            @click="loadMoreImages"
+          >
+            加载更多
+          </v-btn>
+        </div>
+      </v-card-text>
+    </v-navigation-drawer>
+
+    <!-- 图片详情对话框 -->
     <v-dialog v-model="showImageDialog" max-width="800">
       <v-card class="elevation-4">
         <v-card-title class="text-h6 font-weight-bold">图片详情</v-card-title>
@@ -335,33 +343,43 @@
             <div class="d-flex flex-column gap-2">
               <div class="d-flex align-center">
                 <v-icon
-                  :color="selectedImage?.aiChecked ? 'success' : 'error'"
+                  :color="selectedImage?.isDetect === 'true' ? 'success' : 'error'"
                   size="small"
                   class="mr-1"
                 >
-                  {{ selectedImage?.aiChecked ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  {{ selectedImage?.isDetect === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
                 </v-icon>
-                <span>AI检测状态：{{ selectedImage?.aiChecked ? '已检测' : '未检测' }}</span>
+                <span>AI检测状态：{{ selectedImage?.isDetect === 'true' ? '已检测' : '未检测' }}</span>
               </div>
               <div class="d-flex align-center">
                 <v-icon
-                  :color="selectedImage?.manuallyChecked ? 'success' : 'error'"
+                  :color="selectedImage?.isReview === 'true' ? 'success' : 'error'"
                   size="small"
                   class="mr-1"
                 >
-                  {{ selectedImage?.manuallyChecked ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  {{ selectedImage?.isReview === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
                 </v-icon>
-                <span>人工审核状态：{{ selectedImage?.manuallyChecked ? '已审核' : '未审核' }}</span>
+                <span>人工审核状态：{{ selectedImage?.isReview === 'true' ? '已审核' : '未审核' }}</span>
               </div>
               <div class="d-flex align-center">
                 <v-icon
-                  :color="selectedImage?.result ? 'success' : 'error'"
+                  :color="selectedImage?.detectResult === 'true' ? 'success' : 'error'"
                   size="small"
                   class="mr-1"
                 >
-                  {{ selectedImage?.result ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  {{ selectedImage?.detectResult === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
                 </v-icon>
-                <span>检测结果：{{ selectedImage?.result ? '真实' : '虚假' }}</span>
+                <span>检测结果：{{ selectedImage?.detectResult === 'true' ? '真实' : selectedImage?.detectResult === 'false' ? '虚假' : '未检测' }}</span>
+              </div>
+              <div class="d-flex align-center">
+                <v-icon
+                  :color="selectedImage?.reviewResult === 'true' ? 'success' : 'error'"
+                  size="small"
+                  class="mr-1"
+                >
+                  {{ selectedImage?.reviewResult === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                </v-icon>
+                <span>审核结果：{{ selectedImage?.reviewResult === 'true' ? '真实' : selectedImage?.reviewResult === 'false' ? '虚假' : '未审核' }}</span>
               </div>
             </div>
           </div>
@@ -394,9 +412,10 @@ interface File {
 interface Image {
   id: number
   url: string
-  aiChecked: boolean
-  manuallyChecked: boolean
-  result: boolean
+  isDetect: string
+  isReview: string
+  detectResult: string | null
+  reviewResult: string | null
 }
 
 interface User {
@@ -461,14 +480,22 @@ const timeRangeOptions = [
 // 详情相关
 const showDetailDialog = ref(false)
 const selectedFile = ref<File | null>(null)
+const detailImages = ref<any[]>([])
+const detailPage = ref(1)
+const detailPageSize = ref(20)
+const hasMoreImages = ref(false)
+const loadingMoreImages = ref(false)
+
 const detailFilters = ref<{
-  aiChecked: boolean | null
-  manuallyChecked: boolean | null
-  result: boolean | null
+  isDetect: string
+  isReview: string
+  detectResult: string
+  reviewResult: string
 }>({
-  aiChecked: null,
-  manuallyChecked: null,
-  result: null
+  isDetect: 'all',
+  isReview: 'all',
+  detectResult: 'all',
+  reviewResult: 'all'
 })
 
 // 图片查看相关
@@ -576,10 +603,53 @@ const applyFilters = () => {
   showFilterDialog.value = false
 }
 
-// 打开详情对话框
-const openDetailDialog = (file: File) => {
+// 打开详情抽屉
+const openDetailDialog = async (file: File) => {
   selectedFile.value = file
   showDetailDialog.value = true
+  detailPage.value = 1
+  detailImages.value = []
+  await fetchDetailImages()
+}
+
+// 获取详情图片
+const fetchDetailImages = async () => {
+  if (!selectedFile.value) return
+  
+  loadingMoreImages.value = true
+  try {
+    const response = await fileApi.getFileImages(selectedFile.value.id, {
+      page: detailPage.value,
+      page_size: detailPageSize.value,
+      ...detailFilters.value
+    })
+    
+    const { imgs, has_next } = response.data
+    if (detailPage.value === 1) {
+      detailImages.value = imgs
+    } else {
+      detailImages.value.push(...imgs)
+    }
+    hasMoreImages.value = has_next
+  } catch (error) {
+    console.error('获取图片详情失败:', error)
+    snackbar.showMessage('获取图片详情失败', 'error')
+  } finally {
+    loadingMoreImages.value = false
+  }
+}
+
+// 加载更多图片
+const loadMoreImages = async () => {
+  detailPage.value++
+  await fetchDetailImages()
+}
+
+// 处理筛选变化
+const handleDetailFilterChange = () => {
+  detailPage.value = 1
+  detailImages.value = []
+  fetchDetailImages()
 }
 
 // 打开删除对话框
@@ -629,24 +699,6 @@ const deleteSingleImage = async () => {
     }
   }
 }
-
-// 过滤详情图片
-const filteredDetailImages = computed(() => {
-  if (!selectedFile.value) return []
-  
-  return selectedFile.value.images.filter(image => {
-    if (detailFilters.value.aiChecked !== null && image.aiChecked !== detailFilters.value.aiChecked) {
-      return false
-    }
-    if (detailFilters.value.manuallyChecked !== null && image.manuallyChecked !== detailFilters.value.manuallyChecked) {
-      return false
-    }
-    if (detailFilters.value.result !== null && image.result !== detailFilters.value.result) {
-      return false
-    }
-    return true
-  })
-})
 
 // 格式化时间
 const formatTime = (timestamp: number) => {
@@ -717,9 +769,10 @@ const fetchFiles = async (page: number, pageSize: number) => {
         {
           id: file.id,
           url: file.file_url || '',
-          aiChecked: file.ai_checked || false,
-          manuallyChecked: file.manually_checked || false,
-          result: file.result || false
+          isDetect: file.ai_checked ? 'true' : 'false',
+          isReview: file.manually_checked ? 'true' : 'false',
+          detectResult: file.result ? 'true' : file.result === false ? 'false' : null,
+          reviewResult: file.result ? 'true' : file.result === false ? 'false' : null
         }
       ]
     }))

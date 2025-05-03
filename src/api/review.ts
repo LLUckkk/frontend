@@ -11,6 +11,6 @@ export default {
 
     // 处理审核请求
     handleReviewRequest(id: number, data: any) {
-        return http.post(`/handle_reviewRequest/${id}/`, {data})
+        return http.post(`/handle_reviewRequest/${id}/`, data)
     }
 }

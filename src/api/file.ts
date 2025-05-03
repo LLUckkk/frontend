@@ -18,5 +18,17 @@ export default {
   // 删除文件
   deleteFile(fileId: number) {
     return http.delete(`/upload/${fileId}/delete/`);
+  },
+
+  // 获取文件图片列表
+  getFileImages(fileId: number, params: {
+    page: number;
+    page_size: number;
+    isDetect: string;
+    isReview: string;
+    detectResult: string;
+    reviewResult: string;
+  }) {
+    return http.get(`/get_file_image/${fileId}/`, { params });
   }
 }
