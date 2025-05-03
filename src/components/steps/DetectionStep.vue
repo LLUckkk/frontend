@@ -29,7 +29,7 @@
                     <div class="info-item d-flex align-center" :class="isDarkMode ? 'info-item-dark' : ''">
                       <v-icon :color="isDarkMode ? 'grey-lighten-1' : 'grey-darken-2'"
                         class="mr-2">mdi-clock-outline</v-icon>
-                      <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
+                      <span class="text-body-1">检测时间：{{ formatDateTime(detectionResult.detectionTime) }}</span>
                     </div>
                     <div class="info-item d-flex align-center" :class="isDarkMode ? 'info-item-dark' : ''">
                       <v-icon :color="isDarkMode ? 'grey-lighten-1' : 'grey-darken-2'" class="mr-2">mdi-pound</v-icon>
@@ -155,7 +155,6 @@
 
         <v-card-text class="pa-6">
           <v-row>
-            <!-- 左侧图片信息 (保持原有样式) -->
             <!-- 图片展示区域 -->
             <v-col cols="12" md="6" class="pr-md-6">
               <div style="position: relative;">
@@ -163,7 +162,7 @@
 
                 <!-- 检测覆盖层 -->
                 <transition name="fade">
-                  <v-img v-if="activeOverlay" :src="activeOverlay" max-height="500" contain
+                  <v-img v-if="activeOverlay && isOverlayVisible" :src="activeOverlay" max-height="500" contain
                     class="rounded-lg overlay-image"></v-img>
                 </transition>
               </div>
@@ -172,7 +171,7 @@
                 <div class="d-flex flex-column gap-2">
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-clock-outline</v-icon>
-                    <span class="text-body-1">检测时间：{{ detectionResult.detectionTime }}</span>
+                    <span class="text-body-1">检测时间：{{ formatDateTime(detectionResult.detectionTime) }}</span>
                   </div>
                   <div class="info-item d-flex align-center">
                     <v-icon color="grey" class="mr-2">mdi-pound</v-icon>
@@ -222,10 +221,16 @@
                             </v-progress-circular>
 
                             <!-- 操作按钮 -->
-                            <v-btn size="small" color="primary" variant="text"
+                            <!-- <v-btn size="small" color="primary" variant="text"
                               @click.stop="showOverlay(dimension.mask_image)">
                               <v-icon left>mdi-image-filter-center-focus</v-icon>
                               显示
+                            </v-btn> -->
+                            <v-btn size="small" :color="dimension.visible ? 'error' : 'grey'" variant="tonal"
+                              @click="showOverlay(dimension, dimension.mask_image)" class="fake-area-btn ml-4">
+                              <v-icon size="small" :icon="dimension.visible ? 'mdi-eye-off' : 'mdi-eye'"
+                                class="mr-1"></v-icon>
+                              {{ dimension.visible ? '隐藏造假区域' : '显示造假区域' }}
                             </v-btn>
                           </div>
                         </v-list-item>
@@ -309,6 +314,14 @@ interface DetectionResult {
   realImages: Image[]
 }
 
+interface SubMethod {
+  method: string
+  probability: number
+  mask_image: string
+  mask_matrix: any | null
+  visible: boolean // 我们要新增的字段
+}
+
 const snackbar = useSnackbarStore()
 const theme = useTheme()
 const emit = defineEmits(['complete'])
@@ -316,9 +329,10 @@ const isDarkMode = computed(() => theme.global.current.value.dark)
 const activeTab = ref('analysis')
 const llm = ref('')
 const ela = ref()
-const urn = ref()
+const urn = ref<SubMethod[]>([])
 const exif = ref()
 const activeOverlay = ref()
+const isOverlayVisible = ref(false)
 
 const downloadReport = async () => {
   try {
@@ -343,6 +357,19 @@ const downloadReport = async () => {
   } catch (error) {
     snackbar.showMessage('报告下载失败', 'error')
   }
+}
+
+const formatDateTime = (dateTime: string) => {
+  console.log(dateTime)
+  if (!dateTime) return ''
+  const date = new Date(dateTime)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
 // 模拟检测结果数据
@@ -381,12 +408,15 @@ const selectedImage = ref<Image | null>(null)
 
 const fetchImageDetection = async (result_id: string) => {
   try {
-    const responese = (await publisher.getSingleImageResult(result_id)).data
-    llm.value = responese.llm
-    ela.value = responese.ela_image
-    urn.value = responese.sub_methods
-    detectionResult.value.detectionTime = responese.timestamps
-    exif.value = responese.exif
+    const response = (await publisher.getSingleImageResult(result_id)).data
+    llm.value = response.llm
+    ela.value = response.ela_image
+    urn.value = response.sub_methods.map((item: Omit<SubMethod, 'visible'>) => ({
+      ...item,
+      visible: false
+    }))
+    detectionResult.value.detectionTime = response.timestamps
+    exif.value = response.exif
     console.log(urn.value)
   } catch (error) {
     snackbar.showMessage('获取图片检测结果失败', 'error')
@@ -399,8 +429,11 @@ const viewImageDetail = (image: Image) => {
   fetchImageDetection(image.result_id)
 }
 
-const showOverlay = (imageUrl: string) => {
+
+const showOverlay = (item: SubMethod, imageUrl: string) => {
   activeOverlay.value = imageUrl
+  isOverlayVisible.value = !(isOverlayVisible.value)
+  item.visible = !item.visible
 }
 
 const getProbabilityColor = (probability: number): string => {
