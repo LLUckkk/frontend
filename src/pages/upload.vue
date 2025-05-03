@@ -242,7 +242,7 @@
 
     <v-card>
       <v-card-text>
-        <ImageSelectionStep :images="extractedImages" :fileId="fileId" @update="updateSelectedImages"
+        <ImageSelectionStep v-if="fileId" :fileId="fileId" @update="updateSelectedImages"
           @tagChanged="handleSelectedTag" @add-name="handleName"/>
       </v-card-text>
       <v-card-actions>
@@ -268,7 +268,7 @@ const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
-const fileId = ref<string>('')
+const fileId = ref()
 const loading = ref<boolean>(false)
 const snackbar = useSnackbarStore()
 
@@ -393,14 +393,14 @@ const handleSubmit = async () => {
     snackbar.showMessage('文件上传成功，正在处理中...', 'success')
 
     // 获取提取的图片
-    const { data: imagesData } = await uploadApi.getExtractedImages(data.file_id)
-    extractedImages.value = imagesData.images.map((img: any) => ({
-      image_id: img.image_id,
-      image_url: import.meta.env.VITE_API_URL + img.image_url,
-      page_number: img.page_number,
-      extracted_from_pdf: img.extracted_from_pdf,
-      selected: false
-    }))
+    // const { data: imagesData } = await uploadApi.getExtractedImages(data.file_id)
+    // extractedImages.value = imagesData.images.map((img: any) => ({
+    //   image_id: img.image_id,
+    //   image_url: import.meta.env.VITE_API_URL + img.image_url,
+    //   page_number: img.page_number,
+    //   extracted_from_pdf: img.extracted_from_pdf,
+    //   selected: false
+    // }))
 
     // 显示进度页面
     showProgress.value = true

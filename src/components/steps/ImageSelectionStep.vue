@@ -1,10 +1,11 @@
 <template>
   <v-row>
     <v-col cols="6" class="mb-2">
-      <v-select v-model="selectedTag" :items="mappedTag" label="为本批图片添加标签" clearable variant="outlined" hide-details/>
+      <v-select v-model="selectedTag" :items="mappedTag" label="为本批图片添加标签" clearable variant="outlined" hide-details />
     </v-col>
     <v-col cols="6" class="mb-2">
-      <v-text-field v-model="task_name" label="为该检测任务添加名称" @update:modelValue="handleName" variant="outlined"></v-text-field>
+      <v-text-field v-model="task_name" label="为该检测任务添加名称" @update:modelValue="handleName"
+        variant="outlined"></v-text-field>
     </v-col>
   </v-row>
 
@@ -87,6 +88,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSnackbarStore } from '@/stores/snackbar';
 import upload from '@/api/upload'
+import publisher from '@/api/publisher';
 
 const snackbar = useSnackbarStore()
 const task_name = ref('')
@@ -101,10 +103,10 @@ interface Image {
 
 const props = withDefaults(defineProps<{
   images?: Image[]
-  fileId?: string
+  fileId?: number
 }>(), {
   images: () => [],
-  fileId: ''
+  fileId: 0
 })
 
 const emit = defineEmits<{
@@ -129,6 +131,7 @@ const displayImages = computed(() => {
 const loading = ref(false)
 const page = ref(1)
 const hasMore = ref(true)
+const pageSize = ref(20)
 
 // 添加滚动加载方法
 const loadMoreImages = async () => {
@@ -136,22 +139,21 @@ const loadMoreImages = async () => {
 
   loading.value = true
   try {
-    // 模拟加载更多图片
-    //await new Promise(resolve => setTimeout(resolve, 1000))
-    const newImages = Array(5).fill(null).map((_, index) => ({
-      image_id: page.value * 5 + index + 1,
-      image_url: 'https://seafoodfat1ger.github.io/img/toux.jpg',
-      extracted_from_pdf: false,
+    console.log(page.value)
+    console.log(pageSize.value)
+    const response = (await upload.getExtractedImages({ file_id: props.fileId, page_number: page.value, page_size: pageSize.value })).data
+    const newImages = response.images.map((img: any) => ({
+      image_id: img.image_id,
+      image_url: import.meta.env.VITE_API_URL + img.image_url,
+      page_number: img.page_number,
+      extracted_from_pdf: img.extracted_from_pdf,
       selected: false
     }))
-
     localImages.value.push(...newImages)
     page.value++
-
-    // 模拟数据加载完毕
-    if (page.value >= 4) {
-      hasMore.value = false
-    }
+    hasMore.value = localImages.value.length < response.total
+  } catch (error) {
+    snackbar.showMessage('图片加载失败', 'error')
   } finally {
     loading.value = false
   }
@@ -227,19 +229,7 @@ const emitUpdate = () => {
 // 获取提取的图片
 onMounted(async () => {
   if (props.fileId) {
-    //console.log('fileId value:', props.fileId)
-    try {
-      const { data } = await upload.getExtractedImages(props.fileId)
-      localImages.value = data.images.map((img: any) => ({
-        image_id: img.image_id,
-        image_url: import.meta.env.VITE_API_URL + img.image_url,
-        page_number: img.page_number,
-        extracted_from_pdf: img.extracted_from_pdf,
-        selected: false
-      }))
-    } catch (error) {
-      console.error('Failed to get extracted images:', error)
-    }
+    loadMoreImages()
   }
 })
 

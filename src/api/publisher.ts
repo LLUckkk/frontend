@@ -68,5 +68,16 @@ export default {
     endTime?: string
   }) {
     return http.get('/get_publisher_review_tasks/', { params })
+  },
+
+  getTaskSummary() {
+    return http.get('/task-summary/')
+  },
+
+  ifHasPermission(params:{
+    task_id: string
+  }) {
+    return http.get(`/publisher-dectectiontask-access/`, {params})
   }
+
 }

@@ -8,6 +8,11 @@ export default {
     return http.get('/get_reviewer_tasks/', { params })
   },
   getReviewRequest(params: any) {
-    return http.get('/get_publisher_review_tasks/',{ params })
+    return http.get('/get_publisher_review_tasks/', { params })
   },
+
+  getReviewTaskDetail(data: any) {
+    return http.get(`/get-reviewer-request-detail/${data.task_id}`)
+  }
+
 }

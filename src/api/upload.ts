@@ -11,8 +11,7 @@ export default {
   },
 
   getExtractedImages(data: any) {
-    console.log(data)
-    return http.get(`/upload/${data}/extract_images/`)
+    return http.get(`/upload/${data.file_id}/extract_images/?page=${data.page_number}&page_size=${data.page_size}`)
   },
 
   addTag(data: any) {

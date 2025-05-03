@@ -256,7 +256,7 @@ const getProgressColor = (progress: string) => {
 }
 
 const goToTaskDetail = (task: Task) => {
-  router.push(`/task/detail/${task.review_request_id}`)
+  router.push(`/task/${task.review_request_id}`)
 }
 
 // 时间验证相关

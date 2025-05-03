@@ -160,23 +160,7 @@ const snackbar = useSnackbarStore()
 
 // 图片相关数据和方法
 const currentImageIndex = ref(0)
-const images = ref([
-  {
-    id: '1',
-    url: 'https://picsum.photos/id/237/800/600',
-    thumbnail: 'https://picsum.photos/id/237/80/80',
-  },
-  {
-    id: '2',
-    url: 'https://picsum.photos/id/238/800/600',
-    thumbnail: 'https://picsum.photos/id/238/80/80',
-  },
-  {
-    id: '3',
-    url: 'https://picsum.photos/id/239/800/600',
-    thumbnail: 'https://picsum.photos/id/239/80/80',
-  }
-])
+const images = ref([])
 
 const currentImage = computed(() => images.value[currentImageIndex.value])
 

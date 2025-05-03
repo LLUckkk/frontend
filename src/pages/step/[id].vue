@@ -65,11 +65,10 @@ const reviewData = ref({
 // 组件挂载时获取任务数据
 onMounted(async () => {
   currentStep.value = 1
-  console.log(taskId)
-  console.log('挂载成功')
-  if (taskId) {
-    // TODO: 根据taskId获取任务数据
-    console.log('获取任务数据:', taskId)
+  const response = (await publisher.ifHasPermission({task_id: taskId.value})).data.access
+  console.log(response)
+  if(response !== true){
+    router.push('/404')
   }
 })
 
@@ -116,7 +115,7 @@ const nextStep = () => {
         snackbar.showMessage('已提交人工复查任务，请等待管理员审核', 'success')
       } catch (error) {
         console.log(error)
-        snackbar.showMessage('提交人工复查任务失败')
+        snackbar.showMessage('提交人工复查任务失败', 'error')
       }
       snackbar.showMessage('人工审核任务发布成功！', 'success')
       router.push('/annual')

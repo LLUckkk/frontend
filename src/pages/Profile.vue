@@ -54,16 +54,14 @@
                   <v-icon>mdi-image</v-icon>
                 </template>
                 <v-list-item-title>已上传任务</v-list-item-title>
-                <!-- <v-list-item-subtitle>{{ stats.uploadedTasks || 0 }}</v-list-item-subtitle> -->
-                <v-list-item-subtitle>0</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ stats.uploadedTasks }}</v-list-item-subtitle>
               </v-list-item>
               <v-list-item>
                 <template v-slot:prepend>
                   <v-icon>mdi-check-circle</v-icon>
                 </template>
                 <v-list-item-title>已完成任务</v-list-item-title>
-                <!-- <v-list-item-subtitle>{{ stats.completedTasks || 0 }}</v-list-item-subtitle> -->
-                <v-list-item-subtitle>0</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ stats.completedTasks }}</v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </v-card-text>
@@ -80,11 +78,11 @@
                 size="small">
                 <div class="d-flex justify-space-between">
                   <div>
-                    <div class="text-subtitle-1">{{ activity.title }}</div>
-                    <div class="text-caption">{{ activity.time }}</div>
+                    <div class="text-subtitle-1">{{ activity.task_name }}</div>
+                    <div class="text-caption">{{ activity.completion_time }}</div>
                   </div>
-                  <v-chip :color="activity.statusColor" size="small">
-                    {{ activity.status }}
+                  <v-chip :color=getStatusColor(activity.status) size="small">
+                    {{ getStatusType(activity.status) }}
                   </v-chip>
                 </div>
               </v-timeline-item>
@@ -125,55 +123,27 @@
         <v-card-text>
           <v-form>
             <div class="d-flex align-center mb-4">
-              <v-text-field 
-                v-model="passwordForm.email" 
-                label="邮箱" 
-                variant="outlined" 
-                :value="userStore.email"
-                disabled
-                class="flex-grow-1"
-              ></v-text-field>
-              <v-btn 
-                color="primary" 
-                class="ml-2"
-                @click="requestResetEmail" 
-                :loading="sendingEmail"
-                :disabled="countdown > 0"
-              >
+              <v-text-field v-model="passwordForm.email" label="邮箱" variant="outlined" :value="userStore.email" disabled
+                class="flex-grow-1"></v-text-field>
+              <v-btn color="primary" class="ml-2" @click="requestResetEmail" :loading="sendingEmail"
+                :disabled="countdown > 0">
                 {{ countdown > 0 ? `${countdown}秒后重发` : '发送验证码' }}
               </v-btn>
             </div>
-            
+
             <div class="mb-4">
               <div class="text-subtitle-2 mb-2">验证码</div>
               <VerificationCodeInput v-model="passwordForm.verificationCode" />
             </div>
-            
-            <v-text-field 
-              v-model="passwordForm.newPassword" 
-              label="新密码" 
-              type="password"
-              variant="outlined" 
-              class="mb-4"
-              placeholder="请输入新密码"
-            ></v-text-field>
-            
-            <v-text-field 
-              v-model="passwordForm.confirmPassword" 
-              label="确认新密码" 
-              type="password"
-              variant="outlined" 
-              class="mb-4"
-              placeholder="请再次输入新密码"
-            ></v-text-field>
-            
-            <v-btn 
-              color="primary" 
-              block
-              @click="resetPassword" 
-              :loading="resettingPassword"
-              :disabled="!isPasswordValid"
-            >
+
+            <v-text-field v-model="passwordForm.newPassword" label="新密码" type="password" variant="outlined" class="mb-4"
+              placeholder="请输入新密码"></v-text-field>
+
+            <v-text-field v-model="passwordForm.confirmPassword" label="确认新密码" type="password" variant="outlined"
+              class="mb-4" placeholder="请再次输入新密码"></v-text-field>
+
+            <v-btn color="primary" block @click="resetPassword" :loading="resettingPassword"
+              :disabled="!isPasswordValid">
               重置密码
             </v-btn>
           </v-form>
@@ -196,6 +166,7 @@ import { useSnackbarStore } from '@/stores/snackbar'
 import { useUserStore } from '@/stores/user'
 import { useRoute } from 'vue-router'
 import VerificationCodeInput from '@/components/VerificationCodeInput.vue'
+import publisher from '@/api/publisher'
 
 const snackbar = useSnackbarStore()
 const userStore = useUserStore()
@@ -227,10 +198,10 @@ const passwordForm = ref({
 
 // 密码验证
 const isPasswordValid = computed(() => {
-  return passwordForm.value.verificationCode && 
-         passwordForm.value.newPassword && 
-         passwordForm.value.newPassword === passwordForm.value.confirmPassword &&
-         passwordForm.value.newPassword.length >= 6
+  return passwordForm.value.verificationCode &&
+    passwordForm.value.newPassword &&
+    passwordForm.value.newPassword === passwordForm.value.confirmPassword &&
+    passwordForm.value.newPassword.length >= 6
 })
 
 // 关闭密码对话框
@@ -292,7 +263,7 @@ const resetPassword = async () => {
     snackbar.showMessage('请确保两次输入的密码一致且长度不少于6位', 'error')
     return
   }
-  
+
   try {
     resettingPassword.value = true
     await user.confirmPasswordReset({
@@ -322,6 +293,14 @@ onUnmounted(() => {
 // 文件上传相关
 const fileInput = ref<HTMLInputElement | null>(null)
 
+const stats = ref({
+  uploadedTasks: 10,
+  completedTasks: 8
+})
+
+// 模拟最近活动
+const recentActivities = ref()
+
 // 获取用户信息
 onMounted(async () => {
   try {
@@ -335,6 +314,10 @@ onMounted(async () => {
     }
     // 初始化密码表单
     passwordForm.value.email = userStore.email
+    const response = (await publisher.getTaskSummary()).data
+    stats.value.completedTasks = response.completed_task_count
+    stats.value.uploadedTasks = response.total_task_count
+    recentActivities.value = response.recent_tasks
   } catch (error) {
     console.error('获取用户信息失败:', error)
     snackbar.showMessage('获取用户信息失败', 'error')
@@ -358,7 +341,7 @@ const handleAvatarChange = async (event: Event) => {
         userStore.avatar = e.target?.result as string
       }
       reader.readAsDataURL(file)
-      
+
       // 上传头像
       const success = await userStore.updateAvatar(file)
       if (success) {
@@ -389,10 +372,10 @@ const handleUpdateProfile = async () => {
     formData.append('profile', editForm.value.profile)
 
     await user.updateUserInfo(formData)
-    
+
     // 重新获取用户信息以更新 store
     await userStore.fetchUserInfo()
-    
+
     showEditDialog.value = false
     snackbar.showMessage('个人信息更新成功', 'success')
   } catch (error) {
@@ -403,36 +386,30 @@ const handleUpdateProfile = async () => {
   }
 }
 
-// 模拟统计信息
-const stats = ref({
-  uploadedTasks: 10,
-  completedTasks: 8
-})
-
-// 模拟最近活动
-const recentActivities = ref([
-  {
-    title: '上传新任务',
-    time: '2024-03-20 14:30',
-    status: '处理中',
-    statusColor: 'warning',
-    color: 'primary'
-  },
-  {
-    title: '任务检测完成',
-    time: '2024-03-19 16:45',
-    status: '已完成',
-    statusColor: 'success',
-    color: 'success'
-  },
-  {
-    title: '上传新任务',
-    time: '2024-03-18 09:15',
-    status: '已完成',
-    statusColor: 'success',
-    color: 'primary'
+const getStatusType = (status:string) => {
+  switch(status){
+    case 'completed':
+      return '成功'
+    case 'pending':
+      return '等待'
+    case 'in_progress':
+      return '进行中'
+    default:
+      return '未知'
   }
-])
+}
+
+const getStatusColor = (status:string) => {
+  switch(status){
+    case 'completed':
+      return 'success'
+    case 'pending':
+      return 'info'
+    default:
+      return 'grey'
+  }
+}
+
 </script>
 
 <style scoped>
