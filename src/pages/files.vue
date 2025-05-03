@@ -1,4 +1,5 @@
 <template>
+  <v-container>
     <!-- 标题 -->
     <v-row class="mb-6">
       <v-col>
@@ -28,7 +29,7 @@
             <v-chip class="ma-1">
               {{ item.raw.username }}
               <v-avatar start size="24" class="mr-2">
-                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
               </v-avatar>
             </v-chip>
           </template>
@@ -36,7 +37,7 @@
             <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
               <template v-slot:prepend>
                 <v-avatar size="24" class="mr-2">
-                  <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                  <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
                 </v-avatar>
               </template>
             </v-list-item>
@@ -214,7 +215,7 @@
     >
       <v-card-title class="d-flex justify-space-between align-center">
         <span class="text-h5 font-weight-bold">图片详情</span>
-        <v-btn icon @click="showDetailDialog = false">
+        <v-btn icon @click="closeDetailDialog">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -234,7 +235,6 @@
               item-value="value"
               label="AI检测状态"
               hide-details
-              @update:model-value="handleDetailFilterChange"
             ></v-select>
           </v-col>
           <v-col cols="12" sm="6" md="3">
@@ -249,42 +249,26 @@
               item-value="value"
               label="人工审核状态"
               hide-details
-              @update:model-value="handleDetailFilterChange"
             ></v-select>
           </v-col>
           <v-col cols="12" sm="6" md="3">
             <v-select
-              v-model="detailFilters.detectResult"
+              v-model="detailFilters.isFake"
               :disabled="detailFilters.isDetect !== 'true'"
               :items="[
                 { title: '全部', value: 'all' },
                 { title: '真实', value: 'true' },
                 { title: '虚假', value: 'false' },
-                { title: '未检测', value: 'null' }
               ]"
               item-title="title"
               item-value="value"
               label="检测结果"
               hide-details
-              @update:model-value="handleDetailFilterChange"
             ></v-select>
           </v-col>
           <v-col cols="12" sm="6" md="3">
-            <v-select
-              v-model="detailFilters.reviewResult"
-              :disabled="detailFilters.isReview !== 'true'"
-              :items="[
-                { title: '全部', value: 'all' },
-                { title: '真实', value: 'true' },
-                { title: '虚假', value: 'false' },
-                { title: '未审核', value: 'null' }
-              ]"
-              item-title="title"
-              item-value="value"
-              label="审核结果"
-              hide-details
-              @update:model-value="handleDetailFilterChange"
-            ></v-select>
+            <v-btn color="primary" @click="handleDetailFilterChange">确认筛选</v-btn>
+            <v-btn color="grey" variant="text" @click="resetDetailFilters" class="ml-2">重置</v-btn>
           </v-col>
         </v-row>
 
@@ -295,12 +279,12 @@
             :key="index"
             cols="12"
             sm="6"
-            md="4"
+            md="3"
             lg="3"
           >
             <v-card class="image-card" @click="openImageDialog(image)">
               <v-img
-                :src="image.url"
+                :src="getImageUrl(image.url)"
                 aspect-ratio="1"
                 cover
                 class="image-thumbnail"
@@ -311,20 +295,15 @@
                   </v-row>
                 </template>
               </v-img>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn icon color="error" @click.stop="deleteSingleImage(image)">
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
+              </v-card-actions>
             </v-card>
           </v-col>
         </v-row>
-
-        <!-- 加载更多按钮 -->
-        <div v-if="hasMoreImages" class="text-center mt-4">
-          <v-btn
-            color="primary"
-            :loading="loadingMoreImages"
-            @click="loadMoreImages"
-          >
-            加载更多
-          </v-btn>
-        </div>
       </v-card-text>
     </v-navigation-drawer>
 
@@ -363,23 +342,13 @@
               </div>
               <div class="d-flex align-center">
                 <v-icon
-                  :color="selectedImage?.detectResult === 'true' ? 'success' : 'error'"
+                  :color="selectedImage?.isFake === 'true' ? 'success' : 'error'"
                   size="small"
                   class="mr-1"
                 >
-                  {{ selectedImage?.detectResult === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  {{ selectedImage?.isFake === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
                 </v-icon>
-                <span>检测结果：{{ selectedImage?.detectResult === 'true' ? '真实' : selectedImage?.detectResult === 'false' ? '虚假' : '未检测' }}</span>
-              </div>
-              <div class="d-flex align-center">
-                <v-icon
-                  :color="selectedImage?.reviewResult === 'true' ? 'success' : 'error'"
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ selectedImage?.reviewResult === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                </v-icon>
-                <span>审核结果：{{ selectedImage?.reviewResult === 'true' ? '真实' : selectedImage?.reviewResult === 'false' ? '虚假' : '未审核' }}</span>
+                <span>检测结果：{{ selectedImage?.isFake === 'true' ? '真实' : selectedImage?.isFake === 'false' ? '虚假' : '未检测' }}</span>
               </div>
             </div>
           </div>
@@ -391,6 +360,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -414,8 +384,7 @@ interface Image {
   url: string
   isDetect: string
   isReview: string
-  detectResult: string | null
-  reviewResult: string | null
+  isFake: string | null
 }
 
 interface User {
@@ -482,20 +451,18 @@ const showDetailDialog = ref(false)
 const selectedFile = ref<File | null>(null)
 const detailImages = ref<any[]>([])
 const detailPage = ref(1)
-const detailPageSize = ref(20)
+const detailPageSize = ref(12)
 const hasMoreImages = ref(false)
 const loadingMoreImages = ref(false)
 
 const detailFilters = ref<{
   isDetect: string
   isReview: string
-  detectResult: string
-  reviewResult: string
+  isFake: string
 }>({
   isDetect: 'all',
   isReview: 'all',
-  detectResult: 'all',
-  reviewResult: 'all'
+  isFake: 'all',
 })
 
 // 图片查看相关
@@ -610,6 +577,7 @@ const openDetailDialog = async (file: File) => {
   detailPage.value = 1
   detailImages.value = []
   await fetchDetailImages()
+  document.querySelector('.v-navigation-drawer__content')?.addEventListener('scroll', handleScroll)
 }
 
 // 获取详情图片
@@ -621,15 +589,30 @@ const fetchDetailImages = async () => {
     const response = await fileApi.getFileImages(selectedFile.value.id, {
       page: detailPage.value,
       page_size: detailPageSize.value,
-      ...detailFilters.value
+      isDetect: detailFilters.value.isDetect,
+      isReview: detailFilters.value.isReview,
+      isFake: detailFilters.value.isFake
     })
     
     const { imgs, has_next } = response.data
     if (detailPage.value === 1) {
-      detailImages.value = imgs
+      detailImages.value = imgs.map((img: any) => ({
+        id: img.img_id,
+        url: img.img_url,
+        isDetect: img.isDetect,
+        isReview: img.isReview,
+        isFake: img.isFake
+      }))
     } else {
-      detailImages.value.push(...imgs)
+      detailImages.value.push(...imgs.map((img: any) => ({
+        id: img.img_id,
+        url: img.img_url,
+        isDetect: img.isDetect,
+        isReview: img.isReview,
+        isFake: img.isFake
+      })))
     }
+    
     hasMoreImages.value = has_next
   } catch (error) {
     console.error('获取图片详情失败:', error)
@@ -652,12 +635,30 @@ const handleDetailFilterChange = () => {
   fetchDetailImages()
 }
 
+// 重置详情筛选条件
+const resetDetailFilters = () => {
+  detailFilters.value = {
+    isDetect: 'all',
+    isReview: 'all',
+    isFake: 'all'
+  }
+  detailPage.value = 1
+  detailImages.value = []
+  fetchDetailImages()
+}
+
 // 打开删除对话框
 const showDeleteDialog = ref(false)
 const openDeleteDialog = (file: File) => {
   selectedFile.value = file
   showDeleteDialog.value = true
 }
+
+
+const getImageUrl =(url:string)=>{
+  return import.meta.env.VITE_API_URL + url
+}
+
 
 // 删除文件
 const deleteFile = async () => {
@@ -684,12 +685,12 @@ const openImageDialog = (image: Image) => {
 }
 
 // 删除单张图片
-const deleteSingleImage = async () => {
+const deleteSingleImage = async (image: Image) => {
   if (selectedImage.value && selectedFile.value) {
     try {
       // TODO: 调用删除图片API
       selectedFile.value.images = selectedFile.value.images.filter(
-        img => img.id !== selectedImage.value!.id
+        img => img.id !== image.id
       )
       snackbar.showMessage('图片删除成功', 'success')
       showImageDialog.value = false
@@ -771,8 +772,7 @@ const fetchFiles = async (page: number, pageSize: number) => {
           url: file.file_url || '',
           isDetect: file.ai_checked ? 'true' : 'false',
           isReview: file.manually_checked ? 'true' : 'false',
-          detectResult: file.result ? 'true' : file.result === false ? 'false' : null,
-          reviewResult: file.result ? 'true' : file.result === false ? 'false' : null
+          isFake: file.result ? 'true' : file.result === false ? 'false' : null,
         }
       ]
     }))
@@ -824,6 +824,29 @@ const getSubjectName = (subject: string) => {
       return '其他'
     default:
       return subject
+  }
+}
+
+// 关闭详情抽屉
+const closeDetailDialog = () => {
+  showDetailDialog.value = false
+  detailFilters.value = {
+    isDetect: 'all',
+    isReview: 'all',
+    isFake: 'all'
+  }
+  detailPage.value = 1
+  detailImages.value = []
+  document.querySelector('.v-navigation-drawer__content')?.removeEventListener('scroll', handleScroll)
+}
+
+const handleScroll = () => {
+  const drawer = document.querySelector('.v-navigation-drawer__content')
+  if (drawer && hasMoreImages.value && !loadingMoreImages.value) {
+    const { scrollTop, scrollHeight, clientHeight } = drawer
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      loadMoreImages()
+    }
   }
 }
 </script>

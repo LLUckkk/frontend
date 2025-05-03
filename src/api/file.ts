@@ -26,9 +26,8 @@ export default {
     page_size: number;
     isDetect: string;
     isReview: string;
-    detectResult: string;
-    reviewResult: string;
+    isFake: string;
   }) {
-    return http.get(`/get_file_image/${fileId}/`, { params });
+    return http.get(`/upload/get_all_file_images/${fileId}/`, { params });
   }
 }

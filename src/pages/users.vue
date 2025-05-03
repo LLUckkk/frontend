@@ -1,4 +1,5 @@
 <template>
+  <v-container>
     <!-- 标题 -->
     <v-row class="mb-6">
       <v-col>
@@ -373,6 +374,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+  </v-container>
 </template>
 
 <script setup lang="ts">

@@ -28,10 +28,10 @@
       <v-list density="compact" nav>
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics" @click="goToAnalytics"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="文件管理" value="files" @click="goToFiles"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files" @click="goToFiles"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users" @click="goToUsers"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs" @click="goToLogs"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核请求" value="reviewRequests" @click="goToReviews"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核" value="reviewRequests" @click="goToReviews"></v-list-item>
         <v-divider class="my-2"></v-divider>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>
         <v-list-item 
@@ -77,7 +77,7 @@
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/files" value="files">
         <v-icon>mdi-folder</v-icon>
-        <span>文件管理</span>
+        <span>图像管理</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/users" value="users">
         <v-icon>mdi-account-group</v-icon>
@@ -89,7 +89,7 @@
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/reviews" value="reviews">
         <v-icon>mdi-gavel</v-icon>
-        <span>人工审核请求</span>
+        <span>人工审核</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" @click="handleLogout" value="logout">
         <v-icon>mdi-logout</v-icon>

@@ -15,26 +15,28 @@
                   进行统计分析
                 </v-list-item-title>
               </v-list-item>
-            </v-list>
-            <v-list>
               <v-list-item> 
                 <v-list-item-title>
                   <v-icon start>mdi-folder</v-icon>
-                  查看文件管理
+                  分类管理图像
                 </v-list-item-title>
               </v-list-item>
-            </v-list>
-            <v-list>
               <v-list-item>
                 <v-list-item-title>
                   <v-icon start>mdi-account-group</v-icon>
-                  查看用户信息
+                  管理用户信息
                 </v-list-item-title>
               </v-list-item>
               <v-list-item>
                 <v-list-item-title>
                   <v-icon start>mdi-history</v-icon>
                   查看日志记录
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-title> 
+                  <v-icon start>mdi-gavel</v-icon>
+                  审批人工审核
                 </v-list-item-title>
               </v-list-item>
             </v-list>

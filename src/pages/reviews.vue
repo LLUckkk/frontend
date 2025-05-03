@@ -1,8 +1,9 @@
 <template>
+  <v-container>
     <!-- 标题 -->
     <v-row class="mb-6">
       <v-col>
-        <h1 class="text-h4 font-weight-bold">人工审核请求</h1>
+        <h1 class="text-h4 font-weight-bold">人工审核审批</h1>
       </v-col>
     </v-row>
 
@@ -255,6 +256,7 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+  </v-container>
 </template>
 
 <script setup lang="ts">

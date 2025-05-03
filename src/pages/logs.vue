@@ -1,4 +1,5 @@
 <template>
+  <v-container>
   <!-- 标题 -->
   <v-row class="mb-6">
     <v-col>
@@ -184,6 +185,7 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+</v-container>
 </template>
 
 <script setup lang="ts">
@@ -432,6 +434,10 @@ const getRelatedModel = (model: string) => {
       return "检测任务"
     case 'FileManagement':
       return "文件管理"
+    case 'ReviewRequest':
+      return "人工审核请求"
+    case 'ManualReview':
+      return "人工审核提交"
     default:
       return '未知'
   }
