@@ -1,8 +1,8 @@
 import http from './request'
 
 export default {
-  submitReview(data: any) {
-    return http.post(`/submit_review_result/${data.task_id}/`, data)
+  submitReview(manual_review_id: number, data: any) {
+    return http.post(`/post_review/${manual_review_id}/`, data)
   },
   getReviewerTasks(params: any) {
     return http.get('/get_reviewer_tasks/', { params })
@@ -12,7 +12,7 @@ export default {
   },
 
   getReviewTaskDetail(data: any) {
-    return http.get(`/get-reviewer-request-detail/${data.task_id}`)
+    return http.get(`/get_review_request_detail/${data.manual_review_id}/`)
   }
 
 }

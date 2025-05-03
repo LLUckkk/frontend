@@ -74,10 +74,20 @@ export default {
     return http.get('/task-summary/')
   },
 
-  ifHasPermission(params:{
+  ifHasPermission(params: {
     task_id: string
   }) {
-    return http.get(`/publisher-dectectiontask-access/`, {params})
+    return http.get(`/publisher-dectectiontask-access/`, { params })
+  },
+
+  //publisher端返回人工审核表头
+  getRequestDetail(data: any) {
+    return http.get(`/get_request_detail/${data.review_request_id}/`)
+  },
+
+  //publisher获取单个图片的所有人工审核结果
+  getImageReviewAll(data: any) {
+    return http.get(`/get_img_review_all/?review_request_id=${data.review_request_id}&img_id=${data.img_id}`)
   }
 
 }

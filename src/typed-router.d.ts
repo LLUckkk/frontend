@@ -26,8 +26,8 @@ declare module 'vue-router/auto-routes' {
     '/Profile': RouteRecordInfo<'/Profile', '/Profile', Record<never, never>, Record<never, never>>,
     '/review': RouteRecordInfo<'/review', '/review', Record<never, never>, Record<never, never>>,
     '/step/[id]': RouteRecordInfo<'/step/[id]', '/step/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
-    '/task/[id]': RouteRecordInfo<'/task/[id]', '/task/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
-    '/task/detail': RouteRecordInfo<'/task/detail', '/task/detail', Record<never, never>, Record<never, never>>,
+    '/task/[review_request_id]': RouteRecordInfo<'/task/[review_request_id]', '/task/:review_request_id', { review_request_id: ParamValue<true> }, { review_request_id: ParamValue<false> }>,
+    '/task/detail/[manual_review_id]': RouteRecordInfo<'/task/detail/[manual_review_id]', '/task/detail/:manual_review_id', { manual_review_id: ParamValue<true> }, { manual_review_id: ParamValue<false> }>,
     '/upload': RouteRecordInfo<'/upload', '/upload', Record<never, never>, Record<never, never>>,
   }
 }

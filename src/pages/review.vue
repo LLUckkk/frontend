@@ -174,8 +174,8 @@ const router = useRouter()
 const snackbar = useSnackbarStore()
 
 interface Task {
-  maual_review_id: number
-  maual_review_time: string
+  manual_review_id: number
+  manual_review_time: string
   publisher_username: string
   publisher_avatar: string
   image_count: number
@@ -256,8 +256,7 @@ const formatTime = (timestamp: string) => {
 }
 
 const goToTaskDetail = (task: Task) => {
-  //router.push(`/task/detail/${task.maual_review_id}`)
-  router.push(`/task/detail`)
+  router.push(`/task/detail/${task.manual_review_id}`)
 }
 
 // 时间验证相关
@@ -361,8 +360,8 @@ const fetchTasks = async (page: number, pageSize: number) => {
     const { results: taskList, current_page, total_pages, total_users } = response.data
     
     tasks.value = taskList.map((task: any) => ({
-      maual_review_id: task.maual_review_id,
-      maual_review_time: task.maual_review_time,
+      manual_review_id: task.manual_review_id,
+      manual_review_time: task.manual_review_time,
       publisher_username: task.publisher_username,
       publisher_avatar: 'http://122.9.45.122' + task.publisher_avatar || '',
       image_count: task.image_count,
@@ -407,35 +406,6 @@ const formatDateFilter = (timestamp: number) => {
 
 // 初始化
 onMounted(() => {
-  // 以下为测试数据
-  // tasks.value = [
-  //   {
-  //     maual_review_id: 1,
-  //     maual_review_time: '2023-09-01 10:00:00',
-  //     publisher_username: '出版社A',
-  //     publisher_avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-  //     image_count: 12,
-  //     status: 'undo'
-  //   },
-  //   {
-  //     maual_review_id: 2,
-  //     maual_review_time: '2023-09-02 11:30:00',
-  //     publisher_username: '出版社B',
-  //     publisher_avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-  //     image_count: 8,
-  //     status: 'completed'
-  //   },
-  //   {
-  //     maual_review_id: 3,
-  //     maual_review_time: '2023-09-03 14:20:00',
-  //     publisher_username: '出版社C',
-  //     publisher_avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
-  //     image_count: 20,
-  //     status: 'completed'
-  //   }
-  // ]
-  // totalTasks.value = tasks.value.length
-  // totalPages.value = 1
   fetchTasks(currentPage.value, pageSize.value)
 })
 </script>

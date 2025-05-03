@@ -29,7 +29,17 @@
               <!-- 右侧任务信息 -->
               <div class="task-stats d-flex align-center">
                 <div class="answer-card">
-                  <div class="text-h6 font-weight-medium mb-4">答题卡</div>
+
+                  <v-row align="center" justify="start">
+                    <v-col class="d-flex" cols="auto">
+                      <div class="text-h6 font-weight-medium mb-4">答题卡</div>
+                    </v-col>
+                    <v-col class="d-flex align-center ml-4" cols="auto">
+                      <v-btn color="primary" @click="handleSubmit">
+                        提交
+                      </v-btn>
+                    </v-col>
+                  </v-row>
                   <div class="answer-grid">
                     <v-btn v-for="(image, index) in images" :key="index" :color="getAnswerButtonColor(index)"
                       variant="outlined" size="small" class="answer-btn" density="compact"
@@ -57,7 +67,7 @@
             <div class="image-grid">
               <div v-for="(image, index) in images" :key="index" class="image-grid-item"
                 :class="{ 'active': currentImageIndex === index }" @click="handleImageSelect(index)">
-                <v-img :src="image.thumbnail" cover width="100%" height="100%" class="rounded-lg"></v-img>
+                <v-img :src="getImageUrl(image.url)" cover width="100%" height="100%" class="rounded-lg"></v-img>
               </div>
             </div>
           </div>
@@ -65,7 +75,8 @@
           <!-- 图片预览区域 -->
           <div class="preview-section">
             <div class="preview-box">
-              <v-img v-if="currentImage" :src="currentImage.url" contain height="100%" class="rounded-lg"></v-img>
+              <v-img v-if="currentImage" :src="getImageUrl(currentImage.url)" contain height="100%"
+                class="rounded-lg"></v-img>
               <span v-else class="text-h4">PIC</span>
               <div class="preview-controls">
                 <v-btn icon="mdi-chevron-left" variant="flat" @click="handlePrevImage"
@@ -81,7 +92,8 @@
           <div class="dimension-section rounded-lg elevation-1">
             <div class="text-h6 font-weight-medium mb-4">评分维度</div>
             <div class="dimension-list">
-              <div v-for="(dimension, index) in dimensions" :key="index" class="dimension-item mb-6">
+              <div v-for="(dimension, index) in dimensionsPerImage[currentImageIndex]" :key="index"
+                class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
                   <v-btn size="small" :color="dimension.showFakeArea ? 'error' : 'grey'" variant="tonal"
@@ -123,13 +135,6 @@
           </div>
         </div>
       </div>
-
-      <!-- 底部操作按钮 -->
-      <div class="d-flex justify-end pa-4">
-        <v-btn color="primary" @click="handleSubmit">
-          提交
-        </v-btn>
-      </div>
     </div>
 
     <!-- 添加提示对话框 -->
@@ -152,37 +157,75 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import reviewer from '@/api/reviewer'
+import type { RouteParams } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
+import type { StateTree } from 'pinia'
+import { da } from 'vuetify/locale'
 
 const router = useRouter()
 const taskProgress = [70, 85, 30]
 const snackbar = useSnackbarStore()
+const route = useRoute()
+
+interface Image {
+  id: number,
+  url: string
+}
+
 
 // 图片相关数据和方法
 const currentImageIndex = ref(0)
-const images = ref([
-  {
-    id: '1',
-    url: 'https://picsum.photos/id/237/800/600',
-    thumbnail: 'https://picsum.photos/id/237/80/80',
-  },
-  {
-    id: '2',
-    url: 'https://picsum.photos/id/238/800/600',
-    thumbnail: 'https://picsum.photos/id/238/80/80',
-  },
-  {
-    id: '3',
-    url: 'https://picsum.photos/id/239/800/600',
-    thumbnail: 'https://picsum.photos/id/239/80/80',
-  }
-])
+const images = ref<Image[]>([])
 
-const currentImage = computed(() => images.value[currentImageIndex.value])
+
+const manual_review_id = computed(() => (route.params as RouteParams & { manual_review_id: number }).manual_review_id)
+const imageJudgements = ref<(boolean | null)[]>([])
+const dimensionsPerImage = ref<Dimension[][]>([])
+
+
+onMounted(async () => {
+  try {
+    const response = (await reviewer.getReviewTaskDetail({ manual_review_id: manual_review_id.value })).data
+    console.log(response)
+    images.value = response.imgs
+    imageJudgements.value = new Array(images.value.length).fill(null)
+
+    dimensionsPerImage.value = images.value.map(() => [
+      { name: '高斯模糊', value: null, reason: '', showFakeArea: false },
+      { name: '亮度/对比度调节', value: null, reason: '', showFakeArea: false },
+      { name: '智能修复', value: null, reason: '', showFakeArea: false },
+      { name: '暴力覆盖', value: null, reason: '', showFakeArea: false },
+      { name: '同图复制', value: null, reason: '', showFakeArea: false },
+      { name: '重叠切割', value: null, reason: '', showFakeArea: false },
+      { name: '跨图拼接', value: null, reason: '', showFakeArea: false }
+    ])
+
+  } catch (error) {
+    snackbar.showMessage('获取任务详情失败', 'error')
+  }
+})
+
+const currentImage = computed(() => {
+  if (
+    Array.isArray(images.value) &&
+    typeof currentImageIndex.value === 'number' &&
+    currentImageIndex.value >= 0 &&
+    currentImageIndex.value < images.value.length
+  ) {
+    return images.value[currentImageIndex.value];
+  }
+  return null;
+});
+
+const getImageUrl = (url: string) => {
+  return import.meta.env.VITE_API_URL + url
+}
+
 
 const handleImageSelect = (index: number) => {
   currentImageIndex.value = index
 }
+
 
 const handlePrevImage = () => {
   if (currentImageIndex.value > 0) {
@@ -211,51 +254,6 @@ interface Dimension {
   showFakeArea: boolean;
 }
 
-const dimensions = ref<Dimension[]>([
-  {
-    name: '高斯模糊',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '亮度/对比度调节',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '智能修复',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '暴力覆盖',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '同图复制',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '重叠切割',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  },
-  {
-    name: '跨图拼接',
-    value: null,
-    reason: '',
-    showFakeArea: false
-  }
-])
-
 const degreeOptions = [
   { value: 1, label: '很差' },
   { value: 2, label: '较差' },
@@ -281,8 +279,7 @@ const getDegreeColor = (value: number) => {
   }
 }
 
-// 图片造假判定数据
-const imageJudgements = ref<(boolean | null)[]>(new Array(images.value.length).fill(null))
+// 图片造假判定数
 
 // 处理造假判定
 const handleJudgement = (isFake: boolean) => {
@@ -305,6 +302,8 @@ const alert = (message: string) => {
   showAlert.value = true
 }
 
+
+
 const checkAnswerCompletion = () => {
   // 检查每张图片是否都已完成评分和判定
   for (let i = 0; i < images.value.length; i++) {
@@ -315,9 +314,12 @@ const checkAnswerCompletion = () => {
         message: `第 ${i + 1} 张图片尚未进行造假判定`
       }
     }
+  }
 
-    // 检查所有维度是否都已评分
-    const hasUnratedDimension = dimensions.value.some(dim => dim.value === null)
+  for (let i = 0; i < dimensionsPerImage.value.length; i++) {
+    const dims = dimensionsPerImage.value[i]
+
+    const hasUnratedDimension = dims.some(dim => dim.value === null)
     if (hasUnratedDimension) {
       return {
         complete: false,
@@ -325,8 +327,7 @@ const checkAnswerCompletion = () => {
       }
     }
 
-    // 检查所有维度是否都填写了理由
-    const hasEmptyReason = dimensions.value.some(dim => !dim.reason)
+    const hasEmptyReason = dims.some(dim => !dim.reason)
     if (hasEmptyReason) {
       return {
         complete: false,
@@ -341,22 +342,42 @@ const checkAnswerCompletion = () => {
   }
 }
 
+interface ImageItem {
+  img_id: number
+  score: Array<number | null>  // 维度得分数组，可能是数值或者null
+  reason: Array<string | null>  // 维度理由数组，可能是字符串或者null
+  final: boolean | null  // 造假判定结果
+}
+
+const constructData = () => {
+  const data = { result: [] as ImageItem[] }
+  for (let i = 0; i < images.value.length; i++) {
+    const item: ImageItem = {
+      img_id: images.value[i].id,
+      score: dimensionsPerImage.value[i].map(dim => dim.value),
+      reason: dimensionsPerImage.value[i].map(dim => dim.reason),
+      final: imageJudgements.value[i]
+    }
+    data.result.push(item)
+  }
+  console.log(data)
+  return data
+}
+
 const handleSubmit = async () => {
   const result = checkAnswerCompletion()
   if (!result.complete) {
     // 显示错误提示
-    alert(result.message)
+    snackbar.showMessage(result.message, 'error')
     return
-    // } else {
-    //   try {
-    //     await reviewer.submitReview({dimension_scores: dimensions})
-    //   } catch (error) {
-    //     snackbar.showMessage('提交失败', 'error')
-    //   }
+  } else {
+    try {
+      await reviewer.submitReview(manual_review_id.value, constructData())
+      snackbar.showMessage("提交成功", 'success')
+    } catch (error) {
+      snackbar.showMessage('提交失败', 'error')
+    }
   }
-
-  // TODO: 处理提交逻辑
-  //console.log('提交成功')
 }
 </script>
 
