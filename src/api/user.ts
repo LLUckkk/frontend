@@ -2,13 +2,13 @@ import http from './request'
 import { ref } from 'vue'
 
 // 使用ref直接管理登录状态
-export const isLoggedIn = ref(localStorage.getItem("isLoggedIn") === "true")
+export const isLoggedIn = ref(localStorage.getItem("1-isLoggedIn") === "true")
 
 export default {
   login(data: any) {
     return http.post('/admin-login/', data).then(res => {
       isLoggedIn.value = true
-      localStorage.setItem("isLoggedIn", "true")
+      localStorage.setItem("1-isLoggedIn", "true")
       return res
     })
   },
@@ -73,6 +73,10 @@ export default {
     role?: string;
   }) {
     return http.post('/create-admin/', data)
+  },
+  // 获取其他用户信息
+  getOtherUserInfo(userId: number) {
+    return http.get(`/admin/details/${userId}`);
   },
 
 }

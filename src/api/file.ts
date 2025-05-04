@@ -29,5 +29,10 @@ export default {
     isFake: string;
   }) {
     return http.get(`/upload/get_all_file_images/${fileId}/`, { params });
+  },
+
+  // 删除单张图片
+  deleteImage(imageId: number) {
+    return http.delete(`/delete_image_upload/${imageId}/`);
   }
 }

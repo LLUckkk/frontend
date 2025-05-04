@@ -464,6 +464,10 @@ const getModelColor = (model: string) => {
       return 'info'
     case 'FileManagement':
       return 'primary'
+    case 'ReviewRequest':
+      return 'warning'
+    case 'ManualReview':
+      return 'success'
     default:
       return 'grey'
   }

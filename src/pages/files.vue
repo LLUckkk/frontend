@@ -297,7 +297,7 @@
               </v-img>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn icon color="error" @click.stop="deleteSingleImage(image)">
+                <v-btn icon color="error" @click.stop="deleteListImage(image)">
                   <v-icon>mdi-delete</v-icon>
                 </v-btn>
               </v-card-actions>
@@ -313,12 +313,21 @@
         <v-card-title class="text-h6 font-weight-bold">图片详情</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column align-center">
-            <v-img
-              :src="selectedImage?.url"
-              max-height="500"
-              contain
-              class="mb-4"
-            ></v-img>
+            <div class="image-container">
+              <v-img
+                :src="selectedImage && selectedImage.url ? getImageUrl(selectedImage.url) : ''"
+                :max-height="windowHeight * 0.6"
+                :max-width="windowWidth * 0.7"
+                contain
+                class="mb-4"
+              >
+                <template v-slot:placeholder>
+                  <v-row class="fill-height ma-0" align="center" justify="center">
+                    <v-progress-circular indeterminate color="grey-lighten-5"></v-progress-circular>
+                  </v-row>
+                </template>
+              </v-img>
+            </div>
             <div class="d-flex flex-column gap-2">
               <div class="d-flex align-center">
                 <v-icon
@@ -355,7 +364,7 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" @click="deleteSingleImage">删除图片</v-btn>
+          <v-btn color="error" @click="deleteDetailImage(selectedImage)">删除图片</v-btn>
           <v-btn color="grey" variant="text" @click="showImageDialog = false">关闭</v-btn>
         </v-card-actions>
       </v-card>
@@ -364,7 +373,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import fileApi from '@/api/file'
 import userApi from '@/api/user'
@@ -468,6 +477,25 @@ const detailFilters = ref<{
 // 图片查看相关
 const showImageDialog = ref(false)
 const selectedImage = ref<Image | null>(null)
+
+// 添加窗口尺寸响应
+const windowWidth = ref(window.innerWidth)
+const windowHeight = ref(window.innerHeight)
+
+// 监听窗口大小变化
+onMounted(() => {
+  window.addEventListener('resize', () => {
+    windowWidth.value = window.innerWidth
+    windowHeight.value = window.innerHeight
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', () => {
+    windowWidth.value = window.innerWidth
+    windowHeight.value = window.innerHeight
+  })
+})
 
 // 处理搜索选择
 const handleSearchSelection = () => {
@@ -678,26 +706,63 @@ const deleteFile = async () => {
   showDeleteDialog.value = false
 }
 
+// 删除列表中的单张图片
+const deleteListImage = async (image: Image) => {
+  if (!selectedFile.value) return
+  
+  try {
+    await fileApi.deleteImage(image.id)
+    // 从列表中移除已删除的图片
+    selectedFile.value.images = selectedFile.value.images.filter(
+      img => img.id !== image.id
+    )
+    // 同时从详情图片列表中移除
+    detailImages.value = detailImages.value.filter(img => img.id !== image.id)
+    // 如果当前正在查看的图片被删除，关闭图片对话框
+    if (selectedImage.value?.id === image.id) {
+      showImageDialog.value = false
+    }
+    snackbar.showMessage('图片删除成功', 'success')
+  } catch (error) {
+    console.error('删除图片失败:', error)
+    snackbar.showMessage('删除图片失败', 'error')
+  }
+}
+
+// 删除详情对话框中的单张图片
+const deleteDetailImage = async (image: Image | null) => {
+  if (!image) return
+  
+  try {
+    await fileApi.deleteImage(image.id)
+    // 从详情图片列表中移除已删除的图片
+    detailImages.value = detailImages.value.filter(img => img.id !== image.id)
+    // 同时从文件图片列表中移除
+    if (selectedFile.value) {
+      selectedFile.value.images = selectedFile.value.images.filter(
+        img => img.id !== image.id
+      )
+    }
+    snackbar.showMessage('图片删除成功', 'success')
+    showImageDialog.value = false
+  } catch (error) {
+    console.error('删除图片失败:', error)
+    snackbar.showMessage('删除图片失败', 'error')
+  }
+}
+
 // 打开图片对话框
 const openImageDialog = (image: Image) => {
   selectedImage.value = image
   showImageDialog.value = true
 }
 
-// 删除单张图片
+// 删除单张图片（保留原有函数作为兼容）
 const deleteSingleImage = async (image: Image) => {
-  if (selectedImage.value && selectedFile.value) {
-    try {
-      // TODO: 调用删除图片API
-      selectedFile.value.images = selectedFile.value.images.filter(
-        img => img.id !== image.id
-      )
-      snackbar.showMessage('图片删除成功', 'success')
-      showImageDialog.value = false
-    } catch (error) {
-      console.error('删除图片失败:', error)
-      snackbar.showMessage('删除图片失败', 'error')
-    }
+  if (showImageDialog.value) {
+    await deleteDetailImage(image)
+  } else {
+    await deleteListImage(image)
   }
 }
 
@@ -944,5 +1009,23 @@ const handleScroll = () => {
   height: 100%;
   width: 100%;
   object-fit: cover;
+}
+
+.image-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+:deep(.v-img) {
+  transition: transform 0.2s;
+}
+
+:deep(.v-img:hover) {
+  transform: scale(1.02);
 }
 </style>

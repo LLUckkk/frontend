@@ -13,7 +13,7 @@ const instance = axios.create({
  
 //请求拦截处理 
 instance.interceptors.request.use(config=>{
-    let token = localStorage.getItem('token')
+    let token = localStorage.getItem('1-token')
     if(token){
         config.headers['Authorization'] = 'Bearer ' + token
     }
@@ -39,8 +39,8 @@ instance.interceptors.response.use(response=>{
             return instance(error.config)
         }).catch(err => {
             // 刷新token失败，跳转到登录页
-            localStorage.removeItem('token')
-            localStorage.removeItem('refresh')
+            localStorage.removeItem('1-token')
+            localStorage.removeItem('1-refresh')
             router.push('/login')
             return Promise.reject(err)
         })
@@ -51,7 +51,7 @@ instance.interceptors.response.use(response=>{
 
 // 刷新token的函数
 const refreshToken = async () => {
-    const refresh = localStorage.getItem('refresh')
+    const refresh = localStorage.getItem('1-refresh')
     if (!refresh) {
         return Promise.reject(new Error('No refresh token available'))
     }
@@ -64,7 +64,7 @@ const refreshToken = async () => {
         
         if (response.data && response.data.access) {
             // 保存新的access token
-            localStorage.setItem('token', response.data.access)
+            localStorage.setItem('1-token', response.data.access)
             return response.data.access
         } else {
             return Promise.reject(new Error('Invalid response format'))

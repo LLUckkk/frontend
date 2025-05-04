@@ -158,6 +158,16 @@
             icon
             variant="text"
             size="small"
+            color="info"
+            class="mr-2"
+            @click="openUserDetailsDialog(item)"
+          >
+            <v-icon>mdi-eye</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
             color="primary"
             class="mr-2"
             @click="openPermissionDialog(item)"
@@ -206,30 +216,36 @@
         <v-card-title class="text-h6 font-weight-bold">修改权限</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column gap-4">
-            <v-switch
-              v-model="editingPermissions.uploadImage"
-              label="上传图像权限"
-              color="info"
-              hide-details
-            ></v-switch>
-            <v-switch
-              v-model="editingPermissions.submitAI"
-              label="提交AI检测权限"
-              color="success"
-              hide-details
-            ></v-switch>
-            <v-switch
-              v-model="editingPermissions.publishReview"
-              label="发布人工审核权限"
-              color="warning"
-              hide-details
-            ></v-switch>
-            <v-switch
-              v-model="editingPermissions.submitReview"
-              label="提交人工审核权限"
-              color="primary"
-              hide-details
-            ></v-switch>
+            <!-- 出版社权限 -->
+            <template v-if="selectedUser?.role === 'publisher'">
+              <v-switch
+                v-model="editingPermissions.uploadImage"
+                label="上传图像权限"
+                color="info"
+                hide-details
+              ></v-switch>
+              <v-switch
+                v-model="editingPermissions.submitAI"
+                label="提交AI检测权限"
+                color="success"
+                hide-details
+              ></v-switch>
+              <v-switch
+                v-model="editingPermissions.publishReview"
+                label="发布人工审核权限"
+                color="warning"
+                hide-details
+              ></v-switch>
+            </template>
+            <!-- 审稿人权限 -->
+            <template v-else-if="selectedUser?.role === 'reviewer'">
+              <v-switch
+                v-model="editingPermissions.submitReview"
+                label="提交人工审核权限"
+                color="primary"
+                hide-details
+              ></v-switch>
+            </template>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -371,6 +387,55 @@
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="showCreateAdminDialog = false">取消</v-btn>
           <v-btn color="success" @click="createAdmin" :loading="creatingAdmin">创建</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 用户详情对话框 -->
+    <v-dialog v-model="showUserDetailsDialog" max-width="500">
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">用户详情</v-card-title>
+        <v-card-text>
+          <div class="d-flex flex-column gap-4">
+            <div class="d-flex justify-center">
+              <v-avatar size="120">
+                <v-img :src="selectedUserDetails?.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'" :alt="selectedUserDetails?.username"></v-img>
+              </v-avatar>
+            </div>
+            <v-divider></v-divider>
+            <div class="d-flex flex-column gap-2">
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-account</v-icon>
+                <span class="text-subtitle-1">用户名：</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails?.username }}</span>
+              </div>
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-email</v-icon>
+                <span class="text-subtitle-1">邮箱：</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails?.email }}</span>
+              </div>
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-account-cog</v-icon>
+                <span class="text-subtitle-1">角色：</span>
+                <v-chip
+                  :color="getRoleColor(selectedUserDetails?.role || '')"
+                  size="small"
+                  class="ml-2"
+                >
+                  {{ getRoleName(selectedUserDetails?.role || '') }}
+                </v-chip>
+              </div>
+              <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-text</v-icon>
+                <span class="text-subtitle-1">简介：</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails?.profile || '暂无简介' }}</span>
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="showUserDetailsDialog = false">关闭</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -851,6 +916,37 @@ const formatDateFilter = (timestamp: number) => {
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+// 用户详情相关
+const showUserDetailsDialog = ref(false)
+const selectedUserDetails = ref<{
+  username: string
+  email: string
+  role: string
+  profile: string
+  avatar: string
+} | null>(null)
+
+// 打开用户详情对话框
+const openUserDetailsDialog = async (user: User) => {
+  // 检查权限
+  if (user.role === 'admin' && currentUser.value?.email !== ROOT_ADMIN_EMAIL) {
+    snackbar.showMessage('只有根管理员才能查看管理员信息', 'warning')
+    return
+  }
+
+  try {
+    const response = await userApi.getOtherUserInfo(user.id)
+    selectedUserDetails.value = {
+      ...response.data,
+      avatar: 'http://122.9.45.122' + response.data.avatar
+    }
+    showUserDetailsDialog.value = true
+  } catch (error) {
+    console.error('获取用户详情失败:', error)
+    snackbar.showMessage('获取用户详情失败', 'error')
+  }
 }
 </script>
 

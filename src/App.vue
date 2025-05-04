@@ -171,12 +171,12 @@ const goToLogin = () => {
 const handleLogout = async () => {
   try {
     //localStorage.clear()
-    let refresh = localStorage.getItem("refresh")
+    let refresh = localStorage.getItem("1-refresh")
     const response = await user.logout({refresh})
-    localStorage.removeItem("refresh")
-    localStorage.removeItem("token")
+    localStorage.removeItem("1-refresh")
+    localStorage.removeItem("1-token")
     isLoggedIn.value = false
-    localStorage.setItem("isLoggedIn", "false")
+    localStorage.setItem("1-isLoggedIn", "false")
     userStore.clearUserInfo() // 清除用户信息
     snackbar.showMessage('退出成功', 'success')
     router.push('/login')

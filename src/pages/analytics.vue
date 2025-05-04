@@ -22,11 +22,11 @@
       </v-col>
     </v-row>
 
-    <v-row class="mt-4">
+    <!-- <v-row class="mt-4">
       <v-col cols="12">
         <MethodStats />
       </v-col>
-    </v-row>
+    </v-row> -->
   </v-container>
 </template>
 

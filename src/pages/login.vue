@@ -201,9 +201,9 @@
       password: password.value,
       // role: 'admin'//TODO：admin
     }).then(async (res: { data: { access: string; refresh: string } }) => {
-      localStorage.setItem("token", res.data.access)
-      localStorage.setItem("refresh", res.data.refresh)
-      localStorage.setItem("isLoggedIn", "true")
+      localStorage.setItem("1-token", res.data.access)
+      localStorage.setItem("1-refresh", res.data.refresh)
+      localStorage.setItem("1-isLoggedIn", "true")
       
       // 获取用户信息并存储到 user store
       await userStore.fetchUserInfo();

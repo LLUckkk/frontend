@@ -5,7 +5,7 @@
       各学科检测方法使用频率
     </v-card-title>
     <v-card-text>
-      <div ref="methodStatsChart" class="chart-wrapper"></div>
+      <div ref="chartRef" class="chart-wrapper"></div>
     </v-card-text>
   </v-card>
 </template>
@@ -16,170 +16,123 @@ import * as echarts from 'echarts'
 import analyticsApi from '@/api/analytics'
 import { useSnackbarStore } from '@/stores/snackbar'
 
-const methodStatsChart = ref<HTMLElement | null>(null)
-const methodStatsChartInstance = ref<echarts.ECharts | null>(null)
+const chartRef = ref<HTMLElement | null>(null)
+const chartInstance = ref<echarts.ECharts | null>(null)
 const snackbar = useSnackbarStore()
 
-const handleResize = () => {
-  if (methodStatsChartInstance.value && methodStatsChart.value) {
-    methodStatsChartInstance.value.resize()
-  }
+// 响应式处理图表大小
+const resizeHandler = () => {
+  chartInstance.value?.resize()
 }
 
-const initMethodStatsChart = () => {
-  if (methodStatsChart.value) {
-    try {
-      if (methodStatsChartInstance.value) {
-        methodStatsChartInstance.value.dispose()
-      }
-      methodStatsChartInstance.value = echarts.init(methodStatsChart.value)
-      fetchMethodStats()
-    } catch (error) {
-      console.error('初始化方法统计图失败:', error)
-    }
-  }
+// 初始化图表
+const initChart = () => {
+  if (!chartRef.value) return
+  // 清理之前的实例
+  chartInstance.value?.dispose()
+  chartInstance.value = echarts.init(chartRef.value)
+  loadChartData()
 }
 
-const fetchMethodStats = async () => {
+// 加载数据并渲染图表
+const loadChartData = async () => {
   try {
     const res = await analyticsApi.getDetectionMethodStats()
     if (res.data) {
-      renderMethodStatsChart(res.data)
+      renderChart(res.data)
     }
-  } catch (error) {
-    console.error('获取检测方法统计数据失败:', error)
+  } catch (e) {
+    console.error('获取数据失败:', e)
     snackbar.showMessage('获取检测方法统计数据失败')
   }
 }
 
-const renderMethodStatsChart = (data: Record<string, Record<string, number>>) => {
-  if (!methodStatsChart.value) return
-  if (methodStatsChartInstance.value) {
-    methodStatsChartInstance.value.dispose()
-  }
-  methodStatsChartInstance.value = echarts.init(methodStatsChart.value)
-
+// 渲染图表
+const renderChart = (data: Record<string, Record<string, number>>) => {
   const methodList = Array.from({ length: 7 }, (_, i) => `Method-${i + 1}`)
+  const colorPalette = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452']
 
-  const colorPalette = [
-    '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
-    '#3ba272', '#fc8452'
-  ]
-
+  // 构建堆叠图的系列
   const series = methodList.map((method, index) => ({
     name: method,
     type: 'bar',
     stack: 'total',
-    emphasis: {
-      focus: 'series',
-      itemStyle: {
-        shadowBlur: 10,
-        shadowOffsetX: 0,
-        shadowColor: 'rgba(0, 0, 0, 0.5)'
-      }
-    },
+    emphasis: { focus: 'series' },
+    itemStyle: { color: colorPalette[index] },
     data: Object.keys(data).map(tag => {
-      const tagData = data[tag]
-      const total = tagData.total || 1
+      const value = data[tag][method] || 0
+      const total = data[tag].total || 1
       return {
-        value: tagData[method] || 0,
-        percent: ((tagData[method] || 0) / total * 100).toFixed(1) + '%'
+        value,
+        percent: ((value / total) * 100).toFixed(1) + '%'
       }
-    }),
-    itemStyle: {
-      color: colorPalette[index]
-    }
+    })
   }))
 
-  const option = {
+  // 配置图表
+  const option: echarts.EChartsOption = {
     tooltip: {
       trigger: 'axis',
-      axisPointer: {
-        type: 'shadow',
-        shadowStyle: {
-          color: 'rgba(0, 0, 0, 0.1)'
-        }
-      },
-      formatter: function(params: any) {
+      axisPointer: { type: 'shadow' },
+      formatter(params: any) {
         const category = params[0].axisValue
-        let result = `
-          <div style="font-weight: bold; margin-bottom: 8px;">${category}</div>
-        `
-        params.forEach((param: any) => {
-          result += `
-            <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-              <span style="color: #666;">${param.seriesName}：</span>
-              <span style="font-weight: bold;">${param.data.value} (${param.data.percent})</span>
-            </div>
-          `
+        let html = `<strong>${category}</strong><br/>`
+        params.forEach((item: any) => {
+          html += `${item.seriesName}: <strong>${item.data.value}</strong> (${item.data.percent})<br/>`
         })
-        return result
+        return html
       },
-      backgroundColor: 'rgba(255, 255, 255, 0.98)',
-      borderColor: '#ddd',
+      backgroundColor: '#ffffff',
+      borderColor: '#ccc',
       borderWidth: 1,
-      textStyle: {
-        color: '#333',
-        fontSize: 13
-      },
-      padding: [12, 16],
-      extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;'
+      textStyle: { color: '#333' },
+      padding: [10, 15],
+      extraCssText: 'box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-radius: 8px;'
     },
     legend: {
       data: methodList,
-      orient: 'horizontal',
       bottom: 0,
-      textStyle: {
-        fontSize: 12
-      },
+      textStyle: { fontSize: 12, color: '#333' },
       itemWidth: 12,
       itemHeight: 12,
-      itemGap: 20,
-      padding: [10, 0],
-      formatter: function(name: string) {
-        return name.length > 8 ? name.slice(0, 8) + '...' : name
-      }
+      itemGap: 16
     },
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '15%',
-      top: '5%',
+      bottom: '18%',
+      top: '6%',
       containLabel: true
     },
     xAxis: {
       type: 'category',
       data: Object.keys(data),
-      axisLabel: {
-        interval: 0,
-        rotate: 30,
-        fontSize: 12
-      }
+      axisLabel: { rotate: 30, fontSize: 12, color: '#333' },
+      axisLine: { lineStyle: { color: '#ccc' } }
     },
     yAxis: {
       type: 'value',
       name: '使用次数',
-      nameTextStyle: {
-        padding: [0, 0, 0, 40]
-      }
+      axisLabel: { color: '#333' },
+      nameTextStyle: { color: '#333' },
+      axisLine: { lineStyle: { color: '#ccc' } },
+      splitLine: { lineStyle: { color: '#eee' } }
     },
-    series: series
   }
 
-  methodStatsChartInstance.value.setOption(option)
+  // 设置图表配置
+  chartInstance.value?.setOption(option)
 }
 
 onMounted(() => {
-  initMethodStatsChart()
-  window.addEventListener('resize', handleResize)
+  initChart()
+  window.addEventListener('resize', resizeHandler)
 })
 
 onUnmounted(() => {
-  if (methodStatsChartInstance.value) {
-    methodStatsChartInstance.value.dispose()
-    methodStatsChartInstance.value = null
-  }
-  window.removeEventListener('resize', handleResize)
+  chartInstance.value?.dispose()
+  chartInstance.value = null
+  window.removeEventListener('resize', resizeHandler)
 })
 </script>
 
@@ -193,7 +146,7 @@ onUnmounted(() => {
 }
 
 .chart-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
 .chart-wrapper {
@@ -206,4 +159,4 @@ onUnmounted(() => {
     height: 300px;
   }
 }
-</style> 
+</style>
