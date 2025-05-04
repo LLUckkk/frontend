@@ -77,7 +77,10 @@
             <div class="preview-box">
               <v-img v-if="currentImage" :src="getImageUrl(currentImage.url)" contain height="100%"
                 class="rounded-lg"></v-img>
-              <span v-else class="text-h4">PIC</span>
+              <transition name="fade">
+                <v-img v-if="activeOverlay && isOverlayVisible" :src="activeOverlay"
+                  class="rounded-lg overlay-image"></v-img>
+              </transition>
               <div class="preview-controls">
                 <v-btn icon="mdi-chevron-left" variant="flat" @click="handlePrevImage"
                   :disabled="currentImageIndex <= 0" class="control-btn" color="black" size="x-large"></v-btn>
@@ -96,11 +99,10 @@
                 class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <v-btn size="small" :color="dimension.showFakeArea ? 'error' : 'grey'" variant="tonal"
-                    @click="dimension.showFakeArea = !dimension.showFakeArea" class="fake-area-btn ml-4">
-                    <v-icon size="small" :icon="dimension.showFakeArea ? 'mdi-eye-off' : 'mdi-eye'"
-                      class="mr-1"></v-icon>
-                    {{ dimension.showFakeArea ? '隐藏造假区域' : '显示造假区域' }}
+                  <v-btn size="small" :color="urn[index].visible ? 'error' : 'grey'" variant="tonal"
+                    @click="handleDisplayFake(urn[index])" class="fake-area-btn ml-4">
+                    <v-icon size="small" :icon="urn[index].visible ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
+                    {{ urn[index] ? '隐藏造假区域' : '显示造假区域' }}
                   </v-btn>
                 </div>
                 <div class="degree-buttons mb-2">
@@ -162,15 +164,23 @@ import { useSnackbarStore } from '@/stores/snackbar'
 
 
 const router = useRouter()
-const taskProgress = [70, 85, 30]
 const snackbar = useSnackbarStore()
 const route = useRoute()
+
+
 
 interface Image {
   id: number,
   url: string
 }
 
+interface SubMethod {
+  method: string
+  probability: number
+  mask_image: string
+  mask_matrix: any | null
+  visible: boolean
+}
 
 // 图片相关数据和方法
 const currentImageIndex = ref(0)
@@ -180,6 +190,9 @@ const images = ref<Image[]>([])
 const manual_review_id = computed(() => (route.params as RouteParams & { manual_review_id: number }).manual_review_id)
 const imageJudgements = ref<(boolean | null)[]>([])
 const dimensionsPerImage = ref<Dimension[][]>([])
+const urn = ref<SubMethod[]>([])
+const activeOverlay = ref()
+const isOverlayVisible = ref(false)
 
 
 onMounted(async () => {
@@ -188,6 +201,7 @@ onMounted(async () => {
     console.log(response)
     images.value = response.imgs
     imageJudgements.value = new Array(images.value.length).fill(null)
+    fetchMaskImage()
 
     dimensionsPerImage.value = images.value.map(() => [
       { name: '高斯模糊', value: null, reason: '', showFakeArea: false },
@@ -218,6 +232,39 @@ const currentImage = computed(() => {
 
 const getImageUrl = (url: string) => {
   return import.meta.env.VITE_API_URL + url
+}
+
+const fetchMaskImage = async () => {
+  try {
+    const res = (await reviewer.getMaskImage({ img_id: currentImage.value?.id })).data
+    urn.value = res.sub_methods.map((item: Omit<SubMethod, 'visible'>) => ({
+      ...item,
+      visible: false
+    }))
+  } catch (error) {
+    snackbar.showMessage('获取mask失败', 'error')
+  }
+}
+
+const handleDisplayFake = (dimension: SubMethod) => {
+  if (dimension.visible) {
+    dimension.visible = false
+    isOverlayVisible.value = false
+    activeOverlay.value = null
+    return
+  }
+
+  // 关闭其他所有覆盖层
+  urn.value.forEach(d => {
+    if (d !== dimension) {
+      d.visible = false
+    }
+  })
+
+  // 显示当前覆盖层
+  dimension.visible = true
+  isOverlayVisible.value = true
+  activeOverlay.value = dimension.mask_image
 }
 
 
@@ -482,6 +529,18 @@ const handleSubmit = async () => {
   grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
+
+.overlay-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+  object-fit: contain;
+}
+
 
 .answer-btn {
   width: 36px !important;

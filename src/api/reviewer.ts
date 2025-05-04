@@ -13,6 +13,10 @@ export default {
 
   getReviewTaskDetail(data: any) {
     return http.get(`/get_review_request_detail/${data.manual_review_id}/`)
+  },
+
+  getMaskImage(data: any) {
+    return http.get(`/results_image/${data.img_id}/`)
   }
 
 }
