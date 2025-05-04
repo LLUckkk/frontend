@@ -38,8 +38,7 @@
       <v-spacer></v-spacer>
       <v-btn :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" @click="toggleTheme"></v-btn>
       <v-btn v-if="isLoggedIn" :color="hasUnreadNotifications ? 'red' : ''"
-        :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
-        @click="showNotifications = true"></v-btn>
+        :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'" @click="toggleNotification()"></v-btn>
     </v-app-bar>
 
     <v-main>
@@ -84,77 +83,79 @@
       </v-btn>
     </v-bottom-navigation>
 
-    <!-- 通知对话框 -->
-    <!-- <v-dialog v-model="showNotifications" max-width="700px">
-      <v-card>
-        <v-card-title>通知</v-card-title>
-        <v-card-text>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" @click="showNotifications = false">关闭</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-    <v-dialog v-model="showNotifications" max-width="700px">
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon icon="mdi-bell" start></v-icon>
-          <span class="text-h6">通知中心</span>
+    <v-navigation-drawer v-model="showDrawer" location="right" width="400" temporary>
+      <v-toolbar flat>
+        <v-toolbar-title class="text-h6">
+          <v-icon icon="mdi-bell" start class="me-2"></v-icon>
+          通知中心
+        </v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon="mdi-close" @click="showDrawer = false"></v-btn>
+      </v-toolbar>
 
-          <v-spacer></v-spacer>
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-btn variant="text" prepend-icon="mdi-check-all" @click="markAllAsRead">
+          全部标记已读
+        </v-btn>
+      </v-card-actions>
 
-          <v-btn v-if="notifications.length > 0" variant="text" icon="mdi-check-all" @click="markAllAsRead"
-            title="标记全部为已读"></v-btn>
+      <v-card-text class="pa-0" style="overflow-y: auto; max-height: 80vh;">
+        <v-list v-if="notifications.length > 0" lines="two" density="comfortable">
+          <template v-for="(item, index) in notifications" :key="item.id">
+            <v-list-item :class="{ 'bg-blue-lighten-5': item.status !== 'read' }" @click="openDetail(item)">
+              <template #prepend>
+                <v-chip size="small" :color="getCategoryColor(item.category)" class="me-2">
+                  {{ item.category }}
+                </v-chip>
+              </template>
+
+              <v-list-item-title class="d-flex justify-space-between align-center">
+                <span :class="{ 'font-weight-bold': item.status !== 'read' }">
+                  {{ item.title }}
+                </span>
+                <v-btn variant="text" size="small" @click.stop="openDetail(item)">
+                  详情
+                </v-btn>
+                <v-btn v-if="item.url" :href="getUrl(item.url)" target="_blank" variant="text" size="small"
+                  class="text-primary">
+                  跳转
+                </v-btn>
+              </v-list-item-title>
+
+              <v-list-item-subtitle class="text-truncate text-wrap">
+                {{ item.content.length > 40 ? item.content.slice(0, 40) + '...' : item.content }}
+              </v-list-item-subtitle>
+            </v-list-item>
+
+            <v-divider v-if="index < notifications.length - 1"></v-divider>
+          </template>
+        </v-list>
+
+        <v-alert v-else type="info" variant="tonal" class="mt-4" icon="mdi-information">
+          暂无新通知
+        </v-alert>
+      </v-card-text>
+    </v-navigation-drawer>
+
+    <!-- 详情弹窗 -->
+    <v-dialog v-model="showDetailDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="text-h6 d-flex align-center">
+          <v-icon icon="mdi-information" class="me-2"></v-icon>
+          {{ selectedNotification?.title }}
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="showDetailDialog = false"></v-btn>
         </v-card-title>
-
         <v-divider></v-divider>
 
-        <v-card-text style="max-height: 60vh; overflow-y: auto;">
-          <v-list lines="three" v-if="notifications.length > 0">
-            <template v-for="(item, index) in notifications" :key="item.id">
-              <v-list-item :value="item"" :active="!(item.status === 'read')" active-class="bg-blue-lighten-5">
-                <template v-slot:prepend>
-                  <v-icon :color="item.status === 'read' ? 'grey' : 'primary'" size="large" class="me-4">{{
-                    getNotificationIcon(item.category) }}</v-icon>
-                </template>
-
-                <v-list-item-title :class="{ 'font-weight-bold': !(item.status === 'read') }"
-                  v-text="item.title"></v-list-item-title>
-
-                <v-list-item-subtitle class="text-wrap mt-1" v-text="item.content"></v-list-item-subtitle>
-
-                <v-list-item-subtitle class="text-caption text-medium-emphasis mt-1"
-                  v-text="item.notified_at"></v-list-item-subtitle>
-
-                <!-- <template v-slot:append>
-                  <v-btn variant="text" icon="mdi-close" size="small" @click.stop="deleteNotification(item.id)"></v-btn>
-                </template> -->
-              </v-list-item>
-
-              <v-divider v-if="index < notifications.length - 1"></v-divider>
-            </template>
-          </v-list>
-
-          <v-alert v-else type="info" variant="tonal" class="mt-4" icon="mdi-information">
-            暂无新通知
-          </v-alert>
+        <v-card-text>
+          <p class="text-caption text-medium-emphasis">{{ selectedNotification?.notified_at }}</p>
+          <p class="mt-2">{{ selectedNotification?.content }}</p>
         </v-card-text>
-
-        <v-divider></v-divider>
-
-        <v-card-actions>
-          <!-- <v-btn v-if="notifications.length > 0" variant="text" color="error" prepend-icon="mdi-trash-can-outline"
-            @click="clearAllNotifications">
-            清空全部
-          </v-btn> -->
-          <v-spacer></v-spacer>
-          <v-btn color="primary" variant="flat" @click="showNotifications = false">
-            关闭
-          </v-btn>
-        </v-card-actions>
       </v-card>
     </v-dialog>
+
 
   </v-app>
 </template>
@@ -179,12 +180,77 @@ const snackbar = useSnackbarStore();
 const drawer = ref(true)
 const rail = ref(true)
 const theme = ref('light')
-const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
-const notifications = ref()
+const notifications = ref<Notification[]>([])
+
+const showDrawer = ref(false)
+const showDetailDialog = ref(false)
+const selectedNotification = ref<Notification>()
+
 let timer: number | null
 
+interface Notification {
+  id: number,
+  user_id: string,
+  user_name: string,
+  category: string,
+  title: string,
+  content: string,
+  status: string,
+  url: string,
+  notified_at: string,
+  expanded: boolean
+}
+
+const openDetail = (item: Notification) => {
+  selectedNotification.value = item
+  showDetailDialog.value = true
+  if (item.status !== 'read') {
+    markAsRead(item)
+    item.status = 'read' // 标记为已读
+  }
+}
+
+
+const getUrl = (url: string) => {
+  return import.meta.env.VITE_API_URL
+}
+
+
+const getCategoryLabel = (category: string) => {
+  switch (category) {
+    case 'GLOBAL': return '管理员'
+    case 'SYSTEM': return 'AI检测'
+    case 'P2R': return '出版社'
+    case 'R2P': return '审稿人'
+    default: return '未知'
+  }
+}
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'GLOBAL': return 'red'
+    case 'SYSTEM': return 'blue'
+    case 'P2R': return 'green'
+    case 'R2P': return 'purple'
+    default: return 'grey'
+  }
+}
+
+
+const toggleNotification = () => {
+  fetchNotification()
+  showDrawer.value = true
+}
+
+const markAsRead = async (item: Notification) => {
+  try {
+    await notification.setSingleRead({ notification_id: item.id })
+  } catch (error) {
+    snackbar.showMessage('标记已读失败', 'error')
+  }
+}
 
 
 const goToHome = () => {
@@ -274,7 +340,11 @@ const fetchUnRead = async () => {
 const fetchNotification = async () => {
   try {
     const res = (await notification.getAllNotifications()).data
-    notifications.value = res.notifications
+    notifications.value = res.notifications.map((item: Notification) => ({
+      ...item,
+      expanded: false,
+    }))
+    console.log(notifications.value)
   } catch (error) {
     snackbar.showMessage('获取所有通知失败')
   }
@@ -300,10 +370,9 @@ onMounted(async () => {
   // 如果已登录，获取用户信息
   if (isLoggedIn.value) {
     await userStore.fetchUserInfo();
+    fetchUnRead()
+    timer = window.setInterval(fetchUnRead, 60000)
   }
-
-  fetchUnRead()
-  timer = window.setInterval(fetchUnRead, 10000)
 })
 </script>
 
