@@ -452,9 +452,9 @@ const handleSubmit = async () => {
         password: password.value,
         role: selectedRole.value
       }).then(async res => {
-        localStorage.setItem("token", res.data.access)
-        localStorage.setItem("refresh", res.data.refresh)
-        localStorage.setItem("isLoggedIn", "true")
+        localStorage.setItem("2-token", res.data.access)
+        localStorage.setItem("2-refresh", res.data.refresh)
+        localStorage.setItem("2-isLoggedIn", "true")
         
         // 获取用户信息并存储到 user store
         await userStore.fetchUserInfo();

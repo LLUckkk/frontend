@@ -3,13 +3,13 @@ import http from './request'
 import { ref } from 'vue'
 
 // 使用ref直接管理登录状态
-export const isLoggedIn = ref(localStorage.getItem("isLoggedIn") === "true")
+export const isLoggedIn = ref(localStorage.getItem("2-isLoggedIn") === "true")
 
 export default {
   login(data: any) {
     return http.post('/login/', data).then(res => {
       isLoggedIn.value = true
-      localStorage.setItem("isLoggedIn", "true")
+      localStorage.setItem("2-isLoggedIn", "true")
       return res
     })
   },
