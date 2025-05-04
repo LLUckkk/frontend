@@ -37,9 +37,10 @@
       <v-toolbar-title>学术图像检测系统</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" @click="toggleTheme"></v-btn>
-      <v-btn :color="hasUnreadNotifications ? 'red' : ''"
+      <!-- <v-btn v-if="isAdmin" :color="hasUnreadNotifications ? 'red' : ''"
         :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
-        @click="showNotifications = true"></v-btn>
+        @click="showNotifications = true"></v-btn> -->
+      <v-btn icon="mdi-broadcast" @click="showBroadcastDialog = true"></v-btn>
     </v-app-bar>
 
     <v-main>
@@ -94,14 +95,6 @@
       </v-card-title>
 
       <v-divider></v-divider>
-      <!-- 发送广播区域 -->
-      <v-card-text v-if="isAdmin">
-        <v-btn color="primary" block @click="showBroadcastDialog = true">
-          发送广播
-        </v-btn>
-      </v-card-text>
-
-      <v-divider class="mt-4"></v-divider>
 
       <!-- 通知列表 -->
       <v-list>
@@ -115,9 +108,6 @@
           </template>
         </v-list-item>
       </v-list>
-
-
-
     </v-navigation-drawer>
 
     <!-- 广播编辑弹窗 -->
@@ -125,12 +115,17 @@
       <v-card>
         <v-card-title class="text-h5 font-weight-bold">发送广播</v-card-title>
         <v-card-text>
-          <v-text-field v-model="broadcastTitle" label="标题" placeholder="请输入广播标题" variant="outlined" class="mb-4"
-            hide-details></v-text-field>
+          <v-text-field v-model="broadcastTitle" label="标题" placeholder="请输入广播标题（不超过15字）" 
+            variant="outlined" class="mb-4" hide-details counter="15"
+            :error="broadcastTitle.length > 15"
+            :error-messages="broadcastTitle.length > 15 ? '标题不能超过15字' : ''"></v-text-field>
           <v-row align="stretch" style="height: 400px;">
             <v-col cols="6" class="d-flex flex-column h-100">
-              <v-textarea v-model="broadcastContent" label="广播内容" placeholder="输入要广播的内容（支持Markdown格式）"
-                variant="outlined" hide-details @input="updatePreview"
+              <v-textarea v-model="broadcastContent" label="广播内容" 
+                placeholder="输入要广播的内容（支持Markdown格式，不超过400字）"
+                variant="outlined" hide-details @input="updatePreview" counter="400"
+                :error="broadcastContent.length > 400"
+                :error-messages="broadcastContent.length > 400 ? '内容不能超过400字' : ''"
                 style="flex: 1 1 auto; min-height: 0; max-height: 100%;"></v-textarea>
             </v-col>
             <v-col cols="6" class="d-flex flex-column h-100">
@@ -142,7 +137,10 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="grey" variant="text" @click="showBroadcastDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="sendBroadcast" :disabled="!broadcastTitle || !broadcastContent">发送</v-btn>
+          <v-btn color="primary" @click="sendBroadcast" 
+            :disabled="!broadcastTitle || !broadcastContent || broadcastTitle.length > 15 || broadcastContent.length > 100">
+            发送
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -154,13 +152,15 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { marked } from 'marked'
+import { useThemeStore } from '@/stores/theme'
 
 const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
 
 const drawer = ref(true)
 const rail = ref(true)
-const theme = ref('light')
+const themeStore = useThemeStore()
+const theme = computed(() => themeStore.theme)
 const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
@@ -268,8 +268,7 @@ const handleLogout = async () => {
 }
 
 const toggleTheme = () => {
-  theme.value = theme.value === 'light' ? 'dark' : 'light'
-  localStorage.setItem('app_theme', theme.value)
+  themeStore.toggleTheme()
 }
 
 const goToAnalytics = () => {
@@ -296,7 +295,7 @@ onMounted(async () => {
   // 从本地存储加载主题设置
   const savedTheme = localStorage.getItem('app_theme')
   if (savedTheme) {
-    theme.value = savedTheme
+    themeStore.setTheme(savedTheme)
   }
 
   // 如果已登录，获取用户信息

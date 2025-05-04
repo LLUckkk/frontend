@@ -11,14 +11,16 @@
 </template>
   
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
 import analyticsApi from '@/api/analytics'
 import { useSnackbarStore } from '@/stores/snackbar'
+import { useThemeStore } from '@/stores/theme'
 
 const chartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
 const snackbar = useSnackbarStore()
+const themeStore = useThemeStore()
 
 const fetchChartData = async () => {
     try {
@@ -46,23 +48,28 @@ const renderChart = (data: {
     if (chartInstance) chartInstance.dispose()
     chartInstance = echarts.init(chartRef.value)
 
+    const isDark = themeStore.theme === 'dark'
+    const textColor = isDark ? '#fff' : '#333'
+    const axisLineColor = isDark ? '#666' : '#ccc'
+
     const option: echarts.EChartsOption = {
         tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderColor: '#ddd',
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+            borderColor: isDark ? '#444' : '#ddd',
             borderWidth: 1,
-            textStyle: { color: '#333' },
+            textStyle: { color: textColor },
             padding: 12,
             extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px;',
             axisPointer: {
                 type: 'line',
-                lineStyle: { color: '#aaa', width: 1 }
+                lineStyle: { color: isDark ? '#666' : '#aaa', width: 1 }
             }
         },
         legend: {
             data: ['发布者', '审核人'],
-            top: 10
+            top: 10,
+            textStyle: { color: textColor }
         },
         grid: {
             left: '3%',
@@ -78,13 +85,21 @@ const renderChart = (data: {
             axisLabel: {
                 interval: 0,
                 rotate: 30,
-                fontSize: 12
-            }
+                fontSize: 12,
+                color: textColor
+            },
+            axisLine: { lineStyle: { color: axisLineColor } }
         },
         yAxis: {
             type: 'value',
             name: '人数',
-            axisLabel: { formatter: '{value}人' }
+            nameTextStyle: { color: textColor },
+            axisLabel: { 
+                formatter: '{value}人',
+                color: textColor
+            },
+            axisLine: { lineStyle: { color: axisLineColor } },
+            splitLine: { lineStyle: { color: isDark ? '#444' : '#eee' } }
         },
         series: [
             {
@@ -124,6 +139,10 @@ onUnmounted(() => {
     chartInstance?.dispose()
     chartInstance = null
     window.removeEventListener('resize', handleResize)
+})
+
+watch(() => themeStore.theme, () => {
+    fetchChartData()
 })
 </script>
   

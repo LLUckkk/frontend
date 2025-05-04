@@ -11,14 +11,16 @@
 </template>
   
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import * as echarts from 'echarts'
 import analyticsApi from '@/api/analytics'
 import { useSnackbarStore } from '@/stores/snackbar'
+import { useThemeStore } from '@/stores/theme'
 
 const barChartRef = ref<HTMLElement | null>(null)
 let chartInstance: echarts.ECharts | null = null
 const snackbar = useSnackbarStore()
+const themeStore = useThemeStore()
 
 const fetchAndRenderChart = async () => {
     try {
@@ -54,16 +56,23 @@ const renderChart = (data: {
 
     chartInstance = echarts.init(barChartRef.value)
 
+    const isDark = themeStore.theme === 'dark'
+    const textColor = isDark ? '#fff' : '#333'
+    const axisLineColor = isDark ? '#666' : '#ccc'
+
     const option: echarts.EChartsOption = {
         tooltip: {
             trigger: 'axis',
             axisPointer: {
                 type: 'shadow'
-            }
+            },
+            backgroundColor: isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)',
+            textStyle: { color: textColor }
         },
         legend: {
             top: 10,
-            data: ['任务下发数', '人工审核请求数', '完成人工审核数']
+            data: ['任务下发数', '人工审核请求数', '完成人工审核数'],
+            textStyle: { color: textColor }
         },
         grid: {
             left: '3%',
@@ -78,12 +87,18 @@ const renderChart = (data: {
             axisLabel: {
                 interval: 0,
                 rotate: 30,
-                fontSize: 12
-            }
+                fontSize: 12,
+                color: textColor
+            },
+            axisLine: { lineStyle: { color: axisLineColor } }
         },
         yAxis: {
             type: 'value',
-            name: '数量'
+            name: '数量',
+            nameTextStyle: { color: textColor },
+            axisLabel: { color: textColor },
+            axisLine: { lineStyle: { color: axisLineColor } },
+            splitLine: { lineStyle: { color: isDark ? '#444' : '#eee' } }
         },
         series: [
             {
@@ -127,6 +142,10 @@ onUnmounted(() => {
         chartInstance = null
     }
     window.removeEventListener('resize', handleResize)
+})
+
+watch(() => themeStore.theme, () => {
+    fetchAndRenderChart()
 })
 </script>
   

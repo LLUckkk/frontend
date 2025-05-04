@@ -50,10 +50,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import * as echarts from 'echarts'
 import analyticsApi from '@/api/analytics'
 import { useSnackbarStore } from '@/stores/snackbar'
+import { useThemeStore } from '@/stores/theme'
 
 const startTime = ref<string | null>(null)
 const endTime = ref<string | null>(null)
@@ -62,6 +63,7 @@ const endTimeError = ref('')
 const chartContainer = ref<HTMLElement | null>(null)
 const chart = ref<echarts.ECharts | null>(null)
 const snackbar = useSnackbarStore()
+const themeStore = useThemeStore()
 
 const timeError = computed(() => startTimeError.value || endTimeError.value)
 
@@ -123,6 +125,12 @@ const updateChart = (data: Record<string, number>) => {
     value: Number(value)
   }))
 
+  const isDark = themeStore.theme === 'dark'
+  const textColor = isDark ? '#fff' : '#333'
+  const backgroundColor = isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.98)'
+  const borderColor = isDark ? '#444' : '#ddd'
+  const labelColor = isDark ? '#aaa' : '#666'
+
   const colorPalette = [
     '#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de',
     '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc', '#c23531'
@@ -138,20 +146,20 @@ const updateChart = (data: Record<string, number>) => {
         return `
           <div style="font-weight: bold; margin-bottom: 8px;">${params.name}</div>
           <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-            <span style="color: #666;">数量：</span>
+            <span style="color: ${labelColor};">数量：</span>
             <span style="font-weight: bold;">${params.value}</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin: 4px 0;">
-            <span style="color: #666;">占比：</span>
+            <span style="color: ${labelColor};">占比：</span>
             <span style="font-weight: bold;">${percentage}%</span>
           </div>
         `
       },
-      backgroundColor: 'rgba(255, 255, 255, 0.98)',
-      borderColor: '#ddd',
+      backgroundColor: backgroundColor,
+      borderColor: borderColor,
       borderWidth: 1,
       textStyle: {
-        color: '#333',
+        color: textColor,
         fontSize: 13
       },
       padding: [12, 16],
@@ -163,14 +171,14 @@ const updateChart = (data: Record<string, number>) => {
       right: 10,
       top: 'middle',
       textStyle: {
-        color: '#666',
+        color: textColor,
         fontSize: 12
       },
       pageButtonPosition: 'end',
-      pageIconColor: '#666',
-      pageIconInactiveColor: '#ccc',
+      pageIconColor: textColor,
+      pageIconInactiveColor: isDark ? '#666' : '#ccc',
       pageTextStyle: {
-        color: '#666'
+        color: textColor
       }
     },
     series: [
@@ -182,27 +190,27 @@ const updateChart = (data: Record<string, number>) => {
         avoidLabelOverlap: true,
         itemStyle: {
           borderRadius: 6,
-          borderColor: '#fff',
+          borderColor: isDark ? '#333' : '#fff',
           borderWidth: 2,
           shadowBlur: 10,
-          shadowColor: 'rgba(0, 0, 0, 0.1)'
+          shadowColor: isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'
         },
         label: {
           show: true,
           position: 'outside',
           formatter: '{b}\n{c} ({d}%)',
           fontSize: 12,
-          color: '#444',
+          color: textColor,
           lineHeight: 16,
           rich: {
             b: {
               fontSize: 12,
               fontWeight: 'bold',
-              color: '#333'
+              color: textColor
             },
             c: {
               fontSize: 11,
-              color: '#666'
+              color: labelColor
             }
           }
         },
@@ -211,7 +219,7 @@ const updateChart = (data: Record<string, number>) => {
           length: 15,
           length2: 10,
           lineStyle: {
-            color: '#aaa',
+            color: isDark ? '#666' : '#aaa',
             width: 1
           },
           smooth: 0.2
@@ -222,7 +230,7 @@ const updateChart = (data: Record<string, number>) => {
           itemStyle: {
             shadowBlur: 20,
             shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.2)'
+            shadowColor: isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.2)'
           },
           label: {
             show: true,
@@ -267,6 +275,10 @@ onUnmounted(() => {
     chart.value = null
   }
   window.removeEventListener('resize', handleResize)
+})
+
+watch(() => themeStore.theme, () => {
+  fetchChartData()
 })
 </script>
 
