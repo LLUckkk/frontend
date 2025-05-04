@@ -18,46 +18,53 @@
 
     <!-- 筛选对话框 -->
     <v-dialog v-model="showFilter" max-width="500">
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          筛选条件
-          <v-spacer></v-spacer>
-          <v-btn icon variant="text" @click="showFilter = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-divider></v-divider>
-        <v-card-text class="pt-4">
-          <v-row>
-            <v-col cols="12">
-              <div class="text-subtitle-1 mb-2">上传时间</div>
-              <v-row>
-                <v-col cols="6">
-                  <v-text-field v-model="filters.startDate" label="开始日期" type="date" variant="outlined"
-                    density="compact" hide-details clearable @update:model-value="validateDateRange"></v-text-field>
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field v-model="filters.endDate" label="结束日期" type="date" variant="outlined" density="compact"
-                    hide-details clearable @update:model-value="validateDateRange"></v-text-field>
-                </v-col>
-              </v-row>
-              <v-alert v-if="dateError" type="error" density="compact" class="mt-2">
-                {{ dateError }}
-              </v-alert>
-            </v-col>
-            <v-col cols="12">
-              <div class="text-subtitle-1 mb-2">完成情况</div>
-              <v-select v-model="filters.status" :items="statusOptions" variant="outlined" density="compact"
-                hide-details clearable></v-select>
-            </v-col>
-          </v-row>
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
+        <v-card-text>
+          <div class="d-flex flex-column gap-4">
+            <v-select
+              v-model="filters.status"
+              :items="statusOptions"
+              label="任务状态"
+              clearable
+              hide-details
+            ></v-select>
+            
+            <v-select
+              v-model="filters.timeRange"
+              :items="timeRangeOptions"
+              label="快速选择时间范围"
+              clearable
+              hide-details
+              @update:model-value="handleTimeRangeChange"
+            ></v-select>
+
+            <div class="d-flex align-center gap-4">
+              <v-text-field
+                v-model="filters.startDate"
+                label="开始时间"
+                type="datetime-local"
+                hide-details
+                density="compact"
+                :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"
+              ></v-text-field>
+              <v-text-field
+                v-model="filters.endDate"
+                label="结束时间"
+                type="datetime-local"
+                hide-details
+                density="compact"
+                :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"
+              ></v-text-field>
+            </div>
+          </div>
         </v-card-text>
-        <v-card-actions class="pa-4">
+        <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" variant="text" @click="applyFilters" :disabled="!!dateError">
-            应用
-          </v-btn>
-          <v-btn color="error" variant="text" @click="resetFilters">重置</v-btn>
+          <v-btn color="grey" variant="text" @click="resetFilters">重置</v-btn>
+          <v-btn color="primary" @click="applyFilters">应用</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -158,27 +165,108 @@ interface Task {
 // 任务数据
 const tasks = ref<Task[]>([])
 
+// 筛选相关
+const showFilter = ref(false)
+const filters = ref<{
+  status: string | null
+  timeRange: string | null
+  startDate: string | null
+  endDate: string | null
+}>({
+  status: null,
+  timeRange: null,
+  startDate: null,
+  endDate: null
+})
+
+// 时间验证相关
+const timeError = ref('')
+
+const statusOptions = [
+  { title: '排队中', value: 'pending' },
+  { title: '进行中', value: 'in_progress' },
+  { title: '已完成', value: 'completed' }
+] as const
+
+const timeRangeOptions = [
+  { title: '最近一天', value: '1d' },
+  { title: '最近一周', value: '7d' },
+  { title: '最近一月', value: '30d' },
+  { title: '最近三月', value: '90d' },
+  { title: '最近一年', value: '365d' }
+]
+
+// 处理快速选择时间范围变化
+const handleTimeRangeChange = (value: string | null) => {
+  if (value) {
+    filters.value.startDate = null
+    filters.value.endDate = null
+    timeError.value = ''
+  }
+}
+
+// 处理自定义时间变化
+const handleCustomTimeChange = () => {
+  filters.value.timeRange = null
+  
+  // 检查是否都为空或都存在
+  if ((!filters.value.startDate && filters.value.endDate) || 
+      (filters.value.startDate && !filters.value.endDate)) {
+    timeError.value = '开始时间和结束时间必须同时设置或同时为空'
+    return
+  }
+
+  // 如果都为空，清除错误信息
+  if (!filters.value.startDate && !filters.value.endDate) {
+    timeError.value = ''
+    return
+  }
+
+  const startTime = new Date(filters.value.startDate!).getTime()
+  const endTime = new Date(filters.value.endDate!).getTime()
+  
+  if (startTime >= endTime) {
+    timeError.value = '开始时间必须早于结束时间'
+  } else {
+    timeError.value = ''
+  }
+}
+
 // 从后端获取任务数据
 const fetchTasks = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    let startTimeFilter: string | undefined
-    let endTimeFilter: string | undefined
-
-    if (filters.value.startDate && filters.value.endDate) {
-      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
-      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
-    }
-
-    const params = {
+    // 构建筛选参数
+    const params: any = {
       page,
-      page_size: pageSize,
-      status: filters.value.status || '',
-      startTime: startTimeFilter,
-      endTime: endTimeFilter
+      page_size: pageSize
     }
+
+    // 添加状态筛选
+    if (filters.value.status) {
+      params.status = filters.value.status
+    }
+
+    // 添加时间范围筛选
+    if (filters.value.timeRange) {
+      const now = Date.now()
+      const ranges: Record<string, number> = {
+        '1d': 24 * 60 * 60 * 1000,
+        '7d': 7 * 24 * 60 * 60 * 1000,
+        '30d': 30 * 24 * 60 * 60 * 1000,
+        '90d': 90 * 24 * 60 * 60 * 1000,
+        '365d': 365 * 24 * 60 * 60 * 1000
+      }
+      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+      params.startTime = formatDateFilter(now - rangeMs)
+      params.endTime = formatDateFilter(now)
+    } else if (filters.value.startDate && filters.value.endDate) {
+      params.startTime = formatDateFilter(new Date(filters.value.startDate).getTime())
+      params.endTime = formatDateFilter(new Date(filters.value.endDate).getTime())
+    }
+
     const response = await publisher.getAllDetectionTask(params)
-    const { tasks: taskList, current_page, total_pages, total } = response.data
+    const { tasks: taskList, current_page, total_pages, total_tasks } = response.data
 
     tasks.value = taskList.map((task: any) => ({
       task_id: task.task_id,
@@ -189,7 +277,7 @@ const fetchTasks = async (page: number, pageSize: number) => {
 
     currentPage.value = current_page
     totalPages.value = total_pages
-    totalTasks.value = total
+    totalTasks.value = total_tasks
   } catch (error) {
     console.error('获取任务列表失败:', error)
     snackbar.showMessage('获取任务列表失败', 'error')
@@ -262,22 +350,6 @@ const selected = ref([])
 const showDetail = ref(false)
 const currentTask = ref<any>(null)
 
-// 筛选相关
-const showFilter = ref(false)
-const filters = ref({
-  startDate: '',
-  endDate: '',
-  status: null as string | null
-})
-
-const dateError = ref('')
-
-const statusOptions = [
-  { title: '排队中', value: 'pending' },
-  { title: '进行中', value: 'in_progress' },
-  { title: '已完成', value: 'completed' }
-] as const
-
 // 判断是否有激活的筛选条件
 const hasActiveFilters = computed(() => {
   return filters.value.startDate ||
@@ -290,36 +362,24 @@ const filteredTasks = computed(() => {
   return tasks.value
 })
 
-const validateDateRange = () => {
-  if (filters.value.startDate && filters.value.endDate) {
-    const startDate = new Date(filters.value.startDate)
-    const endDate = new Date(filters.value.endDate)
-
-    if (startDate > endDate) {
-      dateError.value = '结束日期不能早于开始日期'
-      return false
-    }
+const resetFilters = () => {
+  filters.value = {
+    status: null,
+    timeRange: null,
+    startDate: null,
+    endDate: null
   }
-  dateError.value = ''
-  return true
-}
-
-const applyFilters = () => {
-  if (!validateDateRange()) {
-    return
-  }
-  showFilter.value = false
+  timeError.value = ''
   // 重置到第一页并重新获取数据
   currentPage.value = 1
   fetchTasks(1, pageSize.value)
 }
 
-const resetFilters = () => {
-  filters.value = {
-    startDate: '',
-    endDate: '',
-    status: null
+const applyFilters = () => {
+  if (timeError.value) {
+    return
   }
+  showFilter.value = false
   // 重置到第一页并重新获取数据
   currentPage.value = 1
   fetchTasks(1, pageSize.value)
