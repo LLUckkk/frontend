@@ -99,10 +99,10 @@
                 class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <v-btn size="small" :color="urn[index].visible ? 'error' : 'grey'" variant="tonal"
+                  <v-btn size="small" :color="urn[index]?.visible ? 'error' : 'grey'" variant="tonal"
                     @click="handleDisplayFake(urn[index])" class="fake-area-btn ml-4">
-                    <v-icon size="small" :icon="urn[index].visible ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
-                    {{ urn[index] ? '隐藏造假区域' : '显示造假区域' }}
+                    <v-icon size="small" :icon="urn[index]?.visible ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
+                    {{ urn[index]?.visible ? '隐藏造假区域' : '显示造假区域' }}
                   </v-btn>
                 </div>
                 <div class="degree-buttons mb-2">
@@ -201,7 +201,6 @@ onMounted(async () => {
     console.log(response)
     images.value = response.imgs
     imageJudgements.value = new Array(images.value.length).fill(null)
-    fetchMaskImage()
 
     dimensionsPerImage.value = images.value.map(() => [
       { name: '高斯模糊', value: null, reason: '', showFakeArea: false },
@@ -212,6 +211,7 @@ onMounted(async () => {
       { name: '重叠切割', value: null, reason: '', showFakeArea: false },
       { name: '跨图拼接', value: null, reason: '', showFakeArea: false }
     ])
+    fetchMaskImage()
 
   } catch (error) {
     snackbar.showMessage('获取任务详情失败', 'error')
@@ -241,6 +241,7 @@ const fetchMaskImage = async () => {
       ...item,
       visible: false
     }))
+    console.log(urn.value)
   } catch (error) {
     snackbar.showMessage('获取mask失败', 'error')
   }
