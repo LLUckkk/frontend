@@ -111,24 +111,12 @@
       <div class="d-flex align-center justify-center pa-4">
         <div class="d-flex align-center">
           <span class="text-caption mr-2">每页显示</span>
-          <v-select
-            v-model="pageSize"
-            :items="[5, 10, 20, 50, 100]"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="width: 100px"
-            @update:model-value="handlePageSizeChange"
-          ></v-select>
+          <v-select v-model="pageSize" :items="[5, 10, 20, 50, 100]" density="compact" variant="outlined" hide-details
+            style="width: 100px" @update:model-value="handlePageSizeChange"></v-select>
           <span class="text-caption ml-2">条</span>
         </div>
-        <v-pagination
-          v-model="currentPage"
-          :length="totalPages"
-          :total-visible="7"
-          class="ml-4"
-          @update:model-value="handlePageChange"
-        ></v-pagination>
+        <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" class="ml-4"
+          @update:model-value="handlePageChange"></v-pagination>
       </div>
 
     </v-card-text>
@@ -190,18 +178,18 @@ const fetchTasks = async (page: number, pageSize: number) => {
       endTime: endTimeFilter
     }
     const response = await publisher.getAllDetectionTask(params)
-    const { tasks: taskList, current_page, total_pages, total_count } = response.data
-    
+    const { tasks: taskList, current_page, total_pages, total } = response.data
+
     tasks.value = taskList.map((task: any) => ({
       task_id: task.task_id,
       upload_time: task.upload_time,
       completion_time: task.completion_time,
       status: task.status
     }))
-    
+
     currentPage.value = current_page
     totalPages.value = total_pages
-    totalTasks.value = total_count
+    totalTasks.value = total
   } catch (error) {
     console.error('获取任务列表失败:', error)
     snackbar.showMessage('获取任务列表失败', 'error')

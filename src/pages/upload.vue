@@ -243,7 +243,7 @@
     <v-card>
       <v-card-text>
         <ImageSelectionStep v-if="fileId" :fileId="fileId" @update="updateSelectedImages"
-          @tagChanged="handleSelectedTag" @add-name="handleName"/>
+          @tagChanged="handleSelectedTag" @add-name="handleName" />
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
@@ -439,15 +439,14 @@ const handleTag = async (tag: string) => {
 const handleNext = async () => {
   handleTag(currentTag.value)
   if (canProceed.value) {
-    try{
+    try {
       console.log(selectedImages.value)
       console.log(currentTaskName.value)
-      const task_id = (await publisher.submitDetection({image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value})).data.task_id
+      const task_id = (await publisher.submitDetection({ image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value })).data.task_id
       router.push(`/history`)
-    } catch(error){
-      snackbar.showMessage('提交失败','error')
+    } catch (error) {
+      snackbar.showMessage('提交失败', 'error')
     }
-    
   }
 }
 
