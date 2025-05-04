@@ -103,22 +103,22 @@
       <v-card-text class="pa-0" style="overflow-y: auto; max-height: 80vh;">
         <v-list v-if="notifications.length > 0" lines="two" density="comfortable">
           <template v-for="(item, index) in notifications" :key="item.id">
-            <v-list-item :class="{ 'bg-blue-lighten-5': item.status !== 'read' }" @click="openDetail(item)">
+            <v-list-item :class="{ 'bg-blue-lighten-5': item.status !== 'read', 'text-grey': item.status === 'read' }" @click="openDetail(item)">
               <template #prepend>
-                <v-chip size="small" :color="getCategoryColor(item.category)" class="me-2">
+                <v-chip size="small" :color="getCategoryColor(item.category)" class="me-2" :class="{ 'opacity-50': item.status === 'read' }">
                   {{ getCategoryLabel(item.category) }}
                 </v-chip>
               </template>
 
               <v-list-item-title class="d-flex justify-space-between align-center">
-                <span :class="{ 'font-weight-bold': item.status !== 'read' }">
+                <span :class="{ 'font-weight-bold': item.status !== 'read', 'text-grey': item.status === 'read' }">
                   {{ item.title }}
                 </span>
-                <v-btn variant="text" size="small" @click.stop="openDetail(item)">
+                <!-- <v-btn variant="text" size="small" @click.stop="openDetail(item)" :class="{ 'text-grey': item.status === 'read' }">
                   详情
-                </v-btn>
+                </v-btn> -->
                 <v-btn v-if="item.url" :href="getUrl(item.url)" target="_blank" variant="text" size="small"
-                  class="text-primary">
+                  class="text-primary" :class="{ 'text-grey': item.status === 'read' }">
                   跳转
                 </v-btn>
               </v-list-item-title>
