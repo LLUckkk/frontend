@@ -2,24 +2,12 @@
   <v-app :theme="theme">
     <Snackbar />
     <!-- 只在非移动端显示侧边导航栏 -->
-    <v-navigation-drawer
-      v-if="!isMobile"
-      v-model="drawer"
-      :rail="rail"
-      :permanent="true"
-      :temporary="false"
-      location="left"
-      class="navigation-drawer"
-      @mouseenter="rail = false"
-      @mouseleave="rail = true"
-      :width="rail ? 56 : 200"
-    >
+    <v-navigation-drawer v-if="!isMobile" v-model="drawer" :rail="rail" :permanent="true" :temporary="false"
+      location="left" class="navigation-drawer" @mouseenter="rail = false" @mouseleave="rail = true"
+      :width="rail ? 56 : 200">
       <v-list>
-        <v-list-item
-          :prepend-avatar="isLoggedIn ? userStore.avatar : undefined"
-          :subtitle="userStore.role"
-          :title="userStore.displayName"
-        >
+        <v-list-item :prepend-avatar="isLoggedIn ? userStore.avatar : undefined" :subtitle="userStore.role"
+          :title="userStore.displayName">
         </v-list-item>
       </v-list>
 
@@ -27,20 +15,20 @@
 
       <v-list density="compact" nav>
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics" @click="goToAnalytics"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files" @click="goToFiles"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users" @click="goToUsers"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs" @click="goToLogs"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核" value="reviewRequests" @click="goToReviews"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics"
+          @click="goToAnalytics"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
+          @click="goToFiles"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users"
+          @click="goToUsers"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs"
+          @click="goToLogs"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核" value="reviewRequests"
+          @click="goToReviews"></v-list-item>
         <v-divider class="my-2"></v-divider>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout" @click="handleLogout"></v-list-item>
-        <v-list-item 
-          v-else
-          prepend-icon="mdi-login" 
-          title="登录" 
-          value="login"
-          @click="goToLogin"
-        ></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout"
+          @click="handleLogout"></v-list-item>
+        <v-list-item v-else prepend-icon="mdi-login" title="登录" value="login" @click="goToLogin"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -48,15 +36,10 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" v-if="!isMobile"></v-app-bar-nav-icon>
       <v-toolbar-title>学术图像检测系统</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn 
-        :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-        @click="toggleTheme"
-      ></v-btn>
-      <v-btn 
-        :color="hasUnreadNotifications ? 'red' : ''"
+      <v-btn :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" @click="toggleTheme"></v-btn>
+      <v-btn :color="hasUnreadNotifications ? 'red' : ''"
         :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
-        @click="showNotifications = true"
-      ></v-btn>
+        @click="showNotifications = true"></v-btn>
     </v-app-bar>
 
     <v-main>
@@ -95,23 +78,14 @@
         <v-icon>mdi-logout</v-icon>
         <span>退出登录</span>
       </v-btn>
-      <v-btn 
-        v-else
-        @click="goToLogin"
-        value="login"
-      >
+      <v-btn v-else @click="goToLogin" value="login">
         <v-icon>mdi-login</v-icon>
         <span>登录</span>
       </v-btn>
     </v-bottom-navigation>
 
     <!-- 通知抽屉 -->
-    <v-navigation-drawer
-      v-model="showNotifications"
-      temporary
-      location="right"
-      width="400"
-    >
+    <v-navigation-drawer v-model="showNotifications" temporary location="right" width="400">
       <v-card-title class="d-flex justify-space-between align-center">
         <span class="text-h5 font-weight-bold">通知</span>
         <v-btn icon @click="showNotifications = false">
@@ -122,42 +96,28 @@
       <v-divider></v-divider>
       <!-- 发送广播区域 -->
       <v-card-text v-if="isAdmin">
-        <v-btn
-          color="primary"
-          block
-          @click="showBroadcastDialog = true"
-        >
+        <v-btn color="primary" block @click="showBroadcastDialog = true">
           发送广播
         </v-btn>
       </v-card-text>
-       
-       <v-divider class="mt-4"></v-divider>
+
+      <v-divider class="mt-4"></v-divider>
 
       <!-- 通知列表 -->
       <v-list>
-        <v-list-item
-          v-for="(notification, index) in notifications"
-          :key="index"
-          :title="notification.title"
-          :subtitle="notification.content"
-          :prepend-icon="notification.icon"
-          :color="notification.unread ? 'primary' : ''"
-          @click="markAsRead(index)"
-        >
+        <v-list-item v-for="(notification, index) in notifications" :key="index" :title="notification.title"
+          :subtitle="notification.content" :prepend-icon="notification.icon"
+          :color="notification.unread ? 'primary' : ''" @click="markAsRead(index)">
           <template v-slot:append>
-            <v-chip
-              v-if="notification.unread"
-              color="primary"
-              size="small"
-            >
+            <v-chip v-if="notification.unread" color="primary" size="small">
               未读
             </v-chip>
           </template>
         </v-list-item>
       </v-list>
 
-     
-      
+
+
     </v-navigation-drawer>
 
     <!-- 广播编辑弹窗 -->
@@ -165,28 +125,17 @@
       <v-card>
         <v-card-title class="text-h5 font-weight-bold">发送广播</v-card-title>
         <v-card-text>
-          <v-text-field
-            v-model="broadcastTitle"
-            label="标题"
-            placeholder="请输入广播标题"
-            variant="outlined"
-            class="mb-4"
-            hide-details
-          ></v-text-field>
+          <v-text-field v-model="broadcastTitle" label="标题" placeholder="请输入广播标题" variant="outlined" class="mb-4"
+            hide-details></v-text-field>
           <v-row align="stretch" style="height: 400px;">
             <v-col cols="6" class="d-flex flex-column h-100">
-              <v-textarea
-                v-model="broadcastContent"
-                label="广播内容"
-                placeholder="输入要广播的内容（支持Markdown格式）"
-                variant="outlined"
-                hide-details
-                @input="updatePreview"
-                style="flex: 1 1 auto; min-height: 0; max-height: 100%;"
-              ></v-textarea>
+              <v-textarea v-model="broadcastContent" label="广播内容" placeholder="输入要广播的内容（支持Markdown格式）"
+                variant="outlined" hide-details @input="updatePreview"
+                style="flex: 1 1 auto; min-height: 0; max-height: 100%;"></v-textarea>
             </v-col>
             <v-col cols="6" class="d-flex flex-column h-100">
-              <div class="preview-content pa-4" v-html="previewContent" style="flex: 1 1 auto; min-height: 0; max-height: 100%; overflow: auto;"></div>
+              <div class="preview-content pa-4" v-html="previewContent"
+                style="flex: 1 1 auto; min-height: 0; max-height: 100%; overflow: auto;"></div>
             </v-col>
           </v-row>
         </v-card-text>
@@ -224,6 +173,7 @@ import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
 
 import { useSnackbarStore } from '@/stores/snackbar';
+import notification from './api/notification'
 const snackbar = useSnackbarStore();
 
 // 通知相关
@@ -276,6 +226,7 @@ const sendBroadcast = async () => {
     previewContent.value = ''
     showBroadcastDialog.value = false
     updateUnreadStatus()
+    await notification.sendBroadcast(newNotification)
     snackbar.showMessage('广播发送成功', 'success')
   } catch (error) {
     snackbar.showMessage('广播发送失败', 'error')
@@ -303,7 +254,7 @@ const handleLogout = async () => {
   try {
     //localStorage.clear()
     let refresh = localStorage.getItem("1-refresh")
-    const response = await user.logout({refresh})
+    const response = await user.logout({ refresh })
     localStorage.removeItem("1-refresh")
     localStorage.removeItem("1-token")
     isLoggedIn.value = false
@@ -348,8 +299,8 @@ onMounted(async () => {
     theme.value = savedTheme
   }
 
-    // 如果已登录，获取用户信息
-    if (isLoggedIn.value) {
+  // 如果已登录，获取用户信息
+  if (isLoggedIn.value) {
     await userStore.fetchUserInfo();
   }
 })
