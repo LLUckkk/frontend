@@ -5,7 +5,7 @@
     </v-col>
     <v-col cols="6" class="mb-2">
       <v-text-field v-model="task_name" label="为该检测任务添加名称" @update:modelValue="handleName"
-        variant="outlined"></v-text-field>
+        variant="outlined" :rules="[v => !v || v.length <= 10 || '任务名称不能超过10个字']" counter="10"></v-text-field>
     </v-col>
   </v-row>
 
@@ -250,6 +250,10 @@ watch(selectedTag, (newVal) => {
   } else {
     console.log('标签被清除')
   }
+})
+
+const canProceed = computed(() => {
+  return displayImages.value.length > 0 && (!task_name.value || task_name.value.length <= 10)
 })
 
 </script>

@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    DetectionReviewStep: typeof import('./components/steps/DetectionReviewStep.vue')['default']
     DetectionStep: typeof import('./components/steps/DetectionStep.vue')['default']
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
     ForgotPassword: typeof import('./components/ForgotPassword.vue')['default']

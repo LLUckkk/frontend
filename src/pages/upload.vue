@@ -2,7 +2,7 @@
   <!-- 上传页面内容 -->
   <div v-show="!showProgress">
     <v-row>
-      <v-col cols="12" lg="9">
+      <v-col cols="12" lg="11">
         <v-row>
           <v-col cols="12" md="4">
             <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'free' }"
@@ -197,7 +197,7 @@
         </v-row>
       </v-col>
 
-      <v-col cols="12" lg="3">
+      <!-- <v-col cols="12" lg="3">
         <v-card>
           <v-card-title class="d-flex align-center">
             实时检测动态
@@ -226,7 +226,7 @@
             </v-timeline>
           </v-card-text>
         </v-card>
-      </v-col>
+      </v-col> -->
     </v-row>
   </div>
 
@@ -418,7 +418,7 @@ const triggerFileInput = () => {
 
 // 进度页面相关方法
 const canProceed = computed(() => {
-  return selectedImages.value.length > 0
+  return selectedImages.value.length > 0 && (!currentTaskName.value || currentTaskName.value.length <= 10)
 })
 
 const updateSelectedImages = (images: typeof extractedImages.value) => {
@@ -436,16 +436,13 @@ const handleTag = async (tag: string) => {
   }
 }
 
-
-
-
 const handleNext = async () => {
   handleTag(currentTag.value)
   if (canProceed.value) {
     try{
       console.log(selectedImages.value)
       console.log(currentTaskName.value)
-      const task_id = (await publisher.submitDetection({image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName})).data.task_id
+      const task_id = (await publisher.submitDetection({image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value})).data.task_id
       router.push(`/history`)
     } catch(error){
       snackbar.showMessage('提交失败','error')

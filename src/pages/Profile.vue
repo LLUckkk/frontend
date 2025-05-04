@@ -71,23 +71,45 @@
       <v-col cols="12" md="8">
         <!-- 最近活动 -->
         <v-card>
-          <v-card-title>最近活动</v-card-title>
+          <v-card-title class="d-flex align-center">
+            <span>最近活动</span>
+            <v-spacer></v-spacer>
+            <span class="text-caption text-grey">最近5条记录</span>
+          </v-card-title>
           <v-card-text>
-            <v-timeline>
-              <v-timeline-item v-for="(activity, index) in recentActivities" :key="index" :dot-color="activity.color"
-                size="small">
-                <div class="d-flex justify-space-between">
-                  <div>
-                    <div class="text-subtitle-1">{{ activity.task_name }}</div>
-                    <div class="text-caption">{{ activity.completion_time }}</div>
+            <v-timeline density="compact" align="start" class="activity-timeline">
+              <template v-if="recentActivities && recentActivities.length > 0">
+                <v-timeline-item v-for="(activity, index) in recentActivities.slice(-5).reverse()" :key="index" 
+                  :dot-color="activity.color" size="small">
+                  <div class="d-flex justify-space-between align-center w-100">
+                    <div class="activity-info">
+                      <div class="text-subtitle-1">{{ activity.task_name }}</div>
+                      <div class="text-caption text-grey">{{ formatDateTime(activity.completion_time) }}</div>
+                    </div>
+                    <v-chip :color="getStatusColor(activity.status)" size="small" class="activity-status">
+                      {{ getStatusType(activity.status) }}
+                    </v-chip>
                   </div>
-                  <v-chip :color=getStatusColor(activity.status) size="small">
-                    {{ getStatusType(activity.status) }}
-                  </v-chip>
-                </div>
-              </v-timeline-item>
+                </v-timeline-item>
+                <!-- 填充空白项以保持对齐 -->
+                <template v-if="recentActivities.length < 5">
+                  <v-timeline-item v-for="n in (5 - recentActivities.length)" :key="`empty-${n}`" 
+                    dot-color="transparent" size="small">
+                    <div class="d-flex justify-space-between align-center w-100">
+                      <div class="activity-info">
+                        <div class="text-subtitle-1 text-grey-lighten-1">-</div>
+                        <div class="text-caption text-grey-lighten-1">-</div>
+                      </div>
+                      <v-chip color="transparent" size="small" class="activity-status">-</v-chip>
+                    </div>
+                  </v-timeline-item>
+                </template>
+              </template>
+              <div v-else class="text-center py-4">
+                <v-icon size="48" color="grey-lighten-1">mdi-information-outline</v-icon>
+                <div class="text-subtitle-1 mt-2 text-grey">暂无活动记录</div>
+              </div>
             </v-timeline>
-            <!-- 您最近没有审核操作哦~ -->
           </v-card-text>
         </v-card>
       </v-col>
@@ -99,9 +121,11 @@
         <v-card-title>编辑个人信息</v-card-title>
         <v-card-text>
           <v-form>
-            <v-text-field v-model="editForm.username" label="用户名" variant="outlined" class="mb-4"></v-text-field>
-            <v-text-field v-model="editForm.email" label="邮箱" variant="outlined" class="mb-4"></v-text-field>
-            <v-textarea v-model="editForm.profile" label="个人简介" variant="outlined" rows="3"></v-textarea>
+            <v-text-field v-model="editForm.username" label="用户名" variant="outlined" class="mb-4" 
+              :rules="[v => !v || v.length <= 10 || '用户名不能超过10个字']" counter="10"></v-text-field>
+            <v-text-field v-model="editForm.email" label="邮箱" variant="outlined" class="mb-4" disabled></v-text-field>
+            <v-textarea v-model="editForm.profile" label="个人简介" variant="outlined" rows="3"
+              :rules="[v => !v || v.length <= 10 || '个人简介不能超过10个字']" counter="10"></v-textarea>
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -109,7 +133,8 @@
           <v-btn color="grey" variant="text" @click="showEditDialog = false">
             取消
           </v-btn>
-          <v-btn color="primary" variant="text" @click="handleUpdateProfile" :loading="updating">
+          <v-btn color="primary" variant="text" @click="handleUpdateProfile" :loading="updating"
+            :disabled="!isEditFormValid">
             保存
           </v-btn>
         </v-card-actions>
@@ -298,8 +323,16 @@ const stats = ref({
   completedTasks: 8
 })
 
-// 模拟最近活动
-const recentActivities = ref()
+// 在 script setup 部分添加接口定义
+interface RecentActivity {
+  task_name: string
+  completion_time: string
+  status: string
+  color: string
+}
+
+// 修改 recentActivities 的初始化
+const recentActivities = ref<RecentActivity[]>([])
 
 // 获取用户信息
 onMounted(async () => {
@@ -410,6 +443,23 @@ const getStatusColor = (status:string) => {
   }
 }
 
+const isEditFormValid = computed(() => {
+  return (!editForm.value.username || editForm.value.username.length <= 10) &&
+         (!editForm.value.profile || editForm.value.profile.length <= 10)
+})
+
+const formatDateTime = (dateString: string) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 </script>
 
 <style scoped>
@@ -419,5 +469,22 @@ const getStatusColor = (status:string) => {
 
 .position-absolute {
   position: absolute;
+}
+
+.activity-timeline {
+  min-height: 300px;
+}
+
+.activity-info {
+  min-width: 200px;
+}
+
+.activity-status {
+  min-width: 80px;
+  justify-content: center;
+}
+
+.w-100 {
+  width: 100%;
 }
 </style>

@@ -88,24 +88,32 @@
           <!-- 右侧人工审核区域 -->
           <div class="review-section rounded-lg elevation-1 pa-4">
             <div class="review-header">
-              <div class="text-h6 font-weight-medium text-center">人工审核</div>
+              <div class="text-h6 font-weight-medium text-center mb-4">人工审核</div>
               <div class="reviewer-info mt-4">
-                <div v-for="(review, index) in review_results" :key="index"
-                  class="reviewer-item d-flex align-center pa-3 mb-4 rounded" style="min-height: 64px;">
-                  <v-avatar size="40" class="mr-3">
-                    <img :src="getImageUrl(review.avatar)" alt="用户头像">
-                  </v-avatar>
-                  <div>
-                    <div class="text-body-1">{{ review.username }}</div>
-                    <div class="text-caption text-grey">结果：{{ getResult(review.result) }}</div>
+                <template v-if="review_results.length > 0">
+                  <div v-for="(review, index) in review_results" :key="index"
+                    class="reviewer-item d-flex align-center pa-3 mb-4 rounded" style="min-height: 64px;">
+                    <v-avatar size="40" class="mr-3" color="primary">
+                      <v-img v-if="review.avatar" :src="getImageUrl(review.avatar)" cover></v-img>
+                      <span v-else class="text-h6">{{ review.username.charAt(0) }}</span>
+                    </v-avatar>
+                    <div class="flex-grow-1">
+                      <div class="text-body-1 font-weight-medium">{{ review.username }}</div>
+                      <div class="text-caption text-grey mt-1">结果：{{ getResult(review.result) }}</div>
+                    </div>
+                    <v-btn variant="text" density="comfortable" class="details-btn" color="primary"
+                      @click="handleViewDetail(review)">
+                      查看详情
+                      <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
+                    </v-btn>
                   </div>
-                  <v-spacer></v-spacer>
-                  <v-btn variant="text" density="comfortable" class="details-btn" color="primary"
-                    @click="handleViewDetail(review)">
-                    查看详情
-                    <v-icon size="16" class="ml-1">mdi-chevron-right</v-icon>
-                  </v-btn>
-                </div>
+                </template>
+                <template v-else>
+                  <div class="d-flex flex-column align-center justify-center" style="height: 200px;">
+                    <v-icon size="48" color="grey" class="mb-4">mdi-information-outline</v-icon>
+                    <div class="text-body-1 text-grey">暂无人工审核结果</div>
+                  </div>
+                </template>
               </div>
             </div>
           </div>
@@ -476,23 +484,33 @@ onMounted(async () => {
 }
 
 .review-header {
-  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  background-color: rgb(var(--v-theme-surface));
+  z-index: 1;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
 }
 
 .reviewer-item {
   position: relative;
-  padding: 8px;
+  padding: 12px;
   border-radius: 8px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  background-color: rgba(var(--v-theme-surface), 0.5);
+  border: 1px solid rgba(var(--v-theme-primary), 0.1);
 }
 
 .reviewer-item:hover {
   background-color: rgba(var(--v-theme-primary), 0.05);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .details-btn {
   opacity: 0;
   transition: opacity 0.2s ease;
+  white-space: nowrap;
 }
 
 .reviewer-item:hover .details-btn {

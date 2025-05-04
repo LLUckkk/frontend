@@ -125,6 +125,14 @@
         <span>检测历史</span>
       </v-btn>
       <v-btn 
+        v-if="userStore.role === 'publisher'"
+        to="/annual" 
+        value="annual"
+      >
+        <v-icon>mdi-gavel</v-icon>
+        <span>人工审核</span>
+      </v-btn>
+      <v-btn 
         v-if="userStore.role === 'reviewer'"
         to="/review" 
         value="review"
