@@ -88,6 +88,11 @@ export default {
   //publisher获取单个图片的所有人工审核结果
   getImageReviewAll(data: any) {
     return http.get(`/get_img_review_all/?review_request_id=${data.review_request_id}&img_id=${data.img_id}`)
+  },
+
+  //publisher获得单张图片的单个人的详细人工审核结果
+  getImageReviewDetail(data: any) {
+    return http.get(`/get_image_review/?review_request_id=${data.review_request_id}&img_id=${data.img_id}&reviewer_id=${data.reviewer_id}`)
   }
 
 }

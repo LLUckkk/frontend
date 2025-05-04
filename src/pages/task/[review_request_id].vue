@@ -126,7 +126,8 @@
           <v-spacer></v-spacer>
         </v-toolbar>
         <result-component v-if="showDetailDialog" :task-id="taskData?.id"
-          :imageUrl="getImageUrl(images[currentImageIndex].img_url)" />
+          :imageUrl="getImageUrl(images[currentImageIndex].img_url)" :reasons="reasons" :result="result"
+          :scores="scores" :ai_detection="AI_detection" />
       </v-card>
     </v-dialog>
   </div>
@@ -140,6 +141,7 @@ import { useUserStore } from '@/stores/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ResultComponent from '@/components/result.vue'
 import publisher from '@/api/publisher'
+import reviewer from '@/api/reviewer'
 
 const router = useRouter()
 const route = useRoute()
@@ -184,6 +186,9 @@ const done = ref(0)
 const process = ref(0)
 const AI_detection = ref(0)
 const review_results = ref<Review[]>([])
+const reasons = ref<string[]>([])
+const result = ref(false)
+const scores = ref<number[]>([])
 
 const currentImage = computed(() => {
   return images.value[currentImageIndex.value]
@@ -194,6 +199,17 @@ const fetchReview = async (img: Image) => {
     review_results.value = (await publisher.getImageReviewAll({ review_request_id: review_request_id.value, img_id: img.img_id })).data.reviewers_results
   } catch (error) {
     snackbar.showMessage('获取人工审核结果失败', 'error')
+  }
+}
+
+const fetchReviewDetail = async (review: Review) => {
+  try {
+    const response = (await publisher.getImageReviewDetail({ review_request_id: review_request_id.value, img_id: currentImage.value.img_id, reviewer_id: review.id })).data
+    reasons.value = response.reasons
+    result.value = response.result
+    scores.value = response.scores
+  } catch (error) {
+    snackbar.showMessage('获取人工审核详情失败', 'error')
   }
 }
 
@@ -266,6 +282,7 @@ const formatNumber = (result: number) => {
 // 修改查看详情按钮的点击事件
 const handleViewDetail = (review: Review) => {
   showDetailDialog.value = true
+  fetchReviewDetail(review)
 }
 
 onMounted(async () => {

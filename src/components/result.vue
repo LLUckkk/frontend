@@ -10,7 +10,7 @@
               <!-- 进度和标签 -->
               <div class="d-flex align-center">
                 <div class="progress-circle mr-3 elevation-1">
-                  <span class="text-h5 font-weight-bold primary--text">90%</span>
+                  <span class="text-h5 font-weight-bold primary--text">{{ formatNumber(props.ai_detection) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
                 <v-chip color="primary" variant="outlined" size="x-large" class="font-weight-medium px-3" elevation="1">
@@ -31,7 +31,7 @@
           <!-- 图片预览区域 -->
           <div class="preview-section">
             <div class="preview-box">
-              <v-img v-if="currentImage" :src="props.imageUrl" contain height="100%" class="rounded-lg"></v-img>
+              <v-img v-if="props.imageUrl" :src="props.imageUrl" contain height="100%" class="rounded-lg"></v-img>
               <span v-else class="text-h4">PIC</span>
             </div>
           </div>
@@ -46,15 +46,15 @@
                 </div>
                 <div class="degree-result mb-2">
                   <div class="d-flex align-center">
-                    <v-icon :color="getDegreeColor(dimension.value)" class="mr-2">
-                      {{ getDegreeIcon(dimension.value) }}
+                    <v-icon :color="getDegreeColor(props.scores[index])" class="mr-2">
+                      {{ getDegreeIcon(props.scores[index]) }}
                     </v-icon>
-                    <span class="text-body-1">{{ getDegreeLabel(dimension.value) }}</span>
+                    <span class="text-body-1">{{ getDegreeLabel(props.scores[index]) }}</span>
                   </div>
                 </div>
                 <div class="reason-text mt-2">
                   <div class="text-caption text-grey">理由：</div>
-                  <div class="text-body-2">{{ dimension.reason || '暂无理由' }}</div>
+                  <div class="text-body-2">{{ props.reasons[index] || '暂无理由' }}</div>
                 </div>
               </div>
 
@@ -62,11 +62,11 @@
               <div class="fake-judge-section mt-4 pt-4">
                 <div class="text-subtitle-1 mb-4">造假判定</div>
                 <div class="d-flex align-center">
-                  <v-icon :color="imageJudgements === true ? 'error' : 'success'" class="mr-2">
-                    {{ imageJudgements === true ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                  <v-icon :color="props.result === true ? 'error' : 'success'" class="mr-2">
+                    {{ props.result === true ? 'mdi-alert-circle' : 'mdi-check-circle' }}
                   </v-icon>
                   <span class="text-body-1">
-                    {{ imageJudgements === true ? '造假图片' : '真实图片' }}
+                    {{ props.result === true ? '造假图片' : '真实图片' }}
                   </span>
                 </div>
               </div>
@@ -75,28 +75,11 @@
         </div>
       </div>
     </div>
-
-    <!-- 添加提示对话框 -->
-    <v-dialog v-model="showAlert" max-width="400">
-      <v-card>
-        <v-card-text class="pa-4">
-          <div class="text-center">{{ alertMessage }}</div>
-        </v-card-text>
-        <v-card-actions class="justify-center pb-4">
-          <v-btn color="primary" variant="text" @click="showAlert = false">
-            确定
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import publisher from '@/api/publisher';
-import reviewer from '@/api/reviewer';
+import { ref } from 'vue'
 
 const props = defineProps({
   taskId: {
@@ -109,14 +92,33 @@ const props = defineProps({
     required: false,
     default: "",
   },
+  reasons: {
+    type: Array as PropType<string[]>,
+    required: true,
+    default: () => [],
+  },
+  result: {
+    type: Boolean,
+    required: true,
+    default: () => false
+  },
+  scores: {
+    type: Array as PropType<number[]>,
+    required: true,
+    default: () => []
+  },
+  ai_detection: {
+    type: Number,
+    required: true,
+    default: () => 0
+  }
+
 });
 
-// 图片相关数据
-const currentImage = ref({
-  id: '1',
-  url: 'https://picsum.photos/id/237/800/600',
-  thumbnail: 'https://picsum.photos/id/237/80/80',
-})
+const formatNumber = (result: number) => {
+  return `${(result * 100).toFixed(2)}%`
+}
+
 
 // 评分维度数据
 interface Dimension {
@@ -129,60 +131,48 @@ interface Dimension {
 const dimensions = ref<Dimension[]>([
   {
     name: '高斯模糊',
-    value: 2,
-    reason: '',
+    value: props.scores[0],
+    reason: props.reasons[0],
     showFakeArea: false
   },
   {
     name: '亮度/对比度调节',
-    value: 1,
-    reason: '',
+    value: props.scores[1],
+    reason: props.reasons[1],
     showFakeArea: false
   },
   {
     name: '智能修复',
-    value: 3,
-    reason: '',
+    value: props.scores[2],
+    reason: props.reasons[2],
     showFakeArea: false
   },
   {
     name: '暴力覆盖',
-    value: 2,
-    reason: '',
+    value: props.scores[3],
+    reason: props.reasons[3],
     showFakeArea: false
   },
   {
     name: '同图复制',
-    value: 1,
-    reason: '',
+    value: props.scores[4],
+    reason: props.reasons[4],
     showFakeArea: false
   },
   {
     name: '重叠切割',
-    value: 2,
-    reason: '',
+    value: props.scores[5],
+    reason: props.reasons[5],
     showFakeArea: false
   },
   {
     name: '跨图拼接',
-    value: 1,
-    reason: '',
+    value: props.scores[6],
+    reason: props.reasons[6],
     showFakeArea: false
   }
 ])
 
-const getAnnualDetail = async () => {
-  // const response = await publisher.getAnnualDetail()
-  //组件通信告诉一下是哪个reviewer和task？？还得是图片吧
-}
-
-const degreeOptions = [
-  { value: 1, label: '很差' },
-  { value: 2, label: '较差' },
-  { value: 3, label: '一般' },
-  { value: 4, label: '较好' },
-  { value: 5, label: '很好' }
-]
 
 const getDegreeColor = (value: number | null) => {
   if (value === null) return 'grey'
@@ -239,60 +229,9 @@ const getDegreeLabel = (value: number | null) => {
 }
 
 // 图片造假判定数据
-const imageJudgements = ref<boolean | null>(null)
+const imageJudgements = props.result
 
-const showAlert = ref(false)
-const alertMessage = ref('')
 
-const alert = (message: string) => {
-  alertMessage.value = message
-  showAlert.value = true
-}
-
-const checkAnswerCompletion = () => {
-  // 检查是否已完成评分和判定
-  if (imageJudgements.value === null) {
-    return {
-      complete: false,
-      message: '尚未进行造假判定'
-    }
-  }
-
-  // 检查所有维度是否都已评分
-  const hasUnratedDimension = dimensions.value.some(dim => dim.value === null)
-  if (hasUnratedDimension) {
-    return {
-      complete: false,
-      message: '评分维度尚未评分完整'
-    }
-  }
-
-  // 检查所有维度是否都填写了理由
-  const hasEmptyReason = dimensions.value.some(dim => !dim.reason)
-  if (hasEmptyReason) {
-    return {
-      complete: false,
-      message: '评分维度理由尚未填写完整'
-    }
-  }
-
-  return {
-    complete: true,
-    message: '已完成评分'
-  }
-}
-
-const handleSubmit = () => {
-  const result = checkAnswerCompletion()
-  if (!result.complete) {
-    // 显示错误提示
-    alert(result.message)
-    return
-  }
-
-  // TODO: 处理提交逻辑
-  console.log('提交成功')
-}
 </script>
 
 <style scoped>
