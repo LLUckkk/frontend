@@ -105,16 +105,95 @@
       </v-btn>
     </v-bottom-navigation>
 
-    <!-- 通知对话框 -->
-    <v-dialog v-model="showNotifications" max-width="700px">
+    <!-- 通知抽屉 -->
+    <v-navigation-drawer
+      v-model="showNotifications"
+      temporary
+      location="right"
+      width="400"
+    >
+      <v-card-title class="d-flex justify-space-between align-center">
+        <span class="text-h5 font-weight-bold">通知</span>
+        <v-btn icon @click="showNotifications = false">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
+
+      <v-divider></v-divider>
+      <!-- 发送广播区域 -->
+      <v-card-text v-if="isAdmin">
+        <v-btn
+          color="primary"
+          block
+          @click="showBroadcastDialog = true"
+        >
+          发送广播
+        </v-btn>
+      </v-card-text>
+       
+       <v-divider class="mt-4"></v-divider>
+
+      <!-- 通知列表 -->
+      <v-list>
+        <v-list-item
+          v-for="(notification, index) in notifications"
+          :key="index"
+          :title="notification.title"
+          :subtitle="notification.content"
+          :prepend-icon="notification.icon"
+          :color="notification.unread ? 'primary' : ''"
+          @click="markAsRead(index)"
+        >
+          <template v-slot:append>
+            <v-chip
+              v-if="notification.unread"
+              color="primary"
+              size="small"
+            >
+              未读
+            </v-chip>
+          </template>
+        </v-list-item>
+      </v-list>
+
+     
+      
+    </v-navigation-drawer>
+
+    <!-- 广播编辑弹窗 -->
+    <v-dialog v-model="showBroadcastDialog" max-width="1000">
       <v-card>
-        <v-card-title>通知</v-card-title>
+        <v-card-title class="text-h5 font-weight-bold">发送广播</v-card-title>
         <v-card-text>
-          <!-- 这里可以添加通知列表 -->
+          <v-text-field
+            v-model="broadcastTitle"
+            label="标题"
+            placeholder="请输入广播标题"
+            variant="outlined"
+            class="mb-4"
+            hide-details
+          ></v-text-field>
+          <v-row align="stretch" style="height: 400px;">
+            <v-col cols="6" class="d-flex flex-column h-100">
+              <v-textarea
+                v-model="broadcastContent"
+                label="广播内容"
+                placeholder="输入要广播的内容（支持Markdown格式）"
+                variant="outlined"
+                hide-details
+                @input="updatePreview"
+                style="flex: 1 1 auto; min-height: 0; max-height: 100%;"
+              ></v-textarea>
+            </v-col>
+            <v-col cols="6" class="d-flex flex-column h-100">
+              <div class="preview-content pa-4" v-html="previewContent" style="flex: 1 1 auto; min-height: 0; max-height: 100%; overflow: auto;"></div>
+            </v-col>
+          </v-row>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="showNotifications = false">关闭</v-btn>
+          <v-btn color="grey" variant="text" @click="showBroadcastDialog = false">取消</v-btn>
+          <v-btn color="primary" @click="sendBroadcast" :disabled="!broadcastTitle || !broadcastContent">发送</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -125,6 +204,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
+import { marked } from 'marked'
 
 const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
@@ -136,7 +216,6 @@ const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
 
-
 import { isLoggedIn } from './api/user'
 
 import user from '@/api/user'
@@ -147,6 +226,61 @@ const userStore = useUserStore();
 import { useSnackbarStore } from '@/stores/snackbar';
 const snackbar = useSnackbarStore();
 
+// 通知相关
+const notifications = ref([
+  {
+    title: '系统通知',
+    content: '欢迎使用学术图像检测系统',
+    icon: 'mdi-bell',
+    unread: true,
+    time: new Date()
+  }
+])
+
+const broadcastContent = ref('')
+const broadcastTitle = ref('')
+const isAdmin = computed(() => userStore.role === 'admin')
+const showBroadcastDialog = ref(false)
+const previewContent = ref('')
+
+// 标记通知为已读
+const markAsRead = (index: number) => {
+  notifications.value[index].unread = false
+  updateUnreadStatus()
+}
+
+// 更新未读状态
+const updateUnreadStatus = () => {
+  hasUnreadNotifications.value = notifications.value.some(n => n.unread)
+}
+
+// 更新预览内容
+const updatePreview = async () => {
+  previewContent.value = await marked.parse(broadcastContent.value)
+}
+
+// 发送广播
+const sendBroadcast = async () => {
+  if (!broadcastTitle.value || !broadcastContent.value) return
+  try {
+    const newNotification = {
+      title: broadcastTitle.value,
+      content: await marked.parse(broadcastContent.value),
+      icon: 'mdi-broadcast',
+      unread: true,
+      time: new Date()
+    }
+    notifications.value.unshift(newNotification)
+    broadcastTitle.value = ''
+    broadcastContent.value = ''
+    previewContent.value = ''
+    showBroadcastDialog.value = false
+    updateUnreadStatus()
+    snackbar.showMessage('广播发送成功', 'success')
+  } catch (error) {
+    snackbar.showMessage('广播发送失败', 'error')
+  }
+}
 
 // 模拟用户信息
 const userInfo = ref<{
@@ -157,12 +291,9 @@ const userInfo = ref<{
   student_id: '管理员'
 })
 
-
-
 const goToHome = () => {
   router.push('/')
 }
-
 
 const goToLogin = () => {
   router.push('/login')
@@ -189,7 +320,6 @@ const toggleTheme = () => {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
   localStorage.setItem('app_theme', theme.value)
 }
-
 
 const goToAnalytics = () => {
   router.push('/analytics')
@@ -269,5 +399,12 @@ onMounted(async () => {
 /* 调整主内容区域的上边距，为固定顶部栏留出空间 */
 .v-main {
   padding-top: 64px !important;
+}
+
+.preview-content {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  min-height: 200px;
+  background-color: rgb(var(--v-theme-surface));
 }
 </style>
