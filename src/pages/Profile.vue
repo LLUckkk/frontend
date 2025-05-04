@@ -79,8 +79,8 @@
           <v-card-text>
             <v-timeline density="compact" align="start" class="activity-timeline">
               <template v-if="recentActivities && recentActivities.length > 0">
-                <v-timeline-item v-for="(activity, index) in recentActivities.slice(-5).reverse()" :key="index" 
-                  :dot-color="activity.color" size="small">
+                <v-timeline-item v-for="(activity, index) in recentActivities.slice(-5).reverse()" :key="index"
+                  :dot-color="getStatusColor(activity.status)" size="small">
                   <div class="d-flex justify-space-between align-center w-100">
                     <div class="activity-info">
                       <div class="text-subtitle-1">{{ activity.task_name }}</div>
@@ -93,7 +93,7 @@
                 </v-timeline-item>
                 <!-- 填充空白项以保持对齐 -->
                 <template v-if="recentActivities.length < 5">
-                  <v-timeline-item v-for="n in (5 - recentActivities.length)" :key="`empty-${n}`" 
+                  <v-timeline-item v-for="n in (5 - recentActivities.length)" :key="`empty-${n}`"
                     dot-color="transparent" size="small">
                     <div class="d-flex justify-space-between align-center w-100">
                       <div class="activity-info">
@@ -121,7 +121,7 @@
         <v-card-title>编辑个人信息</v-card-title>
         <v-card-text>
           <v-form>
-            <v-text-field v-model="editForm.username" label="用户名" variant="outlined" class="mb-4" 
+            <v-text-field v-model="editForm.username" label="用户名" variant="outlined" class="mb-4"
               :rules="[v => !v || v.length <= 10 || '用户名不能超过10个字']" counter="10"></v-text-field>
             <v-text-field v-model="editForm.email" label="邮箱" variant="outlined" class="mb-4" disabled></v-text-field>
             <v-textarea v-model="editForm.profile" label="个人简介" variant="outlined" rows="3"
@@ -419,8 +419,8 @@ const handleUpdateProfile = async () => {
   }
 }
 
-const getStatusType = (status:string) => {
-  switch(status){
+const getStatusType = (status: string) => {
+  switch (status) {
     case 'completed':
       return '成功'
     case 'pending':
@@ -432,8 +432,8 @@ const getStatusType = (status:string) => {
   }
 }
 
-const getStatusColor = (status:string) => {
-  switch(status){
+const getStatusColor = (status: string) => {
+  switch (status) {
     case 'completed':
       return 'success'
     case 'pending':
@@ -445,7 +445,7 @@ const getStatusColor = (status:string) => {
 
 const isEditFormValid = computed(() => {
   return (!editForm.value.username || editForm.value.username.length <= 10) &&
-         (!editForm.value.profile || editForm.value.profile.length <= 10)
+    (!editForm.value.profile || editForm.value.profile.length <= 10)
 })
 
 const formatDateTime = (dateString: string) => {

@@ -63,10 +63,10 @@
                 <div class="text-subtitle-1 mb-4">造假判定</div>
                 <div class="d-flex align-center">
                   <v-icon :color="props.result === true ? 'error' : 'success'" class="mr-2">
-                    {{ props.result === true ? 'mdi-alert-circle' : 'mdi-check-circle' }}
+                    {{ props.result === true ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                   </v-icon>
                   <span class="text-body-1">
-                    {{ props.result === true ? '造假图片' : '真实图片' }}
+                    {{ props.result === true ? '真实图片' : '造假图片' }}
                   </span>
                 </div>
               </div>

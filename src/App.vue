@@ -106,7 +106,7 @@
             <v-list-item :class="{ 'bg-blue-lighten-5': item.status !== 'read' }" @click="openDetail(item)">
               <template #prepend>
                 <v-chip size="small" :color="getCategoryColor(item.category)" class="me-2">
-                  {{ item.category }}
+                  {{ getCategoryLabel(item.category) }}
                 </v-chip>
               </template>
 
@@ -124,7 +124,7 @@
               </v-list-item-title>
 
               <v-list-item-subtitle class="text-truncate text-wrap">
-                {{ item.content.length > 40 ? item.content.slice(0, 40) + '...' : item.content }}
+                <div v-html="renderBriefMarkdown(item.content)"></div>
               </v-list-item-subtitle>
             </v-list-item>
 
@@ -151,7 +151,7 @@
 
         <v-card-text>
           <p class="text-caption text-medium-emphasis">{{ selectedNotification?.notified_at }}</p>
-          <p class="mt-2">{{ selectedNotification?.content }}</p>
+          <div class="mt-2 markdown-body" v-html="renderMarkdown(selectedNotification?.content)"></div>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -165,6 +165,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { isLoggedIn } from './api/user'
+import { marked } from 'marked'
+
+
 const { mobile } = useDisplay()
 const isMobile = computed(() => mobile.value)
 import user from '@/api/user'
@@ -189,6 +192,23 @@ const showDetailDialog = ref(false)
 const selectedNotification = ref<Notification>()
 
 let timer: number | null
+
+marked.setOptions({
+  breaks: true,
+  gfm: true
+})
+
+const renderMarkdown = (content?: string) => {
+  return content ? marked.parse(content) : ''
+}
+
+const renderBriefMarkdown = (content?: string) => {
+  if (!content) return ''
+  const plainText = content.length > 60 ? content.slice(0, 60) + '...' : content
+  return marked.parseInline(plainText)
+}
+
+
 
 interface Notification {
   id: number,
@@ -353,6 +373,7 @@ const fetchNotification = async () => {
 const markAllAsRead = async () => {
   try {
     await notification.setReadAll()
+    hasUnreadNotifications.value = false
     fetchNotification()
   } catch (error) {
     snackbar.showMessage('标记全部已读失败')
