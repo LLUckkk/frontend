@@ -7,10 +7,15 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ActiveUserTrend: typeof import('./components/analytics/ActiveUserTrend.vue')['default']
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
+    ImageTagStats: typeof import('./components/analytics/ImageTagStats.vue')['default']
+    MethodStats: typeof import('./components/analytics/MethodStats.vue')['default']
+    PublisherRanking: typeof import('./components/analytics/PublisherRanking.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Snackbar: typeof import('./components/Snackbar.vue')['default']
+    TaskTrend: typeof import('./components/analytics/TaskTrend.vue')['default']
     VerificationCodeInput: typeof import('./components/VerificationCodeInput.vue')['default']
   }
 }
