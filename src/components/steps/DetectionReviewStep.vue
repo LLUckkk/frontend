@@ -45,8 +45,7 @@
                     查看报告
                   </v-btn>
                   <v-btn :color="isDarkMode ? 'green-darken-2' : 'success'" variant="elevated" class="px-8 py-2"
-                    rounded="pill" prepend-icon="mdi-send" elevation="2" @click="submitReview"
-                    :disabled="!canSubmit">
+                    rounded="pill" prepend-icon="mdi-send" elevation="2" @click="submitReview" :disabled="!canSubmit">
                     提交人工审核
                   </v-btn>
                 </div>
@@ -171,11 +170,12 @@
             <!-- 图片展示区域 -->
             <v-col cols="12" md="6" class="pr-md-6">
               <div class="image-container" ref="imageContainer">
-                <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg" ref="mainImage"></v-img>
+                <v-img :src="getSelectedImageUrl(selectedImage)" max-height="500" contain class="rounded-lg"
+                  ref="mainImage"></v-img>
 
                 <!-- 检测覆盖层 -->
                 <transition name="fade">
-                  <v-img v-if="activeOverlay && isOverlayVisible" :src="activeOverlay" 
+                  <v-img v-if="activeOverlay && isOverlayVisible" :src="activeOverlay"
                     class="rounded-lg overlay-image"></v-img>
                 </transition>
               </div>
@@ -298,6 +298,7 @@ import { useTheme } from 'vuetify'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
 import { useRouter } from 'vue-router'
+import websocket from '@/api/websocket'
 
 interface Image {
   result_id: string
@@ -361,9 +362,9 @@ const submitReview = async () => {
       ...detectionResult.value.fakeImages.filter((img: Image) => img.selected).map((img: Image) => img.image_id),
       ...detectionResult.value.realImages.filter((img: Image) => img.selected).map((img: Image) => img.image_id)
     ]
-    await publisher.dispatchAnnual({ 
-      image_ids: reviewImages, 
-      reviewers: selectedPeopleList.value 
+    await publisher.dispatchAnnual({
+      image_ids: reviewImages,
+      reviewers: selectedPeopleList.value
     })
     snackbar.showMessage('已提交人工复查任务，请等待管理员审核', 'success')
     router.push('/annual')
@@ -695,4 +696,4 @@ watch(activeTab, () => {
   justify-content: center;
   align-items: center;
 }
-</style> 
+</style>

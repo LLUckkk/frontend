@@ -161,6 +161,7 @@ import type { RouteParams } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
 import type { StateTree } from 'pinia'
 import { da } from 'vuetify/locale'
+import websocket from '@/api/websocket'
 
 const router = useRouter()
 const taskProgress = [70, 85, 30]

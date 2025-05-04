@@ -12,6 +12,7 @@ declare module 'vue' {
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
     ForgotPassword: typeof import('./components/ForgotPassword.vue')['default']
     ImageSelectionStep: typeof import('./components/steps/ImageSelectionStep.vue')['default']
+    Notification: typeof import('./components/Notification.vue')['default']
     Result: typeof import('./components/result.vue')['default']
     ReviewStep: typeof import('./components/steps/ReviewStep.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

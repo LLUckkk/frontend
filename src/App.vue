@@ -3,24 +3,12 @@
     <Snackbar />
 
     <!-- 只在非移动端显示侧边导航栏 -->
-    <v-navigation-drawer
-      v-if="!isMobile"
-      v-model="drawer"
-      :rail="rail"
-      :permanent="true"
-      :temporary="false"
-      location="left"
-      class="navigation-drawer"
-      @mouseenter="rail = false"
-      @mouseleave="rail = true"
-      :width="rail ? 56 : 200"
-    >
+    <v-navigation-drawer v-if="!isMobile" v-model="drawer" :rail="rail" :permanent="true" :temporary="false"
+      location="left" class="navigation-drawer" @mouseenter="rail = false" @mouseleave="rail = true"
+      :width="rail ? 56 : 200">
       <v-list>
-        <v-list-item
-          :prepend-avatar="isLoggedIn ? userStore.avatar : undefined"
-          :subtitle="userStore.role"
-          :title="userStore.displayName"
-        >
+        <v-list-item :prepend-avatar="isLoggedIn ? userStore.avatar : undefined" :subtitle="userStore.role"
+          :title="userStore.displayName">
         </v-list-item>
       </v-list>
 
@@ -28,55 +16,19 @@
 
       <v-list density="compact" nav>
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
-        <v-list-item 
-          v-if="userStore.role === 'publisher'"
-          prepend-icon="mdi-image" 
-          title="上传任务" 
-          value="upload" 
-          @click="goToUpload"
-        ></v-list-item>
-        <v-list-item 
-          v-if="userStore.role === 'publisher'"
-          prepend-icon="mdi-history" 
-          title="检测历史" 
-          value="history" 
-          @click="goToHistory"
-        ></v-list-item>
-        <v-list-item 
-          v-if="userStore.role === 'publisher'"
-          prepend-icon="mdi-gavel" 
-          title="人工审核" 
-          value="annual" 
-          @click="gotoAnnual"
-        ></v-list-item>
-        <v-list-item 
-          v-if="userStore.role === 'reviewer'"
-          prepend-icon="mdi-book-open-page-variant" 
-          title="审阅" 
-          value="review" 
-          @click="goToReview"
-        ></v-list-item>
-        <v-list-item 
-          v-if="isLoggedIn"
-          prepend-icon="mdi-account" 
-          title="个人主页" 
-          value="profile" 
-          @click="goToProfile"
-        ></v-list-item>
-        <v-list-item 
-          v-if="isLoggedIn"
-          prepend-icon="mdi-logout" 
-          title="退出登录" 
-          value="logout"
-          @click="handleLogout"
-        ></v-list-item>
-        <v-list-item 
-          v-else
-          prepend-icon="mdi-login" 
-          title="登录" 
-          value="login"
-          @click="goToLogin"
-        ></v-list-item>
+        <v-list-item v-if="userStore.role === 'publisher'" prepend-icon="mdi-image" title="上传任务" value="upload"
+          @click="goToUpload"></v-list-item>
+        <v-list-item v-if="userStore.role === 'publisher'" prepend-icon="mdi-history" title="检测历史" value="history"
+          @click="goToHistory"></v-list-item>
+        <v-list-item v-if="userStore.role === 'publisher'" prepend-icon="mdi-gavel" title="人工审核" value="annual"
+          @click="gotoAnnual"></v-list-item>
+        <v-list-item v-if="userStore.role === 'reviewer'" prepend-icon="mdi-book-open-page-variant" title="审阅"
+          value="review" @click="goToReview"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account" title="个人主页" value="profile"
+          @click="goToProfile"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout"
+          @click="handleLogout"></v-list-item>
+        <v-list-item v-else prepend-icon="mdi-login" title="登录" value="login" @click="goToLogin"></v-list-item>
       </v-list>
     </v-navigation-drawer>
 
@@ -84,16 +36,11 @@
       <v-app-bar-nav-icon @click="drawer = !drawer" v-if="!isMobile"></v-app-bar-nav-icon>
       <v-toolbar-title>学术图像检测系统</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn 
-        :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-        @click="toggleTheme"
-      ></v-btn>
-      <v-btn 
-        v-if="isLoggedIn"
-        :color="hasUnreadNotifications ? 'red' : ''"
+      <v-btn :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" @click="toggleTheme"></v-btn>
+      <Notification v-if="isLoggedIn"></Notification>
+      <!-- <v-btn v-if="isLoggedIn" :color="hasUnreadNotifications ? 'red' : ''"
         :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
-        @click="showNotifications = true"
-      ></v-btn>
+        @click="showNotifications = true"></v-btn> -->
     </v-app-bar>
 
     <v-main>
@@ -108,59 +55,31 @@
         <v-icon>mdi-home</v-icon>
         <span>主页</span>
       </v-btn>
-      <v-btn 
-        v-if="userStore.role === 'publisher'"
-        to="/upload" 
-        value="upload"
-      >
+      <v-btn v-if="userStore.role === 'publisher'" to="/upload" value="upload">
         <v-icon>mdi-image</v-icon>
         <span>上传任务</span>
       </v-btn>
-      <v-btn 
-        v-if="userStore.role === 'publisher'"
-        to="/history" 
-        value="history"
-      >
+      <v-btn v-if="userStore.role === 'publisher'" to="/history" value="history">
         <v-icon>mdi-history</v-icon>
         <span>检测历史</span>
       </v-btn>
-      <v-btn 
-        v-if="userStore.role === 'publisher'"
-        to="/annual" 
-        value="annual"
-      >
+      <v-btn v-if="userStore.role === 'publisher'" to="/annual" value="annual">
         <v-icon>mdi-gavel</v-icon>
         <span>人工审核</span>
       </v-btn>
-      <v-btn 
-        v-if="userStore.role === 'reviewer'"
-        to="/review" 
-        value="review"
-      >
+      <v-btn v-if="userStore.role === 'reviewer'" to="/review" value="review">
         <v-icon>mdi-book-open-page-variant</v-icon>
         <span>审阅</span>
       </v-btn>
-      <v-btn 
-        v-if="isLoggedIn"
-        to="/profile"
-        value="profile"
-      >
+      <v-btn v-if="isLoggedIn" to="/profile" value="profile">
         <v-icon>mdi-account</v-icon>
         <span>个人主页</span>
       </v-btn>
-      <v-btn 
-        v-if="isLoggedIn"
-        @click="handleLogout"
-        value="logout"
-      >
+      <v-btn v-if="isLoggedIn" @click="handleLogout" value="logout">
         <v-icon>mdi-logout</v-icon>
         <span>退出登录</span>
       </v-btn>
-      <v-btn 
-        v-else
-        @click="goToLogin"
-        value="login"
-      >
+      <v-btn v-else @click="goToLogin" value="login">
         <v-icon>mdi-login</v-icon>
         <span>登录</span>
       </v-btn>
@@ -196,6 +115,7 @@ import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
 
 import { useSnackbarStore } from '@/stores/snackbar';
+import websocket from './api/websocket'
 const snackbar = useSnackbarStore();
 
 
@@ -231,11 +151,11 @@ const goToLogin = () => {
   router.push('/login')
 }
 
-const handleLogout = async() => {
+const handleLogout = async () => {
   try {
     //localStorage.clear()
     let refresh = localStorage.getItem("2-refresh")
-    const response = await user.logout({refresh})
+    const response = await user.logout({ refresh })
     localStorage.removeItem("2-refresh")
     localStorage.removeItem("2-token")
     isLoggedIn.value = false
@@ -263,10 +183,11 @@ onMounted(async () => {
   if (savedTheme) {
     theme.value = savedTheme
   }
-  
+
   // 如果已登录，获取用户信息
   if (isLoggedIn.value) {
     await userStore.fetchUserInfo();
+    websocket.Init()
   }
 })
 </script>

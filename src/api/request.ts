@@ -1,6 +1,7 @@
 //引入axios
 import axios from 'axios'
 import router from '@/router'
+import websocket from './websocket'
 // 创建axios实例
 const instance = axios.create({
     //配置
@@ -63,6 +64,7 @@ const refreshToken = async () => {
         if (response.data && response.data.access) {
             // 保存新的access token
             localStorage.setItem('2-token', response.data.access)
+            websocket.Init()
             return response.data.access
         } else {
             return Promise.reject(new Error('Invalid response format'))
