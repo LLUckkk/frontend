@@ -298,7 +298,6 @@ import { useTheme } from 'vuetify'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
 import { useRouter } from 'vue-router'
-import websocket from '@/api/websocket'
 
 interface Image {
   result_id: string

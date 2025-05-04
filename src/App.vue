@@ -37,10 +37,9 @@
       <v-toolbar-title>学术图像检测系统</v-toolbar-title>
       <v-spacer></v-spacer>
       <v-btn :icon="theme === 'light' ? 'mdi-weather-sunny' : 'mdi-weather-night'" @click="toggleTheme"></v-btn>
-      <Notification v-if="isLoggedIn"></Notification>
-      <!-- <v-btn v-if="isLoggedIn" :color="hasUnreadNotifications ? 'red' : ''"
+      <v-btn v-if="isLoggedIn" :color="hasUnreadNotifications ? 'red' : ''"
         :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
-        @click="showNotifications = true"></v-btn> -->
+        @click="showNotifications = true"></v-btn>
     </v-app-bar>
 
     <v-main>
@@ -86,15 +85,73 @@
     </v-bottom-navigation>
 
     <!-- 通知对话框 -->
-    <v-dialog v-model="showNotifications" max-width="700px">
+    <!-- <v-dialog v-model="showNotifications" max-width="700px">
       <v-card>
         <v-card-title>通知</v-card-title>
         <v-card-text>
-          <!-- 这里可以添加通知列表 -->
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" @click="showNotifications = false">关闭</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog> -->
+    <v-dialog v-model="showNotifications" max-width="700px">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon icon="mdi-bell" start></v-icon>
+          <span class="text-h6">通知中心</span>
+
+          <v-spacer></v-spacer>
+
+          <v-btn v-if="notifications.length > 0" variant="text" icon="mdi-check-all" @click="markAllAsRead"
+            title="标记全部为已读"></v-btn>
+        </v-card-title>
+
+        <v-divider></v-divider>
+
+        <v-card-text style="max-height: 60vh; overflow-y: auto;">
+          <v-list lines="three" v-if="notifications.length > 0">
+            <template v-for="(item, index) in notifications" :key="item.id">
+              <v-list-item :value="item"" :active="!(item.status === 'read')" active-class="bg-blue-lighten-5">
+                <template v-slot:prepend>
+                  <v-icon :color="item.status === 'read' ? 'grey' : 'primary'" size="large" class="me-4">{{
+                    getNotificationIcon(item.category) }}</v-icon>
+                </template>
+
+                <v-list-item-title :class="{ 'font-weight-bold': !(item.status === 'read') }"
+                  v-text="item.title"></v-list-item-title>
+
+                <v-list-item-subtitle class="text-wrap mt-1" v-text="item.content"></v-list-item-subtitle>
+
+                <v-list-item-subtitle class="text-caption text-medium-emphasis mt-1"
+                  v-text="item.notified_at"></v-list-item-subtitle>
+
+                <!-- <template v-slot:append>
+                  <v-btn variant="text" icon="mdi-close" size="small" @click.stop="deleteNotification(item.id)"></v-btn>
+                </template> -->
+              </v-list-item>
+
+              <v-divider v-if="index < notifications.length - 1"></v-divider>
+            </template>
+          </v-list>
+
+          <v-alert v-else type="info" variant="tonal" class="mt-4" icon="mdi-information">
+            暂无新通知
+          </v-alert>
+        </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <!-- <v-btn v-if="notifications.length > 0" variant="text" color="error" prepend-icon="mdi-trash-can-outline"
+            @click="clearAllNotifications">
+            清空全部
+          </v-btn> -->
+          <v-spacer></v-spacer>
+          <v-btn color="primary" variant="flat" @click="showNotifications = false">
+            关闭
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -115,7 +172,7 @@ import { useUserStore } from '@/stores/user';
 const userStore = useUserStore();
 
 import { useSnackbarStore } from '@/stores/snackbar';
-import websocket from './api/websocket'
+import notification from './api/notification'
 const snackbar = useSnackbarStore();
 
 
@@ -125,6 +182,9 @@ const theme = ref('light')
 const showNotifications = ref(false)
 const hasUnreadNotifications = ref(false)
 const router = useRouter()
+const notifications = ref()
+let timer: number | null
+
 
 
 const goToHome = () => {
@@ -168,6 +228,27 @@ const handleLogout = async () => {
   }
 }
 
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'global':
+      return 'mdi-information'
+    case 'system':
+      return 'mdi-check-circle'
+    case 'p2r':
+      return 'mdi-alert'
+    case 'r2p':
+      return 'mdi-alert-circle'
+    case 'task':
+      return 'mdi-clipboard-check'
+    case 'message':
+      return 'mdi-message-text'
+    case 'system':
+      return 'mdi-cog'
+    default:
+      return 'mdi-bell'
+  }
+}
+
 const toggleTheme = () => {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
   localStorage.setItem('app_theme', theme.value)
@@ -176,6 +257,38 @@ const toggleTheme = () => {
 const goToProfile = () => {
   router.push('/profile')
 }
+
+const fetchUnRead = async () => {
+  try {
+    const res = (await notification.getUnRead()).data
+    if (res.not_read > 0) {
+      hasUnreadNotifications.value = true
+    } else {
+      hasUnreadNotifications.value = false
+    }
+  } catch (error) {
+    snackbar.showMessage('获取未读通知失败', 'error')
+  }
+}
+
+const fetchNotification = async () => {
+  try {
+    const res = (await notification.getAllNotifications()).data
+    notifications.value = res.notifications
+  } catch (error) {
+    snackbar.showMessage('获取所有通知失败')
+  }
+}
+
+const markAllAsRead = async () => {
+  try {
+    await notification.setReadAll()
+    fetchNotification()
+  } catch (error) {
+    snackbar.showMessage('标记全部已读失败')
+  }
+}
+
 
 onMounted(async () => {
   // 从本地存储加载主题设置
@@ -187,8 +300,10 @@ onMounted(async () => {
   // 如果已登录，获取用户信息
   if (isLoggedIn.value) {
     await userStore.fetchUserInfo();
-    websocket.Init()
   }
+
+  fetchUnRead()
+  timer = window.setInterval(fetchUnRead, 10000)
 })
 </script>
 
