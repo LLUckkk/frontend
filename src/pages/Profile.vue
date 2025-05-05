@@ -320,8 +320,8 @@ onUnmounted(() => {
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const stats = ref({
-  uploadedTasks: 10,
-  completedTasks: 8
+  uploadedTasks: 0,
+  completedTasks: 0
 })
 
 // 在 script setup 部分添加接口定义
@@ -354,8 +354,10 @@ onMounted(async () => {
       stats.value.uploadedTasks = response.total_task_count
       recentActivities.value = response.recent_tasks
     } else {
-      const response = (await reviewer.getTaskCount()).data
-      console.log(response)
+      const res = (await reviewer.getTaskCount()).data
+      stats.value.completedTasks = res.total_completed_tasks
+      stats.value.uploadedTasks = res.total_received_tasks
+      recentActivities.value = (await reviewer.getRecentActivities()).data
     }
   } catch (error) {
     console.error('获取用户信息失败:', error)
