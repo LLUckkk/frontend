@@ -17,6 +17,14 @@ export default {
 
   getMaskImage(data: any) {
     return http.get(`/results_image/${data.img_id}/`)
+  },
+
+  getTaskCount() {
+    return http.get('/reviewer/tasks/')
+  },
+
+  getRecentActivities() {
+    return http.get('/reviewer/activity_logs/')
   }
 
 }

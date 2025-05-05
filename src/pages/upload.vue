@@ -263,6 +263,7 @@ import uploadApi from '@/api/upload'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
 import publisher from '@/api/publisher'
+import { errorMessages } from 'vue/compiler-sfc'
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -404,9 +405,13 @@ const handleSubmit = async () => {
 
     // 显示进度页面
     showProgress.value = true
-  } catch (error) {
-    console.error('Upload failed:', error)
-    snackbar.showMessage('文件上传失败，请稍后重试', 'error')
+  } catch (error: any) {
+    let message = '提交图片失败'
+    const status = error?.response?.status
+    if (status === 403) {
+      message = '用户无权限'
+    }
+    snackbar.showMessage(message, 'error')
   } finally {
     loading.value = false
   }
@@ -440,12 +445,11 @@ const handleNext = async () => {
   handleTag(currentTag.value)
   if (canProceed.value) {
     try {
-      console.log(selectedImages.value)
-      console.log(currentTaskName.value)
       const task_id = (await publisher.submitDetection({ image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value })).data.task_id
       router.push(`/history`)
-    } catch (error) {
-      snackbar.showMessage('提交失败', 'error')
+    } catch (error: any) {
+      const message = error?.response?.data?.message || '图片上传失败'
+      snackbar.showMessage(message, 'error')
     }
   }
 }

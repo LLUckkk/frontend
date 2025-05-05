@@ -192,6 +192,7 @@ import { useUserStore } from '@/stores/user'
 import { useRoute } from 'vue-router'
 import VerificationCodeInput from '@/components/VerificationCodeInput.vue'
 import publisher from '@/api/publisher'
+import reviewer from '@/api/reviewer'
 
 const snackbar = useSnackbarStore()
 const userStore = useUserStore()
@@ -347,10 +348,15 @@ onMounted(async () => {
     }
     // 初始化密码表单
     passwordForm.value.email = userStore.email
-    const response = (await publisher.getTaskSummary()).data
-    stats.value.completedTasks = response.completed_task_count
-    stats.value.uploadedTasks = response.total_task_count
-    recentActivities.value = response.recent_tasks
+    if (userStore.role === 'publisher') {
+      const response = (await publisher.getTaskSummary()).data
+      stats.value.completedTasks = response.completed_task_count
+      stats.value.uploadedTasks = response.total_task_count
+      recentActivities.value = response.recent_tasks
+    } else {
+      const response = (await reviewer.getTaskCount()).data
+      console.log(response)
+    }
   } catch (error) {
     console.error('获取用户信息失败:', error)
     snackbar.showMessage('获取用户信息失败', 'error')

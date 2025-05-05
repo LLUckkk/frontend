@@ -208,7 +208,15 @@
                 <v-window-item value="analysis">
                   <div class="text-h6 mb-4">大模型意见</div>
                   <v-card>
-                    <v-card-text>{{ llm }}</v-card-text>
+                    <v-card-text>
+                      {{ llm }}
+                    </v-card-text>
+                    <v-card-actions>
+                      <v-spacer></v-spacer>
+                      <v-btn size="small" variant="text" @click="toggleLLM()">
+                        {{ isOverlayVisible ? '隐藏造假区域' : '展示造假区域' }}
+                      </v-btn>
+                    </v-card-actions>
                   </v-card>
                 </v-window-item>
 
@@ -336,6 +344,7 @@ const emit = defineEmits(['complete', 'update'])
 const isDarkMode = computed(() => theme.global.current.value.dark)
 const activeTab = ref('analysis')
 const llm = ref('')
+const llm_image = ref('')
 const ela = ref()
 const urn = ref<SubMethod[]>([])
 const exif = ref()
@@ -367,10 +376,19 @@ const submitReview = async () => {
     })
     snackbar.showMessage('已提交人工复查任务，请等待管理员审核', 'success')
     router.push('/annual')
-  } catch (error) {
-    console.error(error)
-    snackbar.showMessage('提交人工复查任务失败', 'error')
+  } catch (error: any) {
+    let message = '提交人工复查任务失败'
+    const status = error?.response?.status
+    if (status === 403) {
+      message = '用户无权限'
+    }
+    snackbar.showMessage(message, 'error')
   }
+}
+
+const toggleLLM = () => {
+  isOverlayVisible.value = !isOverlayVisible.value
+  activeOverlay.value = getImageUrl(llm_image.value)
 }
 
 const downloadReport = async () => {
@@ -446,6 +464,7 @@ const fetchImageDetection = async (result_id: string) => {
   try {
     const response = (await publisher.getSingleImageResult(result_id)).data
     llm.value = response.llm
+    llm_image.value = response.llm_image
     ela.value = response.ela_image
     urn.value = response.sub_methods.map((item: Omit<SubMethod, 'visible'>) => ({
       ...item,

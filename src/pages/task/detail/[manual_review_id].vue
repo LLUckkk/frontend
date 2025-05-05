@@ -18,12 +18,14 @@
               <!-- 左侧进度和标签 -->
               <div class="d-flex align-center" style="min-width: 320px; margin-left: 200px">
                 <div class="progress-circle mr-3 elevation-1">
-                  <span class="text-h5 font-weight-bold primary--text">90%</span>
+                  <span class="text-h5 font-weight-bold primary--text">{{
+                    formatNumber(overall?.confidence_score) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <v-chip color="primary" variant="outlined" size="x-large" class="font-weight-medium px-3" elevation="1">
-                  查看AI检测结果
-                </v-chip>
+                <!-- <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
+                  prepend-icon="mdi-file-document-outline" elevation="2" @click="downloadReport">
+                  下载AI检测结果
+                </v-btn> -->
               </div>
 
               <!-- 右侧任务信息 -->
@@ -193,7 +195,37 @@ const dimensionsPerImage = ref<Dimension[][]>([])
 const urn = ref<SubMethod[]>([])
 const activeOverlay = ref()
 const isOverlayVisible = ref(false)
+const overall = ref()
 
+
+const formatNumber = (result: number) => {
+  return `${(result * 100).toFixed(2)}%`
+}
+
+// const downloadReport = async () => {
+//   try {
+//     const response = await publisher.downloadReport(props.task_id)
+//     const contentDisposition = response.headers['content-disposition']
+
+//     let fileName = `task_${props.task_id}_report.pdf`
+//     if (contentDisposition) {
+//       const match = contentDisposition.match(/filename="(.+)"/);
+//       if (match) fileName = match[1];
+//     }
+
+//     const blob = new Blob([response.data], { type: 'application/pdf' })
+//     const url = window.URL.createObjectURL(blob)
+//     const a = document.createElement('a');
+//     a.href = url;
+//     a.download = fileName;
+//     document.body.appendChild(a);
+//     a.click();
+//     document.body.removeChild(a);
+//     window.URL.revokeObjectURL(url);
+//   } catch (error) {
+//     snackbar.showMessage('报告下载失败', 'error')
+//   }
+// }
 
 onMounted(async () => {
   try {
@@ -241,7 +273,7 @@ const fetchMaskImage = async () => {
       ...item,
       visible: false
     }))
-    console.log(urn.value)
+    overall.value = res.overall
   } catch (error) {
     snackbar.showMessage('获取mask失败', 'error')
   }
@@ -271,6 +303,7 @@ const handleDisplayFake = (dimension: SubMethod) => {
 
 const handleImageSelect = (index: number) => {
   currentImageIndex.value = index
+  fetchMaskImage()
 }
 
 
