@@ -162,7 +162,7 @@
         <v-card-title class="pa-6 d-flex">
           <h1 class="text-h5">图片详情</h1>
           <v-spacer></v-spacer>
-          <v-btn icon="mdi-close" variant="text" @click="showImageDetail = false"></v-btn>
+          <v-btn icon="mdi-close" variant="text" @click="toggleClose"></v-btn>
         </v-card-title>
 
         <v-card-text class="pa-6">
@@ -206,17 +206,18 @@
 
               <v-window v-model="activeTab" class="mt-4">
                 <v-window-item value="analysis">
-                  <div class="text-h6 mb-4">大模型意见</div>
+                  <div class="d-flex align-center justify-space-between mb-4">
+                    <div class="text-h6">大模型意见</div>
+                    <v-btn v-if="activeOverlay" size="small" variant="outlined" color="primary" prepend-icon="mdi-eye"
+                      @click="toggleLLM">
+                      {{ isOverlayVisible ? '隐藏造假区域' : '展示造假区域' }}
+                    </v-btn>
+                  </div>
+
                   <v-card>
                     <v-card-text>
                       {{ llm }}
                     </v-card-text>
-                    <v-card-actions>
-                      <v-spacer></v-spacer>
-                      <v-btn size="small" variant="text" @click="toggleLLM()">
-                        {{ isOverlayVisible ? '隐藏造假区域' : '展示造假区域' }}
-                      </v-btn>
-                    </v-card-actions>
                   </v-card>
                 </v-window-item>
 
@@ -475,6 +476,16 @@ const fetchImageDetection = async (result_id: string) => {
   } catch (error) {
     snackbar.showMessage('获取图片检测结果失败', 'error')
   }
+}
+
+const toggleClose = () => {
+  showImageDetail.value = false
+  llm.value = ''
+  llm_image.value = ''
+  ela.value = ''
+  urn.value = []
+  detectionResult.value.detectionTime = ''
+  exif.value.detection_time = null
 }
 
 const viewImageDetail = (image: Image) => {
