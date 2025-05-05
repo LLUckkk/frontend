@@ -62,7 +62,7 @@ export default {
   // 更新用户权限
   updateUserPermission(userId: number, permissionName: string) {
     return http.post(`/user_permission/${userId}/`, {
-      permission_name: permissionName
+      permission: permissionName
     })
   },
   // 创建管理员

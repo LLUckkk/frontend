@@ -12,8 +12,13 @@ export const useThemeStore = defineStore('theme', () => {
     theme.value = theme.value === 'light' ? 'dark' : 'light'
   }
 
+  const setTheme = (newTheme: string) => {
+    theme.value = newTheme
+  }
+
   return {
     theme,
-    toggleTheme
+    toggleTheme,
+    setTheme
   }
 }) 
