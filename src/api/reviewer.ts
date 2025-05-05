@@ -25,6 +25,10 @@ export default {
 
   getRecentActivities() {
     return http.get('/reviewer/activity_logs/')
+  },
+
+  getDetectionResult(data: any) {
+    return http.get(`tasks_image/${data.img_id}/report/`)
   }
 
 }

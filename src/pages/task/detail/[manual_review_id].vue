@@ -22,10 +22,10 @@
                     formatNumber(overall?.confidence_score) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <!-- <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
+                <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
                   prepend-icon="mdi-file-document-outline" elevation="2" @click="downloadReport">
                   下载AI检测结果
-                </v-btn> -->
+                </v-btn>
               </div>
 
               <!-- 右侧任务信息 -->
@@ -202,30 +202,30 @@ const formatNumber = (result: number) => {
   return `${(result * 100).toFixed(2)}%`
 }
 
-// const downloadReport = async () => {
-//   try {
-//     const response = await publisher.downloadReport(props.task_id)
-//     const contentDisposition = response.headers['content-disposition']
+const downloadReport = async () => {
+  try {
+    const response = await reviewer.getDetectionResult({ img_id: currentImage.value?.id })
+    const contentDisposition = response.headers['content-disposition']
 
-//     let fileName = `task_${props.task_id}_report.pdf`
-//     if (contentDisposition) {
-//       const match = contentDisposition.match(/filename="(.+)"/);
-//       if (match) fileName = match[1];
-//     }
+    let fileName = ''
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) fileName = match[1];
+    }
 
-//     const blob = new Blob([response.data], { type: 'application/pdf' })
-//     const url = window.URL.createObjectURL(blob)
-//     const a = document.createElement('a');
-//     a.href = url;
-//     a.download = fileName;
-//     document.body.appendChild(a);
-//     a.click();
-//     document.body.removeChild(a);
-//     window.URL.revokeObjectURL(url);
-//   } catch (error) {
-//     snackbar.showMessage('报告下载失败', 'error')
-//   }
-// }
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    snackbar.showMessage('报告下载失败', 'error')
+  }
+}
 
 onMounted(async () => {
   try {
