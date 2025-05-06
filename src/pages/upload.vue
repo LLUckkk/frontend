@@ -263,7 +263,7 @@ import uploadApi from '@/api/upload'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
 import publisher from '@/api/publisher'
-import { errorMessages } from 'vue/compiler-sfc'
+import axios from 'axios'
 
 const router = useRouter()
 const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
@@ -407,9 +407,11 @@ const handleSubmit = async () => {
     showProgress.value = true
   } catch (error: any) {
     let message = '提交图片失败'
-    const status = error?.response?.status
-    if (status === 403) {
-      message = '用户无权限'
+    if (axios.isAxiosError(error)) {
+      const status = error?.code
+      if (status === 'ERR_NETWORK') {
+        message = '用户无权限'
+      }
     }
     snackbar.showMessage(message, 'error')
   } finally {

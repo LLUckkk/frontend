@@ -307,6 +307,7 @@ import { useTheme } from 'vuetify'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 interface Image {
   result_id: string
@@ -379,9 +380,11 @@ const submitReview = async () => {
     router.push('/annual')
   } catch (error: any) {
     let message = '提交人工复查任务失败'
-    const status = error?.response?.status
-    if (status === 403) {
-      message = '用户无权限'
+    if (axios.isAxiosError(error)) {
+      const status = error?.code
+      if (status === 'ERR_NETWORK') {
+        message = '用户无权限'
+      }
     }
     snackbar.showMessage(message, 'error')
   }
