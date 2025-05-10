@@ -7,22 +7,40 @@
       </v-col>
     </v-row>
 
-    <!-- 搜索和筛选区域 -->
+    <!-- 组织选择和搜索区域 -->
     <v-row class="mb-4">
       <v-col cols="12" sm="8" md="6">
-        <v-text-field
-          v-model="searchQuery"
-          label="搜索用户名"
-          append-inner-icon="mdi-magnify"
+        <v-autocomplete
+          v-model="selectedOrg"
+          :items="orgList"
+          :loading="loadingOrgs"
+          item-title="name"
+          item-value="id"
+          label="选择组织"
+          prepend-icon="mdi-office-building"
+          return-object
           clearable
-          density="compact"
           hide-details
-          class="search-input"
-          @keyup.enter="handleSearch"
-          @click:append-inner="handleSearch"
-          @click:clear="handleSearch"
-          placeholder="请输入用户名"
-        ></v-text-field>
+          @update:model-value="handleOrgChange"
+        >
+          <template v-slot:selection="{ item }">
+            <v-chip class="ma-1">
+              {{ item.raw.name }}
+              <v-avatar start size="24" class="mr-2">
+                <v-img :src="getImageUrl(item.raw.logo)" cover></v-img>
+              </v-avatar>
+            </v-chip>
+          </template>
+          <template v-slot:item="{ props, item }">
+            <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description">
+              <template v-slot:prepend>
+                <v-avatar size="24" class="mr-2">
+                  <v-img :src="getImageUrl(item.raw.logo)" cover></v-img>
+                </v-avatar>
+              </template>
+            </v-list-item>
+          </template>
+        </v-autocomplete>
       </v-col>
       <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
         <v-btn 
@@ -42,6 +60,49 @@
         >
           创建管理员
         </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- 统计卡片 -->
+    <v-row class="mb-4">
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="primary" size="large" class="mr-3">mdi-account-group</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.totalUsers }}</div>
+                <div class="text-caption">总用户数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="success" size="large" class="mr-3">mdi-account-tie</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.publisherUsers }}</div>
+                <div class="text-caption">主席用户数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="warning" size="large" class="mr-3">mdi-account-edit</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.reviewerUsers }}</div>
+                <div class="text-caption">编辑用户数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -69,8 +130,16 @@
           </v-avatar>
         </template>
 
-        <template v-slot:item.email="{ item }">
-          <span>{{ item.email }}</span>
+        <template v-slot:item.organization="{ item }">
+          <v-chip
+            v-if="item.organization_name"
+            color="info"
+            size="small"
+            class="organization-chip"
+          >
+            {{ item.organization_name }}
+          </v-chip>
+          <span v-else class="text-caption text-medium-emphasis">未分配</span>
         </template>
 
         <template v-slot:item.role="{ item }">
@@ -312,36 +381,6 @@
                 hide-details
               ></v-switch>
             </div>
-            
-            <v-select
-              v-model="filters.timeRange"
-              :items="timeRangeOptions"
-              label="快速选择时间范围"
-              clearable
-              hide-details
-              @update:model-value="handleTimeRangeChange"
-            ></v-select>
-
-            <div class="d-flex align-center gap-4">
-              <v-text-field
-                v-model="filters.startDate"
-                label="开始时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
-              <v-text-field
-                v-model="filters.endDate"
-                label="结束时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
-            </div>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -415,6 +454,11 @@
                 <span class="text-body-1 ml-2">{{ selectedUserDetails?.email }}</span>
               </div>
               <div class="d-flex align-center">
+                <v-icon class="mr-2">mdi-office-building</v-icon>
+                <span class="text-subtitle-1">所属组织：</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails?.organization_name || '未分配' }}</span>
+              </div>
+              <div class="d-flex align-center">
                 <v-icon class="mr-2">mdi-account-cog</v-icon>
                 <span class="text-subtitle-1">角色：</span>
                 <v-chip
@@ -444,11 +488,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import userApi from '@/api/user'
 import { useSnackbarStore } from '@/stores/snackbar'
-import { mockUsers } from '@/mock/users'
+import { mockApi } from '@/mock/users-adm'
 
 const snackbar = useSnackbarStore()
+
+interface Organization {
+  id: number
+  name: string
+  description: string
+  logo: string
+}
 
 interface User {
   id: number
@@ -459,17 +509,40 @@ interface User {
   permission: string
   registerTime: number
   lastLoginTime: number
+  organization_id: number | null
+  organization_name: string | null
+}
+
+interface UserStats {
+  totalUsers: number
+  publisherUsers: number
+  reviewerUsers: number
+  adminUsers: number
 }
 
 const headers = [
   { title: '头像', key: 'avatar', align: 'center', sortable: false },
   { title: '用户名', key: 'username', align: 'start' },
   { title: '邮箱', key: 'email', align: 'start' },
+  { title: '所属组织', key: 'organization', align: 'center' },
   { title: '角色', key: 'role', align: 'center' },
   { title: '权限', key: 'permission', align: 'center', sortable: false },
   { title: '注册时间', key: 'registerTime', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
 ] as const
+
+// 组织相关
+const orgList = ref<Organization[]>([])
+const loadingOrgs = ref(false)
+const selectedOrg = ref<Organization | null>(null)
+
+// 统计信息
+const stats = ref<UserStats>({
+  totalUsers: 0,
+  publisherUsers: 0,
+  reviewerUsers: 0,
+  adminUsers: 0
+})
 
 // 分页相关
 const users = ref<User[]>([])
@@ -492,28 +565,111 @@ const editingPermissions = ref({
 // 删除对话框相关
 const showDeleteDialog = ref(false)
 
-// 搜索相关
-const searchQuery = ref('')
-const selectedHeader = ref<typeof headers[0] | null>(null)
-
-// 可搜索的列
-const searchableHeaders = computed(() => {
-  return headers.filter(header => 
-    header.key !== 'avatar' && 
-    header.key !== 'permission' && 
-    header.key !== 'actions'
-  )
+// 筛选相关
+const showFilterDialog = ref(false)
+const filters = ref<{
+  role: string | null
+  permissions: {
+    uploadImage: boolean | null
+    submitAI: boolean | null
+    publishReview: boolean | null
+    submitReview: boolean | null
+  }
+}>({
+  role: null,
+  permissions: {
+    uploadImage: null,
+    submitAI: null,
+    publishReview: null,
+    submitReview: null
+  }
 })
 
-const selectHeader = (header: typeof headers[0]) => {
-  selectedHeader.value = header
-  searchQuery.value = ''
-}
+const roleOptions = [
+  { title: '主席', value: 'publisher' },
+  { title: '编辑', value: 'reviewer' },
+  { title: '管理员', value: 'admin' }
+]
 
-const handleSearch = () => {
+// 处理组织变化
+const handleOrgChange = () => {
   currentPage.value = 1
   pageSize.value = 10
   fetchUsers(1, 10)
+  fetchStats()
+}
+
+// 获取组织列表
+const fetchOrgs = async () => {
+  loadingOrgs.value = true
+  try {
+    const response = await mockApi.getOrganizations()
+    orgList.value = response.data.organizations
+  } catch (error) {
+    console.error('获取组织列表失败:', error)
+    snackbar.showMessage('获取组织列表失败', 'error')
+  } finally {
+    loadingOrgs.value = false
+  }
+}
+
+// 获取统计信息
+const fetchStats = async () => {
+  try {
+    const response = await mockApi.getUsers({
+      organization_id: selectedOrg.value?.id
+    })
+    const userList = response.data.users
+    
+    stats.value = {
+      totalUsers: userList.length,
+      publisherUsers: userList.filter(user => user.role === 'publisher').length,
+      reviewerUsers: userList.filter(user => user.role === 'reviewer').length,
+      adminUsers: userList.filter(user => user.role === 'admin').length
+    }
+  } catch (error) {
+    console.error('获取统计信息失败:', error)
+    snackbar.showMessage('获取统计信息失败', 'error')
+  }
+}
+
+// 从后端获取用户数据
+const fetchUsers = async (page: number, pageSize: number) => {
+  loading.value = true
+  try {
+    const params = {
+      page,
+      page_size: pageSize,
+      organization_id: selectedOrg.value?.id,
+      role: filters.value.role || ''
+    }
+    
+    const response = await mockApi.getUsers(params)
+    const { users: userList, current_page, total_pages, total_users } = response.data
+    
+    users.value = userList
+    currentPage.value = current_page
+    totalPages.value = total_pages
+    totalUsers.value = total_users
+  } catch (error) {
+    console.error('获取用户数据失败:', error)
+    snackbar.showMessage('获取用户数据失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 处理页码变化
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchUsers(page, pageSize.value)
+}
+
+// 处理每页数量变化
+const handlePageSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  fetchUsers(1, size)
 }
 
 const formatTime = (timestamp: number) => {
@@ -555,12 +711,12 @@ const updatePermissions = async () => {
 
       // 转换为4位二进制字符串
       const permissionBinary = permissionValue.toString(2).padStart(4, '0')
-      await userApi.updateUserPermission(selectedUser.value.id, permissionBinary)
+      await mockApi.updateUserPermission(selectedUser.value.id, permissionBinary)
       
       // 更新本地数据
       const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
       if (userToUpdate) {
-        userToUpdate.permission = permissionBinary  // 使用二进制字符串
+        userToUpdate.permission = permissionBinary
       }
       
       snackbar.showMessage('权限更新成功', 'success')
@@ -585,7 +741,7 @@ const openDeleteDialog = (user: User) => {
 const deleteUser = async () => {
   if (selectedUser.value) {
     try {
-      await userApi.deleteUser(selectedUser.value.id)
+      await mockApi.deleteUser(selectedUser.value.id)
       users.value = users.value.filter(u => u.id !== selectedUser.value!.id)
       snackbar.showMessage('用户删除成功', 'success')
     } catch (error) {
@@ -593,58 +749,10 @@ const deleteUser = async () => {
       snackbar.showMessage('删除用户失败', 'error')
     }
   }
-  currentPage.value=1
-  pageSize.value=10
+  currentPage.value = 1
+  pageSize.value = 10
   fetchUsers(currentPage.value, pageSize.value)
   showDeleteDialog.value = false
-}
-
-// 筛选相关
-const showFilterDialog = ref(false)
-const filters = ref<{
-  role: string | null
-  permissions: {
-    uploadImage: boolean | null
-    submitAI: boolean | null
-    publishReview: boolean | null
-    submitReview: boolean | null
-  }
-  timeRange: string | null
-  startDate: string | null
-  endDate: string | null
-}>({
-  role: null,
-  permissions: {
-    uploadImage: null,
-    submitAI: null,
-    publishReview: null,
-    submitReview: null
-  },
-  timeRange: null,
-  startDate: null,
-  endDate: null
-})
-
-const roleOptions = [
-  { title: '主席', value: 'publisher' },
-  { title: '编辑', value: 'reviewer' },
-  { title: '管理员', value: 'admin' }
-]
-
-const timeRangeOptions = [
-  { title: '最近一天', value: '1d' },
-  { title: '最近一周', value: '7d' },
-  { title: '最近一月', value: '30d' },
-  { title: '最近三月', value: '90d' },
-  { title: '最近一年', value: '365d' }
-]
-
-// 保存原始数据用于重置
-const originalUsers = ref<User[]>([])
-
-// 初始化时保存原始数据
-const initOriginalUsers = () => {
-  originalUsers.value = [...users.value]
 }
 
 // 重置筛选条件
@@ -656,12 +764,8 @@ const resetFilters = () => {
       submitAI: null,
       publishReview: null,
       submitReview: null
-    },
-    timeRange: null,
-    startDate: null,
-    endDate: null
+    }
   }
-  timeError.value = ''
   currentPage.value = 1
   pageSize.value = 10
   fetchUsers(1, 10)
@@ -670,66 +774,11 @@ const resetFilters = () => {
 
 // 应用筛选条件
 const applyFilters = () => {
-  // 如果有时间错误，不执行筛选
-  if (timeError.value) {
-    return
-  }
-  
-  // 计算权限值
-  let permissionValue = 0
-  if (filters.value.permissions.uploadImage !== null) {
-    permissionValue |= (filters.value.permissions.uploadImage ? 8 : 0)
-  }
-  if (filters.value.permissions.submitAI !== null) {
-    permissionValue |= (filters.value.permissions.submitAI ? 4 : 0)
-  }
-  if (filters.value.permissions.publishReview !== null) {
-    permissionValue |= (filters.value.permissions.publishReview ? 2 : 0)
-  }
-  if (filters.value.permissions.submitReview !== null) {
-    permissionValue |= (filters.value.permissions.submitReview ? 1 : 0)
-  }
-  
   currentPage.value = 1
   pageSize.value = 10
   fetchUsers(1, 10)
   showFilterDialog.value = false
 }
-
-// 在 script 部分添加时间验证相关的代码
-const timeError = ref('')
-
-// 处理快速选择时间范围变化
-const handleTimeRangeChange = (value: string | null) => {
-  if (value) {
-    // 如果选择了快速时间范围，清空自定义时间
-    filters.value.startDate = null
-    filters.value.endDate = null
-    timeError.value = ''
-  }
-}
-
-// 处理自定义时间变化
-const handleCustomTimeChange = () => {
-  // 如果输入了自定义时间，清空快速选择
-  filters.value.timeRange = null
-  
-  // 验证时间
-  if (!filters.value.startDate || !filters.value.endDate) {
-    timeError.value = '开始时间和结束时间不能为空'
-    return
-  }
-
-  const startTime = new Date(filters.value.startDate).getTime()
-  const endTime = new Date(filters.value.endDate).getTime()
-  
-  if (startTime >= endTime) {
-    timeError.value = '开始时间必须早于结束时间'
-  } else {
-    timeError.value = ''
-  }
-}
-
 
 const getRoleColor = (role: string) => {
   switch (role) {
@@ -774,87 +823,6 @@ const newAdmin = ref({
   role: 'admin'
 })
 
-// 从后端获取用户数据
-const fetchUsers = async (page: number, pageSize: number) => {
-  loading.value = true
-  try {
-    // // 计算权限筛选值（4 位二进制）
-    // let permissionFilter = ''
-    // const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
-    // if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
-    //   // 修改权限值计算逻辑，确保四位权限正确
-    //   let value = 0
-    //   if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }  // 第3位：上传图像
-    //   if (submitAI !== null) { value |= (submitAI ? 4 : 0) }       // 第2位：提交AI检测
-    //   if (publishReview !== null) { value |= (publishReview ? 2 : 0) } // 第1位：发布人工审核
-    //   if (submitReview !== null) { value |= (submitReview ? 1 : 0) }   // 第0位：提交人工审核
-    //   permissionFilter = value.toString(2).padStart(4, '0')  // 转换为4位二进制字符串
-    // }
-
-    // // 计算时间筛选
-    // let startTimeFilter: string | undefined
-    // let endTimeFilter: string | undefined
-    // if (filters.value.timeRange) {
-    //   const now = Date.now()
-    //   const ranges: Record<string, number> = {
-    //     '1d': 24 * 60 * 60 * 1000,
-    //     '7d': 7 * 24 * 60 * 60 * 1000,
-    //     '30d': 30 * 24 * 60 * 60 * 1000,
-    //     '90d': 90 * 24 * 60 * 60 * 1000,
-    //     '365d': 365 * 24 * 60 * 60 * 1000
-    //   }
-    //   const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
-    //   startTimeFilter = formatDateFilter(now - rangeMs)
-    //   endTimeFilter = formatDateFilter(now)
-    // } else if (filters.value.startDate && filters.value.endDate) {
-    //   startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
-    //   endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
-    // }
-
-    // const params = {
-    //   page,
-    //   page_size: pageSize,
-    //   query: searchQuery.value || '',
-    //   role: filters.value.role || '',
-    //   permission: permissionFilter || '',  // 使用4位二进制字符串
-    //   startTime: startTimeFilter,
-    //   endTime: endTimeFilter
-    // }
-    // const response = await userApi.getUsers(params)
-    const response = { data: mockUsers }
-    const { users: userList, current_page, total_pages, total_users } = response.data
-    
-    // 转换后端数据格式为前端格式
-    users.value = userList.map((user: any) => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      // permission: user.permission, // 直接使用后端返回的二进制字符串
-      // registerTime: new Date(user.date_joined).getTime(),
-      // //lastLoginTime: new Date(user.date_joined).getTime(),
-      // avatar: 'http://122.9.45.122'+user.avatar || ''
-
-      permission: user.permission,
-      registerTime: user.registerTime,
-      lastLoginTime: user.lastLoginTime,
-      avatar: 'http://122.9.45.122'+user.avatar
-    }))
-    
-    currentPage.value = current_page
-    totalPages.value = total_pages
-    totalUsers.value = total_users
-    
-    // // 保存原始数据用于筛选
-    // originalUsers.value = [...users.value]
-  } catch (error) {
-    console.error('获取用户数据失败:', error)
-    snackbar.showMessage('获取用户数据失败', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
 // 创建管理员
 const createAdmin = async () => {
   if (!newAdmin.value.username || !newAdmin.value.email || !newAdmin.value.password) {
@@ -864,7 +832,7 @@ const createAdmin = async () => {
 
   creatingAdmin.value = true
   try {
-    const response = await userApi.createAdmin(newAdmin.value)
+    await mockApi.createAdmin(newAdmin.value)
     snackbar.showMessage('管理员创建成功', 'success')
     showCreateAdminDialog.value = false
     // 刷新用户列表
@@ -884,46 +852,22 @@ const createAdmin = async () => {
   }
 }
 
-// 处理页码变化
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-  fetchUsers(page, pageSize.value)
-}
-
-// 处理每页数量变化
-const handlePageSizeChange = (size: number) => {
-  pageSize.value = size
-  currentPage.value = 1 // 重置到第一页
-  fetchUsers(1, size)
-}
-
 // 当前用户
 const currentUser = ref<{ email: string } | null>(null)
 
 // 初始化
 onMounted(async () => {
   try {
-    const res = await userApi.getUserInfo()
+    const res = await mockApi.getUserInfo(1) // 模拟获取当前用户信息
     currentUser.value = res.data
   } catch (error) {
     console.error('获取当前用户信息失败:', error)
   }
+  fetchOrgs()
   fetchUsers(currentPage.value, pageSize.value)
 })
 
 const ROOT_ADMIN_EMAIL = 'admin@mail.com'
-
-// 时间格式化，用于筛选条件
-const formatDateFilter = (timestamp: number) => {
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
 
 // 用户详情相关
 const showUserDetailsDialog = ref(false)
@@ -933,6 +877,7 @@ const selectedUserDetails = ref<{
   role: string
   profile: string
   avatar: string
+  organization_name: string | null
 } | null>(null)
 
 // 打开用户详情对话框
@@ -944,7 +889,7 @@ const openUserDetailsDialog = async (user: User) => {
   }
 
   try {
-    const response = await userApi.getOtherUserInfo(user.id)
+    const response = await mockApi.getUserInfo(user.id)
     selectedUserDetails.value = {
       ...response.data,
       avatar: 'http://122.9.45.122' + response.data.avatar
@@ -955,6 +900,10 @@ const openUserDetailsDialog = async (user: User) => {
     snackbar.showMessage('获取用户详情失败', 'error')
   }
 }
+
+const getImageUrl = (url: string) => {
+  return import.meta.env.VITE_API_URL + url
+}
 </script>
 
 <style scoped>
@@ -963,7 +912,21 @@ const openUserDetailsDialog = async (user: User) => {
   overflow: hidden;
 }
 
+.stat-card {
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
 .role-chip {
+  font-size: 12px;
+  padding: 0 12px;
+  font-weight: 500;
+}
+
+.organization-chip {
   font-size: 12px;
   padding: 0 12px;
   font-weight: 500;
@@ -1008,16 +971,8 @@ const openUserDetailsDialog = async (user: User) => {
   font-weight: 500;
 }
 
-.search-input {
-  max-width: 400px;
-}
-
 :deep(.v-text-field .v-field__input) {
   min-height: 40px;
-}
-
-:deep(.v-btn--variant-outlined) {
-  border-color: rgb(var(--v-theme-outline));
 }
 
 :deep(.v-select .v-field__input) {

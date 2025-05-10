@@ -194,6 +194,7 @@ import { useSnackbarStore } from '@/stores/snackbar'
 import logApi from '@/api/log'
 import userApi from '@/api/user'
 import axios from 'axios'
+import { mockLogs } from '@/mock/logs'
 
 const snackbar = useSnackbarStore()
 
@@ -329,56 +330,74 @@ const applyFilters = () => {
 const fetchLogs = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    // 计算时间筛选
-    let startTimeFilter: string | undefined
-    let endTimeFilter: string | undefined
-    if (filters.value.timeRange) {
-      const now = Date.now()
-      const ranges: Record<string, number> = {
-        '1d': 24 * 60 * 60 * 1000,
-        '7d': 7 * 24 * 60 * 60 * 1000,
-        '30d': 30 * 24 * 60 * 60 * 1000,
-        '90d': 90 * 24 * 60 * 60 * 1000,
-        '365d': 365 * 24 * 60 * 60 * 1000
-      }
-      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
-      startTimeFilter = formatDateFilter(now - rangeMs)
-      endTimeFilter = formatDateFilter(now)
-    } else if (filters.value.startDate && filters.value.endDate) {
-      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
-      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
-    }
 
-    const params = {
-      page,
-      page_size: pageSize,
-      query: searchSelectedUser.value?.username || '',
-      operation_type: filters.value.operationType || '',
-      startTime: startTimeFilter,
-      endTime: endTimeFilter
-    }
-    const response = await logApi.getLogs(params)
-    const { data } = response
+    //     // 计算时间筛选
+    //     let startTimeFilter: string | undefined
+    // let endTimeFilter: string | undefined
+    // if (filters.value.timeRange) {
+    //   const now = Date.now()
+    //   const ranges: Record<string, number> = {
+    //     '1d': 24 * 60 * 60 * 1000,
+    //     '7d': 7 * 24 * 60 * 60 * 1000,
+    //     '30d': 30 * 24 * 60 * 60 * 1000,
+    //     '90d': 90 * 24 * 60 * 60 * 1000,
+    //     '365d': 365 * 24 * 60 * 60 * 1000
+    //   }
+    //   const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+    //   startTimeFilter = formatDateFilter(now - rangeMs)
+    //   endTimeFilter = formatDateFilter(now)
+    // } else if (filters.value.startDate && filters.value.endDate) {
+    //   startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
+    //   endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
+    // }
 
-    if (data && data.logs) {
-      logs.value = data.logs.map((log: any) => ({
-        id: log.id,
-        user: log.user,
-        operation_type: log.operation_type,
-        related_model: log.related_model,
-        related_id: log.related_id,
-        operation_time: log.operation_time
-      }))
+    // const params = {
+    //   page,
+    //   page_size: pageSize,
+    //   query: searchSelectedUser.value?.username || '',
+    //   operation_type: filters.value.operationType || '',
+    //   startTime: startTimeFilter,
+    //   endTime: endTimeFilter
+    // }
+    // const response = await logApi.getLogs(params)
+    // const { data } = response
 
-      currentPage.value = data.current_page
-      totalPages.value = data.total_pages
-      totalLogs.value = data.total_logs
-    } else {
-      logs.value = []
-      currentPage.value = 1
-      totalPages.value = 1
-      totalLogs.value = 0
-    }
+    // if (data && data.logs) {
+    //   logs.value = data.logs.map((log: any) => ({
+    //     id: log.id,
+    //     user: log.user,
+    //     operation_type: log.operation_type,
+    //     related_model: log.related_model,
+    //     related_id: log.related_id,
+    //     operation_time: log.operation_time
+    //   }))
+
+    //   currentPage.value = data.current_page
+    //   totalPages.value = data.total_pages
+    //   totalLogs.value = data.total_logs
+    // } else {
+    //   logs.value = []
+    //   currentPage.value = 1
+    //   totalPages.value = 1
+    //   totalLogs.value = 0
+    // }
+
+    // 使用模拟数据
+    const response = { data: mockLogs }
+    const { logs: logList, current_page, total_pages, total_logs } = response.data
+    
+    logs.value = logList.map((log: any) => ({
+      id: log.id,
+      user: log.user,
+      operation_type: log.operation_type,
+      related_model: log.related_model,
+      related_id: log.related_id,
+      operation_time: log.operation_time
+    }))
+    
+    currentPage.value = current_page
+    totalPages.value = total_pages
+    totalLogs.value = total_logs
   } catch (error) {
     console.error('获取日志数据失败:', error)
     snackbar.showMessage('获取日志数据失败', 'error')

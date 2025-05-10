@@ -15,16 +15,26 @@
 
       <v-list density="compact" nav>
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics"
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析-Org" value="analytics"
           @click="goToAnalytics"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理-Org" value="files"
           @click="goToFiles"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users"
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理-Org" value="users"
           @click="goToUsers"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs"
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录-Org" value="logs"
           @click="goToLogs"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核" value="reviewRequests"
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-gavel" title="人工审核-Org" value="reviewRequests"
           @click="goToReviews"></v-list-item>
+
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析-Adm" value="analytics-adm"
+          @click="goToAnalyticsAdm"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理-Adm" value="files-adm"
+          @click="goToFilesAdm"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理-Adm" value="users-adm"
+          @click="goToUsersAdm"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录-Adm" value="logs-adm"dm
+
+          @click="goToLogsAdm"></v-list-item>  
         <v-divider class="my-2"></v-divider>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-logout" title="退出登录" value="logout"
           @click="handleLogout"></v-list-item>
@@ -57,24 +67,42 @@
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/analytics" value="analytics">
         <v-icon>mdi-chart-bar</v-icon>
-        <span>统计分析</span>
+        <span>统计分析-Org</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/files" value="files">
         <v-icon>mdi-folder</v-icon>
-        <span>图像管理</span>
+        <span>图像管理-Org</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/users" value="users">
         <v-icon>mdi-account-group</v-icon>
-        <span>用户管理</span>
+        <span>用户管理-Org</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/logs" value="logs">
         <v-icon>mdi-clipboard-text-clock</v-icon>
-        <span>日志记录</span>
+        <span>日志记录-Org</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/reviews" value="reviews">
         <v-icon>mdi-gavel</v-icon>
-        <span>人工审核</span>
+        <span>人工审核-Org</span>
       </v-btn>
+
+      <v-btn v-if="isLoggedIn" to="/analytics-adm" value="analytics-adm"> 
+        <v-icon>mdi-chart-bar</v-icon>
+        <span>统计分析-Adm</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/files-adm" value="files-adm">
+        <v-icon>mdi-folder</v-icon>
+        <span>图像管理-Adm</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/users-adm" value="users-adm">
+        <v-icon>mdi-account-group</v-icon>
+        <span>用户管理-Adm</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/logs-adm" value="logs-adm">
+        <v-icon>mdi-clipboard-text-clock</v-icon>
+        <span>日志记录-Adm</span>
+      </v-btn>
+
       <v-btn v-if="isLoggedIn" @click="handleLogout" value="logout">
         <v-icon>mdi-logout</v-icon>
         <span>退出登录</span>
@@ -290,6 +318,25 @@ const goToLogs = () => {
 const goToReviews = () => {
   router.push('/reviews')
 }
+
+const goToAnalyticsAdm = () => {
+  router.push('/analytics-adm')
+}
+
+const goToFilesAdm = () => {
+  router.push('/files-adm')
+}
+const goToUsersAdm = () => {
+
+  router.push('/users-adm')
+}
+
+const goToLogsAdm = () => {
+  router.push('/logs-adm')
+}
+
+
+
 
 onMounted(async () => {
   // 从本地存储加载主题设置

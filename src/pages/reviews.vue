@@ -12,7 +12,7 @@
       <v-col cols="12" sm="8" md="6">
         <v-text-field
           v-model="searchQuery"
-          label="搜索出版社"
+          label="搜索主席"
           append-inner-icon="mdi-magnify"
           clearable
           density="compact"
@@ -21,7 +21,7 @@
           @keyup.enter="handleSearch"
           @click:append-inner="handleSearch"
           @click:clear="handleSearch"
-          placeholder="请输入出版社名称"
+          placeholder="请输入主席名"
         ></v-text-field>
       </v-col>
       <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
@@ -263,6 +263,7 @@
 import { ref, computed, onMounted } from 'vue'
 import reviewApi from '@/api/review'
 import { useSnackbarStore } from '@/stores/snackbar'
+import { mockReviews, mockReviewDetails } from '@/mock/reviews'
 
 const snackbar = useSnackbarStore()
 
@@ -277,7 +278,7 @@ interface ReviewRequest {
 
 const headers = [
   { title: '头像', key: 'avatar', align: 'center', sortable: false },
-  { title: '出版社', key: 'username', align: 'start' },
+  { title: '主席', key: 'username', align: 'start' },
   { title: '审核状态', key: 'state', align: 'center' },
   { title: '提交时间', key: 'time', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
@@ -471,44 +472,56 @@ const handleSearch = () => {
 const fetchRequests = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    // 计算时间筛选
-    let startTimeFilter: string | undefined
-    let endTimeFilter: string | undefined
-    if (filters.value.timeRange) {
-      const now = Date.now()
-      const ranges: Record<string, number> = {
-        '1d': 24 * 60 * 60 * 1000,
-        '7d': 7 * 24 * 60 * 60 * 1000,
-        '30d': 30 * 24 * 60 * 60 * 1000,
-        '90d': 90 * 24 * 60 * 60 * 1000,
-        '365d': 365 * 24 * 60 * 60 * 1000
-      }
-      const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
-      startTimeFilter = formatDateFilter(now - rangeMs)
-      endTimeFilter = formatDateFilter(now)
-    } else if (filters.value.startDate && filters.value.endDate) {
-      startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
-      endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
-    }
+    //     // 计算时间筛选
+    //     let startTimeFilter: string | undefined
+    // let endTimeFilter: string | undefined
+    // if (filters.value.timeRange) {
+    //   const now = Date.now()
+    //   const ranges: Record<string, number> = {
+    //     '1d': 24 * 60 * 60 * 1000,
+    //     '7d': 7 * 24 * 60 * 60 * 1000,
+    //     '30d': 30 * 24 * 60 * 60 * 1000,
+    //     '90d': 90 * 24 * 60 * 60 * 1000,
+    //     '365d': 365 * 24 * 60 * 60 * 1000
+    //   }
+    //   const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
+    //   startTimeFilter = formatDateFilter(now - rangeMs)
+    //   endTimeFilter = formatDateFilter(now)
+    // } else if (filters.value.startDate && filters.value.endDate) {
+    //   startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
+    //   endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
+    // }
 
-    const params = {
-      page,
-      page_size: pageSize,
-      query: searchQuery.value || '',
-      status: filters.value.status || '',
-      startTime: startTimeFilter,
-      endTime: endTimeFilter
-    }
-    const response = await reviewApi.getReviewRequests(params)
-    const { requests: requestList, current_page, total_pages, total_users } = response.data
+    // const params = {
+    //   page,
+    //   page_size: pageSize,
+    //   query: searchQuery.value || '',
+    //   status: filters.value.status || '',
+    //   startTime: startTimeFilter,
+    //   endTime: endTimeFilter
+    // }
+    // const response = await reviewApi.getReviewRequests(params)
+    // const { requests: requestList, current_page, total_pages, total_users } = response.data
+    // requests.value = requestList.map((request: any) => ({
+    //   id: request.id,
+    //   username: request.username,
+    //   avatar: 'http://122.9.45.122' + request.avatar || '',
+    //   state: request.state,
+    //   file_type: request.file_type,
+    //   time: request.time
+
+
+    // 使用模拟数据
+    const response = { data: mockReviews }
+    const { requests: reviewList, current_page, total_pages, total_users } = response.data
     
-    requests.value = requestList.map((request: any) => ({
-      id: request.id,
-      username: request.username,
-      avatar: 'http://122.9.45.122' + request.avatar || '',
-      state: request.state,
-      file_type: request.file_type,
-      time: request.time
+    requests.value = reviewList.map((review: any) => ({
+      id: review.id,
+      username: review.username,
+      avatar: 'http://122.9.45.122' + review.avatar,
+      state: review.state,
+      file_type: review.file_type,
+      time: review.time
     }))
     
     currentPage.value = current_page

@@ -7,37 +7,35 @@
       </v-col>
     </v-row>
 
-    <!-- 搜索和筛选区域 -->
+    <!-- 组织选择和统计信息 -->
     <v-row class="mb-4">
       <v-col cols="12" sm="8" md="6">
         <v-autocomplete
-          v-model="searchSelectedUser"
-          :items="searchUsersList"
-          :loading="loadingSearchUsers"
-          v-model:search="searchQuery"
-          item-title="username"
+          v-model="selectedOrg"
+          :items="orgList"
+          :loading="loadingOrgs"
+          item-title="name"
           item-value="id"
-          label="搜索主席名"
-          prepend-icon="mdi-magnify"
+          label="选择组织"
+          prepend-icon="mdi-office-building"
           return-object
           clearable
           hide-details
-          @update:search="searchUsersForTable"
-          @update:model-value="handleSearchSelection"
+          @update:model-value="handleOrgChange"
         >
           <template v-slot:selection="{ item }">
             <v-chip class="ma-1">
-              {{ item.raw.username }}
+              {{ item.raw.name }}
               <v-avatar start size="24" class="mr-2">
-                <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
+                <v-img :src="getImageUrl(item.raw.logo)" cover></v-img>
               </v-avatar>
             </v-chip>
           </template>
           <template v-slot:item="{ props, item }">
-            <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
+            <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description">
               <template v-slot:prepend>
                 <v-avatar size="24" class="mr-2">
-                  <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
+                  <v-img :src="getImageUrl(item.raw.logo)" cover></v-img>
                 </v-avatar>
               </template>
             </v-list-item>
@@ -53,6 +51,49 @@
         >
           筛选
         </v-btn>
+      </v-col>
+    </v-row>
+
+    <!-- 统计卡片 -->
+    <v-row class="mb-4">
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="primary" size="large" class="mr-3">mdi-image-multiple</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.totalFiles }}</div>
+                <div class="text-caption">总图像数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="success" size="large" class="mr-3">mdi-check-circle</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.verifiedFiles }}</div>
+                <div class="text-caption">已检测图像数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="4">
+        <v-card class="stat-card">
+          <v-card-text>
+            <div class="d-flex align-center">
+              <v-icon color="warning" size="large" class="mr-3">mdi-clock-outline</v-icon>
+              <div>
+                <div class="text-h6">{{ stats.pendingFiles }}</div>
+                <div class="text-caption">已审核图像数</div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -72,6 +113,15 @@
             <div class="text-caption text-medium-emphasis">
               共 {{ totalFiles }} 条记录
             </div>
+          </div>
+        </template>
+
+        <template v-slot:item.organization="{ item }">
+          <div class="d-flex align-center">
+            <v-avatar size="24" class="mr-2">
+              <v-img :src="getImageUrl(item.organization.logo)" cover></v-img>
+            </v-avatar>
+            <span>{{ item.organization.name }}</span>
           </div>
         </template>
 
@@ -99,6 +149,16 @@
             @click="openDetailDialog(item)"
           >
             <v-icon>mdi-eye</v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            color="primary"
+            class="mr-2"
+            @click="enterOrganization(item.organization)"
+          >
+            <v-icon>mdi-office-building</v-icon>
           </v-btn>
           <v-btn
             icon
@@ -138,10 +198,20 @@
 
     <!-- 筛选对话框 -->
     <v-dialog v-model="showFilterDialog" max-width="500">
-      <v-card class="elevation-4">
+      <v-card>
         <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column gap-4">
+            <v-select
+              v-model="filters.organization"
+              :items="orgList"
+              item-title="name"
+              item-value="id"
+              label="组织"
+              clearable
+              hide-details
+            ></v-select>
+            
             <v-select
               v-model="filters.subject"
               :items="subjectOptions"
@@ -328,43 +398,11 @@
                 </template>
               </v-img>
             </div>
-            <div class="d-flex flex-column gap-2">
-              <div class="d-flex align-center">
-                <v-icon
-                  :color="selectedImage?.isDetect === 'true' ? 'success' : 'error'"
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ selectedImage?.isDetect === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                </v-icon>
-                <span>AI检测状态：{{ selectedImage?.isDetect === 'true' ? '已检测' : '未检测' }}</span>
-              </div>
-              <div class="d-flex align-center">
-                <v-icon
-                  :color="selectedImage?.isReview === 'true' ? 'success' : 'error'"
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ selectedImage?.isReview === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                </v-icon>
-                <span>人工审核状态：{{ selectedImage?.isReview === 'true' ? '已审核' : '未审核' }}</span>
-              </div>
-              <div class="d-flex align-center">
-                <v-icon
-                  :color="selectedImage?.isFake === 'true' ? 'success' : 'error'"
-                  size="small"
-                  class="mr-1"
-                >
-                  {{ selectedImage?.isFake === 'true' ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                </v-icon>
-                <span>检测结果：{{ selectedImage?.isFake === 'true' ? '真实' : selectedImage?.isFake === 'false' ? '虚假' : '未检测' }}</span>
-              </div>
-            </div>
           </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" @click="deleteDetailImage(selectedImage)">删除图片</v-btn>
+          <v-btn color="error" @click="deleteDetailImage(selectedImage)">删除</v-btn>
           <v-btn color="grey" variant="text" @click="showImageDialog = false">关闭</v-btn>
         </v-card-actions>
       </v-card>
@@ -375,17 +413,24 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
-import fileApi from '@/api/file'
-import userApi from '@/api/user'
-import { mockFiles, mockFileImages } from '@/mock/files'
+import fileApi from '@/api/file-adm'
+// import orgApi from '@/api/organization'
 
 const snackbar = useSnackbarStore()
+
+interface Organization {
+  id: number
+  name: string
+  description: string
+  logo: string
+}
 
 interface File {
   id: number
   username: string
   subject: string
   uploadTime: number
+  organization: Organization
   images: Image[]
 }
 
@@ -397,20 +442,26 @@ interface Image {
   isFake: string | null
 }
 
-interface User {
-  id: number
-  username: string
-  email: string
-  avatar: string
-}
-
 const headers = [
-  // { title: '编号', key: 'id', align: 'center' },
+  { title: '组织', key: 'organization', align: 'start' },
   { title: '主席名', key: 'username', align: 'start' },
   { title: '学科', key: 'subject', align: 'start' },
   { title: '上传时间', key: 'uploadTime', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
 ] as const
+
+// 组织相关
+const orgList = ref<Organization[]>([])
+const loadingOrgs = ref(false)
+const selectedOrg = ref<Organization | null>(null)
+
+// 统计信息
+const stats = ref({
+  totalFiles: 0,
+  verifiedFiles: 0,
+  pendingFiles: 0,
+  rejectedFiles: 0
+})
 
 // 分页相关
 const files = ref<File[]>([])
@@ -420,20 +471,16 @@ const pageSize = ref(10)
 const totalFiles = ref(0)
 const totalPages = ref(1)
 
-// 搜索相关
-const searchSelectedUser = ref<User | null>(null)
-const searchUsersList = ref<User[]>([])
-const loadingSearchUsers = ref(false)
-const searchQuery = ref('')
-
 // 筛选相关
 const showFilterDialog = ref(false)
 const filters = ref<{
+  organization: number | null
   subject: string | null
   timeRange: string | null
   startDate: string | null
   endDate: string | null
 }>({
+  organization: null,
   subject: null,
   timeRange: null,
   startDate: null,
@@ -489,6 +536,9 @@ onMounted(() => {
     windowWidth.value = window.innerWidth
     windowHeight.value = window.innerHeight
   })
+  fetchOrgs()
+  fetchStats()
+  fetchFiles(currentPage.value, pageSize.value)
 })
 
 onUnmounted(() => {
@@ -498,33 +548,33 @@ onUnmounted(() => {
   })
 })
 
-// 处理搜索选择
-const handleSearchSelection = () => {
-  searchQuery.value = ''
-  fetchFiles(currentPage.value, pageSize.value)
-}
-
-// 搜索用户（用于表格）
-const searchUsersForTable = async (query: string) => {
-  if (!query) {
-    searchUsersList.value = []
-    return
-  }
-  
-  loadingSearchUsers.value = true
+// 获取组织列表
+const fetchOrgs = async () => {
+  loadingOrgs.value = true
   try {
-    const response = await userApi.getUsers({ query, page: 1, page_size: 10, role: 'publisher' })
-    searchUsersList.value = response.data.users || []
+    // const response = await orgApi.getOrganizations()
+    // orgList.value = response.data.organizations || []
   } catch (error) {
-    console.error('搜索用户失败:', error)
-    snackbar.showMessage('搜索用户失败', 'error')
+    console.error('获取组织列表失败:', error)
+    snackbar.showMessage('获取组织列表失败', 'error')
   } finally {
-    loadingSearchUsers.value = false
+    loadingOrgs.value = false
   }
 }
 
-// 处理搜索
-const handleSearch = () => {
+// 获取统计信息
+const fetchStats = async () => {
+  try {
+    const response = await fileApi.getFileStats()
+    stats.value = response.data
+  } catch (error) {
+    console.error('获取统计信息失败:', error)
+    snackbar.showMessage('获取统计信息失败', 'error')
+  }
+}
+
+// 处理组织变化
+const handleOrgChange = () => {
   currentPage.value = 1
   pageSize.value = 10
   fetchFiles(1, 10)
@@ -575,6 +625,7 @@ const handleCustomTimeChange = () => {
 // 重置筛选条件
 const resetFilters = () => {
   filters.value = {
+    organization: null,
     subject: null,
     timeRange: null,
     startDate: null,
@@ -683,22 +734,18 @@ const openDeleteDialog = (file: File) => {
   showDeleteDialog.value = true
 }
 
-
-const getImageUrl =(url:string)=>{
+const getImageUrl = (url: string) => {
   return import.meta.env.VITE_API_URL + url
 }
-
 
 // 删除文件
 const deleteFile = async () => {
   if (selectedFile.value) {
     try {
-      // 调用后端删除上传记录 API
-      const id = selectedFile.value.id
-      await fileApi.deleteFile(id)
-      // 从列表中移除已删除的文件
-      files.value = files.value.filter(f => f.id !== id)
+      await fileApi.deleteFile(selectedFile.value.id)
+      files.value = files.value.filter(f => f.id !== selectedFile.value?.id)
       snackbar.showMessage('删除成功', 'success')
+      fetchStats() // 更新统计信息
     } catch (error) {
       console.error('删除失败:', error)
       snackbar.showMessage('删除失败', 'error')
@@ -713,17 +760,15 @@ const deleteListImage = async (image: Image) => {
   
   try {
     await fileApi.deleteImage(image.id)
-    // 从列表中移除已删除的图片
     selectedFile.value.images = selectedFile.value.images.filter(
       img => img.id !== image.id
     )
-    // 同时从详情图片列表中移除
     detailImages.value = detailImages.value.filter(img => img.id !== image.id)
-    // 如果当前正在查看的图片被删除，关闭图片对话框
     if (selectedImage.value?.id === image.id) {
       showImageDialog.value = false
     }
     snackbar.showMessage('图片删除成功', 'success')
+    fetchStats() // 更新统计信息
   } catch (error) {
     console.error('删除图片失败:', error)
     snackbar.showMessage('删除图片失败', 'error')
@@ -736,9 +781,7 @@ const deleteDetailImage = async (image: Image | null) => {
   
   try {
     await fileApi.deleteImage(image.id)
-    // 从详情图片列表中移除已删除的图片
     detailImages.value = detailImages.value.filter(img => img.id !== image.id)
-    // 同时从文件图片列表中移除
     if (selectedFile.value) {
       selectedFile.value.images = selectedFile.value.images.filter(
         img => img.id !== image.id
@@ -746,6 +789,7 @@ const deleteDetailImage = async (image: Image | null) => {
     }
     snackbar.showMessage('图片删除成功', 'success')
     showImageDialog.value = false
+    fetchStats() // 更新统计信息
   } catch (error) {
     console.error('删除图片失败:', error)
     snackbar.showMessage('删除图片失败', 'error')
@@ -756,15 +800,6 @@ const deleteDetailImage = async (image: Image | null) => {
 const openImageDialog = (image: Image) => {
   selectedImage.value = image
   showImageDialog.value = true
-}
-
-// 删除单张图片（保留原有函数作为兼容）
-const deleteSingleImage = async (image: Image) => {
-  if (showImageDialog.value) {
-    await deleteDetailImage(image)
-  } else {
-    await deleteListImage(image)
-  }
 }
 
 // 格式化时间
@@ -779,100 +814,34 @@ const formatTime = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-// 时间筛选格式化，用于生成后端可识别的时间字符串
-const formatDateFilter = (timestamp: number) => {
-  const date = new Date(timestamp)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-}
-
 // 从后端获取文件数据
 const fetchFiles = async (page: number, pageSize: number) => {
   loading.value = true
   try {
-    //     // 计算时间筛选
-    //     let startTimeFilter: string | undefined
-    // let endTimeFilter: string | undefined
-    // if (filters.value.timeRange) {
-    //   const now = Date.now()
-    //   const ranges: Record<string, number> = {
-    //     '1d': 24 * 60 * 60 * 1000,
-    //     '7d': 7 * 24 * 60 * 60 * 1000,
-    //     '30d': 30 * 24 * 60 * 60 * 1000,
-    //     '90d': 90 * 24 * 60 * 60 * 1000,
-    //     '365d': 365 * 24 * 60 * 60 * 1000
-    //   }
-    //   const rangeMs = ranges[filters.value.timeRange as keyof typeof ranges]
-    //   startTimeFilter = formatDateFilter(now - rangeMs)
-    //   endTimeFilter = formatDateFilter(now)
-    // } else if (filters.value.startDate && filters.value.endDate) {
-    //   startTimeFilter = formatDateFilter(new Date(filters.value.startDate).getTime())
-    //   endTimeFilter = formatDateFilter(new Date(filters.value.endDate).getTime())
-    // }
-
-    // const params = {
-    //   page,
-    //   page_size: pageSize,
-    //   query: searchSelectedUser.value?.username || '',
-    //   operation_type: filters.value.operationType || '',
-    //   startTime: startTimeFilter,
-    //   endTime: endTimeFilter
-    // }
-    // const response = await logApi.getLogs(params)
-    // const { data } = response
-
-    // if (data && data.logs) {
-    //   logs.value = data.logs.map((log: any) => ({
-    //     id: log.id,
-    //     user: log.user,
-    //     operation_type: log.operation_type,
-    //     related_model: log.related_model,
-    //     related_id: log.related_id,
-    //     operation_time: log.operation_time
-    //   }))
-
-    //   currentPage.value = data.current_page
-    //   totalPages.value = data.total_pages
-    //   totalLogs.value = data.total_logs
-    // } else {
-    //   logs.value = []
-    //   currentPage.value = 1
-    //   totalPages.value = 1
-    //   totalLogs.value = 0
-    // }
-    //
-    // // 转换后端数据格式为前端格式
-    // files.value = fileList.map((file: any) => ({
-    //   id: file.id,
-    //   username: file.username,
-    //   subject: file.tag,
-    //   uploadTime: new Date(file.upload_time).getTime(),
-    //   images: [
-    //     {
-    //       id: file.id,
-    //       url: file.file_url || '',
-    //       isDetect: file.ai_checked ? 'true' : 'false',
-    //       isReview: file.manually_checked ? 'true' : 'false',
-    //       isFake: file.result ? 'true' : file.result === false ? 'false' : null,
-    //     }
-    //   ]
-    // }))
-
-    // 使用模拟数据
-    const response = { data: mockFiles }
-    const { files: fileList, current_page, total_pages, total_files } = response.data
+    const params = {
+      page,
+      page_size: pageSize,
+      organization_id: selectedOrg.value?.id,
+      subject: filters.value.subject,
+      timeRange: filters.value.timeRange,
+      startDate: filters.value.startDate,
+      endDate: filters.value.endDate
+    }
     
+    const response = await fileApi.getFiles(params)
+    const { files: fileList, current_page, total_pages, total_files } = response.data
     
     files.value = fileList.map((file: any) => ({
       id: file.id,
       username: file.username,
       subject: file.tag,
       uploadTime: new Date(file.upload_time).getTime(),
+      organization: {
+        id: file.organization.id,
+        name: file.organization.name,
+        description: file.organization.description,
+        logo: file.organization.logo
+      },
       images: [{
         id: file.id,
         url: file.file_url,
@@ -892,11 +861,6 @@ const fetchFiles = async (page: number, pageSize: number) => {
     loading.value = false
   }
 }
-
-// 初始化
-onMounted(() => {
-  fetchFiles(currentPage.value, pageSize.value)
-})
 
 const getSubjectColor = (subject: string) => {
   switch (subject) {
@@ -954,12 +918,40 @@ const handleScroll = () => {
     }
   }
 }
+
+// 进入组织管理
+const enterOrganization = (organization: Organization) => {
+  // 设置当前选中的组织
+  selectedOrg.value = organization
+  // 重置分页和筛选条件
+  currentPage.value = 1
+  pageSize.value = 10
+  filters.value = {
+    organization: organization.id,
+    subject: null,
+    timeRange: null,
+    startDate: null,
+    endDate: null
+  }
+  // 获取该组织的文件列表
+  fetchFiles(1, 10)
+  // 显示提示信息
+  snackbar.showMessage(`已进入${organization.name}的管理界面`, 'success')
+}
 </script>
 
 <style scoped>
 .v-card {
   border-radius: 12px;
   overflow: hidden;
+}
+
+.stat-card {
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
 }
 
 .subject-chip {
@@ -1007,29 +999,9 @@ const handleScroll = () => {
   font-weight: 500;
 }
 
-.search-input {
-  max-width: 400px;
-}
-
-:deep(.v-text-field .v-field__input) {
-  min-height: 40px;
-}
-
-:deep(.v-btn--variant-outlined) {
-  border-color: rgb(var(--v-theme-outline));
-}
-
-:deep(.v-select .v-field__input) {
-  min-height: 40px;
-}
-
-:deep(.v-select .v-field__append-inner) {
-  padding-top: 0;
-}
-
 .image-card {
-  cursor: pointer;
   transition: transform 0.2s;
+  cursor: pointer;
 }
 
 .image-card:hover {
@@ -1040,32 +1012,15 @@ const handleScroll = () => {
   border-radius: 8px;
 }
 
-:deep(.v-avatar) {
-  overflow: hidden;
-  border-radius: 50%;
+:deep(.v-text-field .v-field__input) {
+  min-height: 40px;
 }
 
-:deep(.v-avatar .v-img) {
-  height: 100%;
-  width: 100%;
-  object-fit: cover;
+:deep(.v-select .v-field__input) {
+  min-height: 40px;
 }
 
-.image-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.05);
-  border-radius: 8px;
-  padding: 16px;
-}
-
-:deep(.v-img) {
-  transition: transform 0.2s;
-}
-
-:deep(.v-img:hover) {
-  transform: scale(1.02);
+:deep(.v-select .v-field__append-inner) {
+  padding-top: 0;
 }
 </style>
