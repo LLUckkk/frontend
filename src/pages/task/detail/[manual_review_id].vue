@@ -103,6 +103,8 @@
           <!-- 评分维度区域 -->
           <div class="dimension-section rounded-lg elevation-1">
             <div class="text-h6 font-weight-medium mb-4">评分维度</div>
+            <div class="text-caption text-medium-emphasis mb-4">
+              请根据图片特征，对每个造假方式进行可能性评估，分值越大表示相应维度造假可能性越大，必要时可使用绘制标注功能标记具体位置。</div>
             <div class="dimension-list">
               <div v-for="(dimension, index) in dimensionsPerImage[currentImageIndex]" :key="index"
                 class="dimension-item mb-6">
@@ -127,7 +129,7 @@
                       :color="dimension.value === option.value ? getDegreeColor(option.value) : 'grey'"
                       :variant="dimension.value === option.value ? 'flat' : 'outlined'" class="flex-grow-1"
                       @click="dimension.value = option.value" size="small">
-                      {{ option.label }}
+                      {{ option.value }}
                     </v-btn>
                   </v-btn-group>
                 </div>
