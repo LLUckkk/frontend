@@ -79,6 +79,13 @@
             <div class="preview-box">
               <v-img v-if="currentImage" :src="getImageUrl(currentImage.url)" contain height="100%"
                 class="rounded-lg"></v-img>
+              <!-- 为每个维度创建独立的画布 -->
+              <template v-for="(dimension, index) in dimensionsPerImage[currentImageIndex]" :key="index">
+                <canvas v-show="currentDrawingDimension === index"
+                  :ref="el => { if (el) drawingCanvases[index] = el as HTMLCanvasElement }" class="drawing-canvas"
+                  :class="{ 'active': currentDrawingDimension === index }"
+                  style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+              </template>
               <transition name="fade">
                 <v-img v-if="activeOverlay && isOverlayVisible" :src="activeOverlay"
                   class="rounded-lg overlay-image"></v-img>
@@ -101,11 +108,18 @@
                 class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <v-btn size="small" :color="urn[index]?.visible ? 'error' : 'grey'" variant="tonal"
-                    @click="handleDisplayFake(urn[index])" class="fake-area-btn ml-4">
-                    <v-icon size="small" :icon="urn[index]?.visible ? 'mdi-eye-off' : 'mdi-eye'" class="mr-1"></v-icon>
-                    {{ urn[index]?.visible ? '隐藏造假区域' : '显示造假区域' }}
-                  </v-btn>
+                  <div class="d-flex">
+                    <v-btn size="small" color="primary" variant="tonal" @click="openDrawingDialog(index)" class="mr-2">
+                      <v-icon size="small" icon="mdi-pencil" class="mr-1"></v-icon>
+                      绘制标注
+                    </v-btn>
+                    <v-btn size="small" :color="urn[index]?.visible ? 'error' : 'grey'" variant="tonal"
+                      @click="handleDisplayFake(urn[index])" class="fake-area-btn">
+                      <v-icon size="small" :icon="urn[index]?.visible ? 'mdi-eye-off' : 'mdi-eye'"
+                        class="mr-1"></v-icon>
+                      {{ urn[index]?.visible ? '隐藏造假区域' : '显示造假区域' }}
+                    </v-btn>
+                  </div>
                 </div>
                 <div class="degree-buttons mb-2">
                   <v-btn-group variant="outlined" class="d-flex">
@@ -154,22 +168,24 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 绘制弹窗 -->
+    <DrawingDialog v-model="showDrawingDialog" :image-url="currentImage ? getImageUrl(currentImage.url) : ''"
+      :initial-paths="currentDimensionPaths" @save="handleDrawingSave" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import reviewer from '@/api/reviewer'
 import type { RouteParams } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
-
+import DrawingDialog from '@/components/DrawingDialog.vue'
 
 const router = useRouter()
 const snackbar = useSnackbarStore()
 const route = useRoute()
-
-
 
 interface Image {
   id: number,
@@ -188,7 +204,6 @@ interface SubMethod {
 const currentImageIndex = ref(0)
 const images = ref<Image[]>([])
 
-
 const manual_review_id = computed(() => (route.params as RouteParams & { manual_review_id: number }).manual_review_id)
 const imageJudgements = ref<(boolean | null)[]>([])
 const dimensionsPerImage = ref<Dimension[][]>([])
@@ -196,7 +211,6 @@ const urn = ref<SubMethod[]>([])
 const activeOverlay = ref()
 const isOverlayVisible = ref(false)
 const overall = ref()
-
 
 const formatNumber = (result: number) => {
   return `${(result * 100).toFixed(2)}%`
@@ -230,18 +244,18 @@ const downloadReport = async () => {
 onMounted(async () => {
   try {
     const response = (await reviewer.getReviewTaskDetail({ manual_review_id: manual_review_id.value })).data
-    console.log(response)
     images.value = response.imgs
     imageJudgements.value = new Array(images.value.length).fill(null)
 
+    // 为每个图片的每个维度初始化独立的数据
     dimensionsPerImage.value = images.value.map(() => [
-      { name: '高斯模糊', value: null, reason: '', showFakeArea: false },
-      { name: '亮度/对比度调节', value: null, reason: '', showFakeArea: false },
-      { name: '智能修复', value: null, reason: '', showFakeArea: false },
-      { name: '暴力覆盖', value: null, reason: '', showFakeArea: false },
-      { name: '同图复制', value: null, reason: '', showFakeArea: false },
-      { name: '重叠切割', value: null, reason: '', showFakeArea: false },
-      { name: '跨图拼接', value: null, reason: '', showFakeArea: false }
+      { name: '高斯模糊', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '亮度/对比度调节', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '智能修复', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '暴力覆盖', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '同图复制', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '重叠切割', value: null, reason: '', showFakeArea: false, drawingPaths: [] },
+      { name: '跨图拼接', value: null, reason: '', showFakeArea: false, drawingPaths: [] }
     ])
     fetchMaskImage()
 
@@ -300,12 +314,11 @@ const handleDisplayFake = (dimension: SubMethod) => {
   activeOverlay.value = dimension.mask_image
 }
 
-
 const handleImageSelect = (index: number) => {
   currentImageIndex.value = index
+  currentDrawingDimension.value = -1 // 重置绘制状态
   fetchMaskImage()
 }
-
 
 const handlePrevImage = () => {
   if (currentImageIndex.value > 0) {
@@ -319,47 +332,104 @@ const handleNextImage = () => {
   }
 }
 
-const getAnswerColor = (index: number) => {
-  // 这里可以根据实际答题状态返回不同的颜色
-  if (index <= 5) return 'success' // 已完成的题目
-  if (index === 6) return 'primary' // 当前题目
-  return 'grey' // 未完成的题目
-}
-
 // 评分维度数据
 interface Dimension {
   name: string;
   value: number | null;
   reason: string;
   showFakeArea: boolean;
+  drawingPaths: Array<{
+    points: Array<{ x: number, y: number }>;
+    color: string;
+  }>;
 }
 
+const drawingCanvases = ref<HTMLCanvasElement[]>([])
+const imageRect = ref<DOMRect | null>(null)
+const currentDrawingDimension = ref<number>(-1)
+
+// 计算当前维度的笔迹列表
+const currentDimensionPaths = computed(() => {
+  if (currentDrawingDimension.value === -1) return []
+  const currentImage = dimensionsPerImage.value[currentImageIndex.value]
+  if (!currentImage) return []
+  const currentDim = currentImage[currentDrawingDimension.value]
+  // console.log("当前的维度是：")
+  // console.log(currentDim)
+  // console.log('当前维度的drawing path是：')
+  // console.log(currentDim?.drawingPaths)
+  return currentDim?.drawingPaths || []
+})
+
+// 打开绘制对话框
+const openDrawingDialog = (index: number) => {
+  currentDrawingDimension.value = index
+  showDrawingDialog.value = true
+}
+
+// 处理绘制保存
+const handleDrawingSave = (paths: Array<{ points: Array<{ x: number; y: number }>; color: string }>) => {
+  if (currentDrawingDimension.value === -1) return
+
+  const currentImage = dimensionsPerImage.value[currentImageIndex.value]
+  if (!currentImage) return
+
+  // 只更新当前维度的绘制路径
+  currentImage[currentDrawingDimension.value].drawingPaths = [...paths]
+}
+
+// 监听图片加载完成
+watch(() => currentImage.value?.url, () => {
+  const imgElement = document.querySelector('.preview-box .v-img img') as HTMLImageElement
+  if (imgElement) {
+    if (imgElement.complete) {
+      imageRect.value = imgElement.getBoundingClientRect()
+    } else {
+      imgElement.onload = () => {
+        imageRect.value = imgElement.getBoundingClientRect()
+      }
+    }
+  }
+})
+
+// 监听窗口大小变化
+onMounted(() => {
+  window.addEventListener('resize', () => {
+    const imgElement = document.querySelector('.preview-box .v-img img') as HTMLImageElement
+    if (imgElement) {
+      imageRect.value = imgElement.getBoundingClientRect()
+    }
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', () => { })
+})
+
 const degreeOptions = [
-  { value: 1, label: '很差' },
-  { value: 2, label: '较差' },
-  { value: 3, label: '一般' },
-  { value: 4, label: '较好' },
-  { value: 5, label: '很好' }
+  { value: 1, label: '轻微' },
+  { value: 2, label: '一般' },
+  { value: 3, label: '中等' },
+  { value: 4, label: '明显' },
+  { value: 5, label: '严重' }
 ]
 
 const getDegreeColor = (value: number) => {
   switch (value) {
     case 1:
-      return 'error'
+      return 'success'
     case 2:
-      return 'warning'
+      return 'info'
     case 3:
       return 'yellow'
     case 4:
-      return 'info'
+      return 'warning'
     case 5:
-      return 'success'
+      return 'error'
     default:
       return 'grey'
   }
 }
-
-// 图片造假判定数
 
 // 处理造假判定
 const handleJudgement = (isFake: boolean) => {
@@ -376,13 +446,6 @@ const getAnswerButtonColor = (index: number) => {
 
 const showAlert = ref(false)
 const alertMessage = ref('')
-
-const alert = (message: string) => {
-  alertMessage.value = message
-  showAlert.value = true
-}
-
-
 
 const checkAnswerCompletion = () => {
   // 检查每张图片是否都已完成评分和判定
@@ -459,6 +522,31 @@ const handleSubmit = async () => {
     }
   }
 }
+
+const showDrawingDialog = ref(false)
+
+// 监听图片切换
+watch(() => currentImageIndex.value, () => {
+  currentDrawingDimension.value = -1 // 重置绘制状态
+})
+
+// 监听维度切换
+watch(() => currentDrawingDimension.value, (newVal, oldVal) => {
+  // 确保所有画布都被隐藏
+  drawingCanvases.value.forEach((canvas, index) => {
+    if (canvas) {
+      canvas.style.display = 'none'
+    }
+  })
+
+  // 只显示当前维度的画布
+  if (newVal !== -1) {
+    const newCanvas = drawingCanvases.value[newVal]
+    if (newCanvas) {
+      newCanvas.style.display = 'block'
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -767,5 +855,29 @@ const handleSubmit = async () => {
   letter-spacing: 0;
   min-width: 120px;
   /* 确保按钮有固定的最小宽度 */
+}
+
+.drawing-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  display: none;
+}
+
+.drawing-canvas.active {
+  pointer-events: auto;
+  cursor: crosshair;
+  display: block;
+}
+
+.color-preview {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 </style>
