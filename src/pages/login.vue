@@ -152,38 +152,6 @@
           <!-- 注册表单 -->
           <template v-else>
             <v-text-field
-              v-model="registerForm.username"
-              label="设置用户名"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              prepend-inner-icon="mdi-account"
-              :rules="registerRules.username"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="registerForm.password"
-              label="设置密码"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              type="password"
-              prepend-inner-icon="mdi-lock"
-              :rules="registerRules.password"
-            ></v-text-field>
-
-            <v-text-field
-              v-model="registerForm.confirmPassword"
-              label="确认密码"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              type="password"
-              prepend-inner-icon="mdi-lock-check"
-              :rules="registerRules.confirmPassword"
-            ></v-text-field>
-
-            <v-text-field
               v-model="registerForm.email"
               label="邮箱"
               variant="outlined"
@@ -191,6 +159,16 @@
               class="mb-4"
               prepend-inner-icon="mdi-email"
               :rules="registerRules.email"
+            ></v-text-field>
+
+            <v-text-field
+              v-model="registerForm.inviteCode"
+              label="邀请码"
+              variant="outlined"
+              density="comfortable"
+              class="mb-4"
+              prepend-inner-icon="mdi-key"
+              :rules="registerRules.inviteCode"
             ></v-text-field>
 
             <!-- 验证码区域 -->
@@ -220,6 +198,17 @@
               class="mb-6"
               :rules="[v => !!v || '请阅读并同意相关协议']"
             ></v-checkbox>
+
+            <v-btn
+              v-if="selectedRole === 'publisher'"
+              block
+              color="secondary"
+              size="large"
+              class="mb-4"
+              @click="showCreateOrgDialog = true"
+            >
+              创建组织
+            </v-btn>
           </template>
 
           <v-btn
@@ -328,6 +317,85 @@
       </v-card>
     </v-dialog>
 
+    <!-- 创建组织对话框 -->
+    <v-dialog
+      v-model="showCreateOrgDialog"
+      max-width="600"
+      persistent
+    >
+      <v-card>
+        <v-card-title>创建组织</v-card-title>
+        <v-card-text>
+          <v-form ref="orgForm" @submit.prevent="handleCreateOrg">
+            <v-text-field
+              v-model="orgFormData.name"
+              label="组织名称"
+              variant="outlined"
+              class="mb-4"
+              :rules="orgRules.name"
+            ></v-text-field>
+
+            <v-textarea
+              v-model="orgFormData.description"
+              label="组织描述"
+              variant="outlined"
+              class="mb-4"
+              :rules="orgRules.description"
+              rows="3"
+            ></v-textarea>
+
+            <div class="mb-4">
+              <div class="text-subtitle-2 mb-2">组织Logo</div>
+              <v-file-input
+                v-model="orgFormData.logo"
+                accept="image/*"
+                label="上传Logo"
+                variant="outlined"
+                prepend-icon="mdi-camera"
+                :rules="orgRules.logo"
+                @change="handleLogoChange"
+              ></v-file-input>
+              <v-img
+                v-if="orgFormData.logoPreview"
+                :src="orgFormData.logoPreview"
+                max-height="200"
+                class="mt-2"
+                contain
+              ></v-img>
+            </div>
+
+            <div class="mb-4">
+              <div class="text-subtitle-2 mb-2">证明材料</div>
+              <v-file-input
+                v-model="orgFormData.certificate"
+                accept=".pdf,.jpg,.jpeg,.png"
+                label="上传证明材料"
+                variant="outlined"
+                prepend-icon="mdi-file-document"
+                :rules="orgRules.certificate"
+              ></v-file-input>
+            </div>
+
+            <v-btn
+              color="primary"
+              block
+              type="submit"
+              :loading="creatingOrg"
+              :disabled="!isOrgFormValid"
+            >
+              创建组织
+            </v-btn>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="grey" variant="text" @click="closeCreateOrgDialog">
+            取消
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -352,28 +420,30 @@ const email = ref('')
 const password = ref('')
 const agreement = ref(false)
 const showForgotPasswordDialog = ref(false)
+const showCreateOrgDialog = ref(false)
+const creatingOrg = ref(false)
 const form = ref(null)
+const orgForm = ref(null)
 
 // 注册表单数据
 const registerForm = ref({
-  username: '',
-  password: '',
-  confirmPassword: '',
   email: '',
-  phone: ''
+  inviteCode: '',
+})
+
+// 组织表单数据
+const orgFormData = ref({
+  name: '',
+  description: '',
+  logo: null as File | null,
+  logoPreview: '',
+  certificate: null as File | null,
 })
 
 // 验证码相关
 const captchaInput = ref('')
 const captchaCode = ref('')
 const captchaError = ref('')
-
-// 监听登录类型变化，重置验证码
-watch(loginType, () => {
-  captchaInput.value = ''
-  captchaError.value = ''
-  captchaRef.value?.refreshCaptcha()
-})
 
 // 表单验证规则
 const loginRules = {
@@ -388,21 +458,32 @@ const loginRules = {
 }
 
 const registerRules = {
-  username: [
-    (v: string) => !!v || '用户名不能为空',
-    (v: string) => v.length >= 4 || '用户名至少4个字符'
-  ],
-  password: [
-    (v: string) => !!v || '密码不能为空',
-    (v: string) => v.length >= 6 || '密码至少6个字符'
-  ],
-  confirmPassword: [
-    (v: string) => !!v || '请确认密码',
-    (v: string) => v === registerForm.value.password || '两次输入的密码不一致'
-  ],
   email: [
     (v: string) => !!v || '邮箱不能为空',
     (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+  ],
+  inviteCode: [
+    (v: string) => !!v || '邀请码不能为空',
+    (v: string) => v.length >= 6 || '邀请码格式不正确'
+  ]
+}
+
+const orgRules = {
+  name: [
+    (v: string) => !!v || '组织名称不能为空',
+    (v: string) => v.length >= 2 || '组织名称至少2个字符'
+  ],
+  description: [
+    (v: string) => !!v || '组织描述不能为空',
+    (v: string) => v.length >= 10 || '组织描述至少10个字符'
+  ],
+  logo: [
+    (v: File | null) => !!v || '请上传组织Logo',
+    (v: File | null) => !v || v.size <= 5 * 1024 * 1024 || 'Logo大小不能超过5MB'
+  ],
+  certificate: [
+    (v: File | null) => !!v || '请上传证明材料',
+    (v: File | null) => !v || v.size <= 10 * 1024 * 1024 || '文件大小不能超过10MB'
   ]
 }
 
@@ -430,14 +511,10 @@ const isFormValid = computed(() => {
            /.+@.+\..+/.test(email.value) && 
            password.value.length >= 6
   } else {
-    return registerForm.value.username && 
-           registerForm.value.email && 
-           registerForm.value.password && 
-           registerForm.value.confirmPassword &&
-           registerForm.value.username.length >= 4 &&
+    return registerForm.value.email && 
+           registerForm.value.inviteCode &&
            /.+@.+\..+/.test(registerForm.value.email) &&
-           registerForm.value.password.length >= 6 &&
-           registerForm.value.password === registerForm.value.confirmPassword
+           registerForm.value.inviteCode.length >= 6
   }
 })
 
@@ -479,9 +556,8 @@ const handleSubmit = async () => {
   } else {
     try {
       const response = await user.register({
-        username: registerForm.value.username,
         email: registerForm.value.email,
-        password: registerForm.value.password,
+        inviteCode: registerForm.value.inviteCode,
         role: selectedRole.value
       })
       snackbar.showMessage('注册成功', 'success')
@@ -494,8 +570,8 @@ const handleSubmit = async () => {
           const errors = error.response.data
           const errorMessages = []
           
-          if (errors.username) errorMessages.push(`用户名已存在`)
           if (errors.email) errorMessages.push(`邮箱已存在`)
+          if (errors.inviteCode) errorMessages.push(`邀请码已存在`)
           
           errorMessage = errorMessages.length > 0 ? errorMessages.join(';') : '请检查输入信息'
         }
@@ -611,6 +687,74 @@ onUnmounted(() => {
     clearInterval(countdownTimer.value)
     countdownTimer.value = null
   }
+})
+
+// 处理Logo预览
+const handleLogoChange = (file: File | null) => {
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      orgFormData.value.logoPreview = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  } else {
+    orgFormData.value.logoPreview = ''
+  }
+}
+
+// 关闭创建组织对话框
+const closeCreateOrgDialog = () => {
+  showCreateOrgDialog.value = false
+  // 重置表单
+  setTimeout(() => {
+    orgFormData.value = {
+      name: '',
+      description: '',
+      logo: null,
+      logoPreview: '',
+      certificate: null
+    }
+  }, 300)
+}
+
+// 创建组织
+const handleCreateOrg = async () => {
+  if (!isOrgFormValid.value) return
+  
+  try {
+    creatingOrg.value = true
+    const formData = new FormData()
+    formData.append('name', orgFormData.value.name)
+    formData.append('description', orgFormData.value.description)
+    if (orgFormData.value.logo) {
+      formData.append('logo', orgFormData.value.logo)
+    }
+    if (orgFormData.value.certificate) {
+      formData.append('certificate', orgFormData.value.certificate)
+    }
+    
+    // TODO: 调用创建组织API
+    // await user.createOrganization(formData)
+    
+    snackbar.showMessage('组织创建成功', 'success')
+    closeCreateOrgDialog()
+  } catch (error: any) {
+    console.error('创建组织失败:', error)
+    const errorMsg = error.response?.data?.message || '创建组织失败'
+    snackbar.showMessage(errorMsg, 'error')
+  } finally {
+    creatingOrg.value = false
+  }
+}
+
+// 组织表单验证
+const isOrgFormValid = computed(() => {
+  return orgFormData.value.name &&
+         orgFormData.value.description &&
+         orgFormData.value.logo &&
+         orgFormData.value.certificate &&
+         orgFormData.value.name.length >= 2 &&
+         orgFormData.value.description.length >= 10
 })
 </script>
 

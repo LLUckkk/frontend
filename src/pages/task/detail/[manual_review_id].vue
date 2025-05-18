@@ -178,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import reviewer from '@/api/reviewer'
 import type { RouteParams } from 'vue-router'
@@ -356,10 +356,6 @@ const currentDimensionPaths = computed(() => {
   const currentImage = dimensionsPerImage.value[currentImageIndex.value]
   if (!currentImage) return []
   const currentDim = currentImage[currentDrawingDimension.value]
-  // console.log("当前的维度是：")
-  // console.log(currentDim)
-  // console.log('当前维度的drawing path是：')
-  // console.log(currentDim?.drawingPaths)
   return currentDim?.drawingPaths || []
 })
 
@@ -492,6 +488,7 @@ interface ImageItem {
   score: Array<number | null>  // 维度得分数组，可能是数值或者null
   reason: Array<string | null>  // 维度理由数组，可能是字符串或者null
   final: boolean | null  // 造假判定结果
+  points: Array<Array<{}>>
 }
 
 const constructData = () => {
@@ -501,7 +498,8 @@ const constructData = () => {
       img_id: images.value[i].id,
       score: dimensionsPerImage.value[i].map(dim => dim.value),
       reason: dimensionsPerImage.value[i].map(dim => dim.reason),
-      final: imageJudgements.value[i]
+      final: imageJudgements.value[i],
+      points: dimensionsPerImage.value[i].map(dim => dim.drawingPaths)
     }
     data.result.push(item)
   }
