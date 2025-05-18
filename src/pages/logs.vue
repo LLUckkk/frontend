@@ -8,7 +8,7 @@
   </v-row>
 
   <!-- 搜索和筛选区域 -->
-  <v-row class="mb-4">
+  <v-row class="mb-4 align-center">
     <v-col cols="12" sm="8" md="6">
       <v-autocomplete
         v-model="searchSelectedUser"
@@ -44,7 +44,21 @@
         </template>
       </v-autocomplete>
     </v-col>
-    <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
+    <v-col v-if="currentUser?.admin_type === 'software_admin'" cols="12" sm="4" md="3">
+      <v-text-field
+        v-model="searchSelectedOrg"
+        label="搜索组织"
+        prepend-icon="mdi-office-building"
+        clearable
+        hide-details
+        @update:model-value="handleSearchSelection"
+      ></v-text-field>
+    </v-col>
+     <!-- spacer 自动填充空位 -->
+     <v-spacer></v-spacer>
+
+    <!-- 筛选按钮，始终靠右 -->
+    <v-col cols="auto">
       <v-btn color="primary" class="text-none mr-2" prepend-icon="mdi-filter-variant" @click="showFilterDialog = true">
         筛选
       </v-btn>
@@ -200,6 +214,7 @@ const snackbar = useSnackbarStore()
 interface Log {
   id: number
   user: string
+  organization: string
   operation_type: string
   related_model: string
   related_id: number
@@ -213,13 +228,21 @@ interface User {
   avatar: string
 }
 
-const headers = [
-  { title: '操作用户', key: 'user', align: 'start' },
-  { title: '操作类型', key: 'operation_type', align: 'center' },
-  { title: '相关模型', key: 'related_model', align: 'center' },
-  { title: '相关ID', key: 'related_id', align: 'center' },
-  { title: '操作时间', key: 'operation_time', align: 'center' },
-] as const
+const headers = computed(() => {
+  const baseHeaders = [
+    { title: '操作用户', key: 'user', align: 'start' },
+    { title: '操作类型', key: 'operation_type', align: 'center' },
+    { title: '相关模型', key: 'related_model', align: 'center' },
+    { title: '相关ID', key: 'related_id', align: 'center' },
+    { title: '操作时间', key: 'operation_time', align: 'center' },
+  ]
+  
+  if (currentUser.value?.admin_type === 'software_admin') {
+    baseHeaders.splice(1, 0, { title: '所属组织', key: 'organization', align: 'start' })
+  }
+  
+  return baseHeaders
+}) as any
 
 // 分页相关
 const logs = ref<Log[]>([])
@@ -231,6 +254,7 @@ const totalPages = ref(1)
 
 // 表格搜索相关
 const searchSelectedUser = ref<User | null>(null)
+const searchSelectedOrg = ref<string | null>(null)
 const searchUsersList = ref<User[]>([])
 const loadingSearchUsers = ref(false)
 const searchQuery = ref('')
@@ -353,6 +377,7 @@ const fetchLogs = async (page: number, pageSize: number) => {
       page,
       page_size: pageSize,
       query: searchSelectedUser.value?.username || '',
+      organization: searchSelectedOrg.value || '',
       operation_type: filters.value.operationType || '',
       startTime: startTimeFilter,
       endTime: endTimeFilter
@@ -364,6 +389,7 @@ const fetchLogs = async (page: number, pageSize: number) => {
       logs.value = data.logs.map((log: any) => ({
         id: log.id,
         user: log.user,
+        organization: log.organization || '未知组织',
         operation_type: log.operation_type,
         related_model: log.related_model,
         related_id: log.related_id,
@@ -473,8 +499,23 @@ const getModelColor = (model: string) => {
   }
 }
 
+
+// 当前用户
+const currentUser = ref<{ 
+  email: string;
+  admin_type?: string;
+} | null>(null)
+
+
+
 // 初始化
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await userApi.getUserInfo()
+    currentUser.value = res.data
+  } catch (error) {
+    console.error('获取当前用户信息失败:', error)
+  }
   fetchLogs(currentPage.value, pageSize.value)
 })
 

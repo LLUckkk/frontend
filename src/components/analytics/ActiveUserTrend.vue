@@ -67,7 +67,7 @@ const renderChart = (data: {
             }
         },
         legend: {
-            data: ['发布者', '审核人'],
+            data: ['编辑', '专家'],
             top: 10,
             textStyle: { color: textColor }
         },
@@ -103,7 +103,7 @@ const renderChart = (data: {
         },
         series: [
             {
-                name: '发布者',
+                name: '编辑',
                 type: 'line',
                 data: data.publishers,
                 symbol: 'circle',
@@ -112,7 +112,7 @@ const renderChart = (data: {
                 itemStyle: { color: '#3f51b5' }
             },
             {
-                name: '审核人',
+                name: '专家',
                 type: 'line',
                 data: data.reviewers,
                 symbol: 'circle',
