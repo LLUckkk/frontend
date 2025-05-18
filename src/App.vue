@@ -21,8 +21,6 @@
           @click="goToOrganizations"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
           @click="goToFiles"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-office-building" title="组织管理" value="organizations"
-          @click="goToOrganizations"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users"
           @click="goToUsers"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs"
@@ -298,10 +296,6 @@ const goToLogs = () => {
 
 const goToReviews = () => {
   router.push('/reviews')
-}
-
-const goToOrganizations = () => {
-  router.push('/organizations')
 }
 
 onMounted(async () => {
