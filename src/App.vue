@@ -19,6 +19,8 @@
           @click="goToAnalytics"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
           @click="goToFiles"></v-list-item>
+        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-office-building" title="组织管理" value="organizations"
+          @click="goToOrganizations"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users"
           @click="goToUsers"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs"
@@ -59,9 +61,14 @@
         <v-icon>mdi-chart-bar</v-icon>
         <span>统计分析</span>
       </v-btn>
+      
       <v-btn v-if="isLoggedIn" to="/files" value="files">
         <v-icon>mdi-folder</v-icon>
         <span>图像管理</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/organizations" value="organizations">
+        <v-icon>mdi-office-building</v-icon>
+        <span>组织管理</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/users" value="users">
         <v-icon>mdi-account-group</v-icon>
@@ -233,15 +240,6 @@ const sendBroadcast = async () => {
   }
 }
 
-// 模拟用户信息
-const userInfo = ref<{
-  name: string;
-  student_id: string;
-}>({
-  name: 'Admin',
-  student_id: '管理员'
-})
-
 const goToHome = () => {
   router.push('/')
 }
@@ -277,6 +275,10 @@ const goToAnalytics = () => {
 
 const goToFiles = () => {
   router.push('/files')
+}
+
+const goToOrganizations = () => {
+  router.push('/organizations')
 }
 
 const goToUsers = () => {
