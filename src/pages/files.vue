@@ -8,8 +8,9 @@
     </v-row>
 
     <!-- 搜索和筛选区域 -->
-    <v-row class="mb-4">
+    <v-row class="mb-4 align-center">
       <v-col cols="12" sm="8" md="6">
+        <!-- 搜索出版社 -->
         <v-autocomplete
           v-model="searchSelectedUser"
           :items="searchUsersList"
@@ -17,7 +18,7 @@
           v-model:search="searchQuery"
           item-title="username"
           item-value="id"
-          label="搜索出版社名"
+          label="搜索编辑名"
           prepend-icon="mdi-magnify"
           return-object
           clearable
@@ -29,7 +30,7 @@
             <v-chip class="ma-1">
               {{ item.raw.username }}
               <v-avatar start size="24" class="mr-2">
-                <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
+                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
               </v-avatar>
             </v-chip>
           </template>
@@ -37,17 +38,34 @@
             <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
               <template v-slot:prepend>
                 <v-avatar size="24" class="mr-2">
-                  <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
+                  <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
                 </v-avatar>
               </template>
             </v-list-item>
           </template>
         </v-autocomplete>
       </v-col>
-      <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
-        <v-btn 
-          color="primary" 
-          class="text-none mr-2" 
+
+      <v-col v-if="currentUser?.admin_type == 'software_admin'" cols="12" sm="4" md="3">
+        <!-- 搜索组织 -->
+        <v-text-field
+          v-model="searchSelectedOrg"
+          label="搜索组织"
+          prepend-icon="mdi-office-building"
+          clearable
+          hide-details
+          @update:model-value="handleSearchSelection"
+        ></v-text-field>
+      </v-col>
+
+      <!-- spacer 自动填充空位 -->
+      <v-spacer></v-spacer>
+
+      <!-- 筛选按钮，始终靠右 -->
+      <v-col cols="auto">
+        <v-btn
+          color="primary"
+          class="text-none"
           prepend-icon="mdi-filter-variant"
           @click="showFilterDialog = true"
         >
@@ -383,6 +401,7 @@ const snackbar = useSnackbarStore()
 interface File {
   id: number
   username: string
+  organization: string
   subject: string
   uploadTime: number
   images: Image[]
@@ -403,13 +422,20 @@ interface User {
   avatar: string
 }
 
-const headers = [
-  // { title: '编号', key: 'id', align: 'center' },
-  { title: '出版社名', key: 'username', align: 'start' },
-  { title: '学科', key: 'subject', align: 'start' },
-  { title: '上传时间', key: 'uploadTime', align: 'center' },
-  { title: '操作', key: 'actions', align: 'center', sortable: false },
-] as const
+const headers = computed(() => {
+  const baseHeaders = [
+    { title: '出版社名', key: 'username', align: 'start' },
+    { title: '学科', key: 'subject', align: 'start' },
+    { title: '上传时间', key: 'uploadTime', align: 'center' },
+    { title: '操作', key: 'actions', align: 'center', sortable: false },
+  ]
+  
+  if (currentUser.value?.admin_type === 'software_admin') {
+    baseHeaders.splice(1, 0, { title: '所属组织', key: 'organization', align: 'start' })
+  }
+  
+  return baseHeaders
+}) as any
 
 // 分页相关
 const files = ref<File[]>([])
@@ -421,6 +447,7 @@ const totalPages = ref(1)
 
 // 搜索相关
 const searchSelectedUser = ref<User | null>(null)
+const searchSelectedOrg = ref<string | null>(null)
 const searchUsersList = ref<User[]>([])
 const loadingSearchUsers = ref(false)
 const searchQuery = ref('')
@@ -818,6 +845,7 @@ const fetchFiles = async (page: number, pageSize: number) => {
       page,
       page_size: pageSize,
       query: searchSelectedUser.value?.username || '',
+      organization: searchSelectedOrg.value || '',
       categories: filters.value.subject || '',
       startTime: startTimeFilter,
       endTime: endTimeFilter
@@ -829,6 +857,7 @@ const fetchFiles = async (page: number, pageSize: number) => {
     files.value = fileList.map((file: any) => ({
       id: file.id,
       username: file.username,
+      organization: file.organization || '未知组织',
       subject: file.tag,
       uploadTime: new Date(file.upload_time).getTime(),
       images: [
@@ -853,8 +882,22 @@ const fetchFiles = async (page: number, pageSize: number) => {
   }
 }
 
+// 当前用户
+const currentUser = ref<{ 
+  email: string;
+  admin_type?: string;
+} | null>(null)
+
+
+
 // 初始化
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await userApi.getUserInfo()
+    currentUser.value = res.data
+  } catch (error) {
+    console.error('获取当前用户信息失败:', error)
+  }
   fetchFiles(currentPage.value, pageSize.value)
 })
 

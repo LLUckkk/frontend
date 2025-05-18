@@ -2,7 +2,7 @@
   <v-card class="mb-6 chart-card scrollable-card" elevation="2">
     <v-card-title class="text-h5 font-weight-bold primary--text py-4">
       <v-icon large color="primary" class="mr-2">mdi-account-group</v-icon>
-      出版社排行榜
+      编辑排行榜
     </v-card-title>
     <v-card-text class="pa-4">
       <v-table class="publisher-table">

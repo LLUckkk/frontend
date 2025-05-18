@@ -9,6 +9,7 @@ interface UserState {
   profile: string;
   avatar: string;
   isLoaded: boolean;
+  admin_type: string;
 }
 
 const API_BASE_URL = 'http://122.9.45.122';
@@ -20,7 +21,8 @@ export const useUserStore = defineStore('user', {
     role: '',
     profile: '',
     avatar: './192.png',
-    isLoaded: false
+    isLoaded: false,
+    admin_type: ''
   }),
   
   actions: {
@@ -32,6 +34,7 @@ export const useUserStore = defineStore('user', {
         this.role = response.data.role || '';
         this.profile = response.data.profile || '';
         this.avatar = response.data.avatar ? `${API_BASE_URL}${response.data.avatar}` : './192.png';
+        this.admin_type = response.data.admin_type;
         this.isLoaded = true;
         return true;
       } catch (error) {
@@ -48,6 +51,7 @@ export const useUserStore = defineStore('user', {
       this.profile = '';
       this.avatar = './192.png';
       this.isLoaded = false;
+      this.admin_type = '';
     }
   },
   

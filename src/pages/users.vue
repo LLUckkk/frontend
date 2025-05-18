@@ -8,8 +8,8 @@
     </v-row>
 
     <!-- 搜索和筛选区域 -->
-    <v-row class="mb-4">
-      <v-col cols="12" sm="6" md="4">
+    <v-row class="mb-4 align-center">
+      <v-col cols="12" sm="8" md="6">
         <v-text-field
           v-model="searchQuery"
           label="搜索用户名"
@@ -24,7 +24,7 @@
           placeholder="请输入用户名"
         ></v-text-field>
       </v-col>
-      <v-col v-if="currentUser?.admin_type === 'software_admin'" cols="12" sm="6" md="4">
+      <v-col v-if="currentUser?.admin_type === 'software_admin'" cols="12" sm="4" md="3">
         <v-text-field
           v-model="organizationQuery"
           label="搜索组织"
@@ -39,7 +39,11 @@
           placeholder="请输入组织名称"
         ></v-text-field>
       </v-col>
-      <v-col cols="12" sm="11" md="4" class="d-flex justify-end">
+      <!-- spacer 自动填充空位 -->
+      <v-spacer></v-spacer>
+
+      <!-- 筛选按钮，始终靠右 -->
+      <v-col cols="auto">
         <v-btn 
           color="primary" 
           class="text-none mr-2" 
@@ -505,16 +509,23 @@ interface User {
   organization?: string
 }
 
-const headers = [
-  { title: '头像', key: 'avatar', align: 'center', sortable: false, width: '80px' },
-  { title: '用户名', key: 'username', align: 'start', width: '120px' },
-  { title: '邮箱', key: 'email', align: 'start', width: '180px' },
-  { title: '角色', key: 'role', align: 'center', width: '100px' },
-  { title: '权限', key: 'permission', align: 'center', sortable: false, width: '200px' },
-  { title: '组织', key: 'organization', align: 'center', width: '120px' },
-  { title: '注册时间', key: 'registerTime', align: 'center', width: '160px' },
-  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '120px' },
-] as const
+const headers = computed(() => {
+  const baseHeaders = [
+    { title: '头像', key: 'avatar', align: 'center', sortable: false, width: '80px' },
+    { title: '用户名', key: 'username', align: 'start', width: '120px' },
+    { title: '邮箱', key: 'email', align: 'start', width: '180px' },
+    { title: '角色', key: 'role', align: 'center', width: '100px' },
+    { title: '权限', key: 'permission', align: 'center', sortable: false, width: '200px' },
+    { title: '注册时间', key: 'registerTime', align: 'center', width: '160px' },
+    { title: '操作', key: 'actions', align: 'center', sortable: false, width: '120px' },
+  ]
+  
+  if (currentUser.value?.admin_type === 'software_admin') {
+    baseHeaders.splice(5, 0, { title: '组织', key: 'organization', align: 'center', width: '120px' })
+  }
+  
+  return baseHeaders
+}) as any
 
 // 分页相关
 const users = ref<User[]>([])
@@ -544,7 +555,7 @@ const selectedHeader = ref<typeof headers[0] | null>(null)
 
 // 可搜索的列
 const searchableHeaders = computed(() => {
-  return headers.filter(header => 
+  return headers.value.filter((header: { key: string }) => 
     header.key !== 'avatar' && 
     header.key !== 'permission' && 
     header.key !== 'actions'
