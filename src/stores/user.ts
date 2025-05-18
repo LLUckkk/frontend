@@ -41,23 +41,6 @@ export const useUserStore = defineStore('user', {
       }
     },
     
-    async updateAvatar(file: File) {
-      try {
-        const formData = new FormData();
-        formData.append('avatar', file);
-        
-        const response = await user.updateUserAvatar(formData);
-        if (response.data.avatar) {
-          this.avatar = `${API_BASE_URL}${response.data.avatar}`;
-          this.fetchUserInfo();
-        }
-        return true;
-      } catch (error) {
-        console.error('更新头像失败:', error);
-        return false;
-      }
-    },
-    
     clearUserInfo() {
       this.username = '';
       this.email = '';

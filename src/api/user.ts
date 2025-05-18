@@ -24,17 +24,7 @@ export default {
   getUserInfo() {
     return http.get('/user/details/');
   },
-  updateUserInfo(data: any) {
-    return http.put('/user/update/', data)
-  },
-  updateUserAvatar(data: any){
-    return http.put('/user/avatar/', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
 
-  },
   // 请求重置密码邮件
   requestPasswordReset(email: string) {
     return http.post('/password-reset/', { email })
@@ -79,4 +69,9 @@ export default {
     return http.get(`/admin/details/${userId}`);
   },
 
+  // 获取管理员详情
+  getAdminDetail(userId?: number) {
+    const url = userId ? `/api/admin_detail/${userId}/` : '/api/admin_detail/';
+    return http.get(url);
+  },
 }

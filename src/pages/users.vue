@@ -9,7 +9,7 @@
 
     <!-- 搜索和筛选区域 -->
     <v-row class="mb-4">
-      <v-col cols="12" sm="8" md="6">
+      <v-col cols="12" sm="6" md="4">
         <v-text-field
           v-model="searchQuery"
           label="搜索用户名"
@@ -24,7 +24,22 @@
           placeholder="请输入用户名"
         ></v-text-field>
       </v-col>
-      <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
+      <v-col v-if="currentUser?.admin_type === 'software_admin'" cols="12" sm="6" md="4">
+        <v-text-field
+          v-model="organizationQuery"
+          label="搜索组织"
+          append-inner-icon="mdi-magnify"
+          clearable
+          density="compact"
+          hide-details
+          class="search-input"
+          @keyup.enter="handleSearch"
+          @click:append-inner="handleSearch"
+          @click:clear="handleSearch"
+          placeholder="请输入组织名称"
+        ></v-text-field>
+      </v-col>
+      <v-col cols="12" sm="11" md="4" class="d-flex justify-end">
         <v-btn 
           color="primary" 
           class="text-none mr-2" 
@@ -81,6 +96,14 @@
             class="role-chip"
           >
             根管理员
+          </v-chip>
+          <v-chip
+            v-else-if="item.role === 'admin'"
+            :color="item.admin_type === 'software_admin' ? 'error' : 'warning'"
+            size="small"
+            class="role-chip"
+          >
+            {{ item.admin_type === 'software_admin' ? '软件管理员' : '组织管理员' }}
           </v-chip>
           <v-chip
             v-else
@@ -147,6 +170,10 @@
               </div>
             </template>
           </div>
+        </template>
+
+        <template v-slot:item.organization="{ item }">
+          <span>{{ item.organization }}</span>
         </template>
 
         <template v-slot:item.registerTime="{ item }">
@@ -425,10 +452,26 @@
                   {{ getRoleName(selectedUserDetails?.role || '') }}
                 </v-chip>
               </div>
+              <div v-if="selectedUserDetails?.role === 'admin'" class="d-flex align-center">
+                <v-icon class="mr-2">mdi-shield-account</v-icon>
+                <span class="text-subtitle-1">管理员类型：</span>
+                <v-chip
+                  :color="selectedUserDetails?.admin_type === 'software_admin' ? 'error' : 'warning'"
+                  size="small"
+                  class="ml-2"
+                >
+                  {{ selectedUserDetails?.admin_type === 'software_admin' ? '软件管理员' : '组织管理员' }}
+                </v-chip>
+              </div>
               <div class="d-flex align-center">
                 <v-icon class="mr-2">mdi-text</v-icon>
                 <span class="text-subtitle-1">简介：</span>
                 <span class="text-body-1 ml-2">{{ selectedUserDetails?.profile || '暂无简介' }}</span>
+              </div>
+              <div v-if="selectedUserDetails?.organization" class="d-flex align-center">
+                <v-icon class="mr-2">mdi-office-building</v-icon>
+                <span class="text-subtitle-1">所属组织：</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails.organization }}</span>
               </div>
             </div>
           </div>
@@ -458,16 +501,19 @@ interface User {
   permission: string
   registerTime: number
   lastLoginTime: number
+  admin_type?: string
+  organization?: string
 }
 
 const headers = [
-  { title: '头像', key: 'avatar', align: 'center', sortable: false },
-  { title: '用户名', key: 'username', align: 'start' },
-  { title: '邮箱', key: 'email', align: 'start' },
-  { title: '角色', key: 'role', align: 'center' },
-  { title: '权限', key: 'permission', align: 'center', sortable: false },
-  { title: '注册时间', key: 'registerTime', align: 'center' },
-  { title: '操作', key: 'actions', align: 'center', sortable: false },
+  { title: '头像', key: 'avatar', align: 'center', sortable: false, width: '80px' },
+  { title: '用户名', key: 'username', align: 'start', width: '120px' },
+  { title: '邮箱', key: 'email', align: 'start', width: '180px' },
+  { title: '角色', key: 'role', align: 'center', width: '100px' },
+  { title: '权限', key: 'permission', align: 'center', sortable: false, width: '200px' },
+  { title: '组织', key: 'organization', align: 'center', width: '120px' },
+  { title: '注册时间', key: 'registerTime', align: 'center', width: '160px' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '120px' },
 ] as const
 
 // 分页相关
@@ -493,6 +539,7 @@ const showDeleteDialog = ref(false)
 
 // 搜索相关
 const searchQuery = ref('')
+const organizationQuery = ref('')
 const selectedHeader = ref<typeof headers[0] | null>(null)
 
 // 可搜索的列
@@ -507,6 +554,7 @@ const searchableHeaders = computed(() => {
 const selectHeader = (header: typeof headers[0]) => {
   selectedHeader.value = header
   searchQuery.value = ''
+  organizationQuery.value = ''
 }
 
 const handleSearch = () => {
@@ -660,6 +708,8 @@ const resetFilters = () => {
     startDate: null,
     endDate: null
   }
+  searchQuery.value = ''
+  organizationQuery.value = ''
   timeError.value = ''
   currentPage.value = 1
   pageSize.value = 10
@@ -781,13 +831,12 @@ const fetchUsers = async (page: number, pageSize: number) => {
     let permissionFilter = ''
     const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
     if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
-      // 修改权限值计算逻辑，确保四位权限正确
       let value = 0
-      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }  // 第3位：上传图像
-      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }       // 第2位：提交AI检测
-      if (publishReview !== null) { value |= (publishReview ? 2 : 0) } // 第1位：发布人工审核
-      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }   // 第0位：提交人工审核
-      permissionFilter = value.toString(2).padStart(4, '0')  // 转换为4位二进制字符串
+      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }
+      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }
+      if (publishReview !== null) { value |= (publishReview ? 2 : 0) }
+      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }
+      permissionFilter = value.toString(2).padStart(4, '0')
     }
 
     // 计算时间筛选
@@ -815,9 +864,10 @@ const fetchUsers = async (page: number, pageSize: number) => {
       page_size: pageSize,
       query: searchQuery.value || '',
       role: filters.value.role || '',
-      permission: permissionFilter || '',  // 使用4位二进制字符串
+      permission: permissionFilter || '',
       startTime: startTimeFilter,
-      endTime: endTimeFilter
+      endTime: endTimeFilter,
+      organization: currentUser.value?.admin_type === 'software_admin' ? organizationQuery.value : ''
     }
     const response = await userApi.getUsers(params)
     const { users: userList, current_page, total_pages, total_users } = response.data
@@ -828,10 +878,11 @@ const fetchUsers = async (page: number, pageSize: number) => {
       username: user.username,
       email: user.email,
       role: user.role,
-      permission: user.permission, // 直接使用后端返回的二进制字符串
+      permission: user.permission,
       registerTime: new Date(user.date_joined).getTime(),
-      //lastLoginTime: new Date(user.date_joined).getTime(),
-      avatar: 'http://122.9.45.122'+user.avatar || ''
+      avatar: 'http://122.9.45.122'+user.avatar || '',
+      admin_type: user.admin_type,
+      organization: user.organization
     }))
     
     currentPage.value = current_page
@@ -891,7 +942,10 @@ const handlePageSizeChange = (size: number) => {
 }
 
 // 当前用户
-const currentUser = ref<{ email: string } | null>(null)
+const currentUser = ref<{ 
+  email: string;
+  admin_type?: string;
+} | null>(null)
 
 // 初始化
 onMounted(async () => {
@@ -926,6 +980,8 @@ const selectedUserDetails = ref<{
   role: string
   profile: string
   avatar: string
+  admin_type: string
+  organization: string
 } | null>(null)
 
 // 打开用户详情对话框
@@ -937,10 +993,18 @@ const openUserDetailsDialog = async (user: User) => {
   }
 
   try {
-    const response = await userApi.getOtherUserInfo(user.id)
+    let response;
+    if (user.role === 'admin') {
+      response = await userApi.getAdminDetail(user.id);
+    } else {
+      response = await userApi.getOtherUserInfo(user.id);
+    }
+    
     selectedUserDetails.value = {
       ...response.data,
-      avatar: 'http://122.9.45.122' + response.data.avatar
+      avatar: 'http://122.9.45.122' + response.data.avatar,
+      admin_type: response.data.admin_type || 'unknown',
+      organization: response.data.organization || '未知'
     }
     showUserDetailsDialog.value = true
   } catch (error) {
@@ -976,6 +1040,7 @@ const openUserDetailsDialog = async (user: User) => {
 :deep(.v-data-table) {
   border-radius: 12px;
   width: 100%;
+  table-layout: fixed;
 }
 
 :deep(.v-data-table-header) {
@@ -987,10 +1052,23 @@ const openUserDetailsDialog = async (user: User) => {
   font-size: 14px;
   color: rgb(var(--v-theme-on-surface));
   white-space: nowrap;
+  padding: 12px 8px;
+  text-align: center;
 }
 
 :deep(.v-data-table__tr td) {
   white-space: nowrap;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+:deep(.v-data-table__tr td:first-child) {
+  text-align: center;
+}
+
+:deep(.v-data-table__tr td:nth-child(2)),
+:deep(.v-data-table__tr td:nth-child(3)) {
+  text-align: left;
 }
 
 :deep(.v-data-table__tr:hover) {
@@ -1002,7 +1080,7 @@ const openUserDetailsDialog = async (user: User) => {
 }
 
 .search-input {
-  max-width: 400px;
+  width: 100%;
 }
 
 :deep(.v-text-field .v-field__input) {

@@ -34,19 +34,19 @@ router.isReady().then(() => {
   localStorage.removeItem('vuetify:dynamic-reload')
 })
 
-// router.beforeEach((to, from, next) => {
-//   if (!isLoggedIn.value) {
-//     if (to.path === '/login') {
-//       next()
-//     } else {
-//       next('/login')
-//     }
-//   } else {
-//     if (to.path === '/login') {
-//       next('/')
-//     } else {
-//       next()
-//     }
-//   }
-// })
+router.beforeEach((to, from, next) => {
+  if (!isLoggedIn.value) {
+    if (to.path === '/login') {
+      next()
+    } else {
+      next('/login')
+    }
+  } else {
+    if (to.path === '/login') {
+      next('/')
+    } else {
+      next()
+    }
+  }
+})
 export default router
