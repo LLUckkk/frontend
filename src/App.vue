@@ -17,7 +17,8 @@
         <v-list-item prepend-icon="mdi-home" title="主页" value="home" @click="goToHome"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-chart-bar" title="统计分析" value="analytics"
           @click="goToAnalytics"></v-list-item>
-        <v-list-item v-if="isLoggedIn" prepend-icon="mdi-office-building" title="组织管理" value="organizations"
+        <v-list-item v-if="isLoggedIn && userStore.admin_type === 'software_admin'" 
+          prepend-icon="mdi-office-building" title="组织管理" value="organizations"
           @click="goToOrganizations"></v-list-item>
         <v-list-item v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" 
           prepend-icon="mdi-account-circle" title="组织信息" value="organization-profile"
@@ -70,7 +71,7 @@
         <v-icon>mdi-folder</v-icon>
         <span>图像管理</span>
       </v-btn>
-      <v-btn v-if="isLoggedIn" to="/organizations" value="organizations">
+      <v-btn v-if="isLoggedIn && userStore.admin_type === 'software_admin'" to="/organizations" value="organizations">
         <v-icon>mdi-office-building</v-icon>
         <span>组织管理</span>
       </v-btn>

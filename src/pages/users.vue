@@ -636,6 +636,12 @@ const openDeleteDialog = (user: User) => {
     snackbar.showMessage('不能删除根管理员', 'warning')
     return
   }
+  if(currentUser.value?.admin_type === 'organization_admin'){
+    if(user.admin_type === 'organization_admin'){
+      snackbar.showMessage('不能删除自己', 'warning')
+      return
+    }
+  }
   selectedUser.value = user
   showDeleteDialog.value = true
 }
