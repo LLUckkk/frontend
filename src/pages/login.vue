@@ -76,8 +76,8 @@
         <div class="role-selector mb-8">
           <v-btn-toggle v-model="selectedRole" mandatory class="role-toggle">
             <v-btn value="publisher" :class="{ 'active-role': selectedRole === 'publisher' }"
-              class="role-btn">出版社</v-btn>
-            <v-btn value="reviewer" :class="{ 'active-role': selectedRole === 'reviewer' }" class="role-btn">审稿人</v-btn>
+              class="role-btn">编辑</v-btn>
+            <v-btn value="reviewer" :class="{ 'active-role': selectedRole === 'reviewer' }" class="role-btn">专家</v-btn>
           </v-btn-toggle>
         </div>
 
@@ -105,11 +105,29 @@
 
           <!-- 注册表单 -->
           <template v-else>
-            <v-text-field v-model="registerForm.email" label="邮箱" variant="outlined" density="comfortable" class="mb-4"
-              prepend-inner-icon="mdi-email" :rules="registerRules.email"></v-text-field>
+            <v-text-field v-model="registerFormData.username" label="请输入用户名" variant="outlined" density="comfortable"
+              class="mb-4" prepend-inner-icon="mdi-account" :rules="[(v: string) => !!v || '用户名不能为空']"
+              required></v-text-field>
 
-            <v-text-field v-model="registerForm.inviteCode" label="邀请码" variant="outlined" density="comfortable"
-              class="mb-4" prepend-inner-icon="mdi-key" :rules="registerRules.inviteCode"></v-text-field>
+            <v-text-field v-model="registerFormData.email" label="请输入邮箱" variant="outlined" density="comfortable"
+              class="mb-4" prepend-inner-icon="mdi-email"
+              :rules="[(v: string) => !!v || '邮箱不能为空', (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
+              required></v-text-field>
+
+            <v-text-field v-model="registerFormData.password" label="请输入密码" variant="outlined" density="comfortable"
+              class="mb-4" type="password" prepend-inner-icon="mdi-lock"
+              :rules="[(v: string) => !!v || '密码不能为空', (v: string) => v.length >= 6 || '密码长度不能少于6位']"
+              required></v-text-field>
+
+            <v-text-field v-model="registerFormData.confirmPassword" label="请确认密码" variant="outlined"
+              density="comfortable" class="mb-4" type="password" prepend-inner-icon="mdi-lock-check" :rules="[
+                (v: string) => !!v || '请确认密码',
+                (v: string) => v === registerFormData.password || '两次输入的密码不一致'
+              ]" required></v-text-field>
+
+            <v-text-field v-model="registerFormData.inviteCode" label="请输入邀请码" variant="outlined" density="comfortable"
+              class="mb-4" prepend-inner-icon="mdi-key" :rules="[(v: string) => !!v || '邀请码不能为空']"
+              required></v-text-field>
 
             <!-- 验证码区域 -->
             <div class="captcha-section mb-6">
@@ -121,13 +139,7 @@
               </v-text-field>
             </div>
 
-            <v-checkbox v-model="agreement" label="我已阅读并同意《隐私政策》和《使用协议》" hide-details class="mb-6"
-              :rules="[v => !!v || '请阅读并同意相关协议']"></v-checkbox>
-
-            <v-btn v-if="selectedRole === 'publisher'" block color="secondary" size="large" class="mb-4"
-              @click="showCreateOrgDialog = true">
-              创建组织
-            </v-btn>
+            <v-checkbox v-model="agreement" label="我已阅读《隐私政策》和《使用协议》" hide-details class="mb-6"></v-checkbox>
           </template>
 
           <v-btn block color="primary" size="large" type="submit" :disabled="!isFormValid">
@@ -268,9 +280,12 @@ const form = ref(null)
 const orgForm = ref(null)
 
 // 注册表单数据
-const registerForm = ref({
+const registerFormData = ref({
+  username: '',
   email: '',
-  inviteCode: '',
+  password: '',
+  confirmPassword: '',
+  inviteCode: ''
 })
 
 // 组织表单数据
@@ -358,10 +373,10 @@ const isFormValid = computed(() => {
       /.+@.+\..+/.test(email.value) &&
       password.value.length >= 6
   } else {
-    return registerForm.value.email &&
-      registerForm.value.inviteCode &&
-      /.+@.+\..+/.test(registerForm.value.email) &&
-      registerForm.value.inviteCode.length >= 6
+    return registerFormData.value.email &&
+      registerFormData.value.inviteCode &&
+      /.+@.+\..+/.test(registerFormData.value.email) &&
+      registerFormData.value.inviteCode.length >= 6
   }
 })
 
@@ -403,9 +418,11 @@ const handleSubmit = async () => {
   } else {
     try {
       const response = await user.register({
-        email: registerForm.value.email,
-        inviteCode: registerForm.value.inviteCode,
-        role: selectedRole.value
+        username: registerFormData.value.username,
+        email: registerFormData.value.email,
+        password: registerFormData.value.password,
+        role: selectedRole.value,
+        invitation_code: registerFormData.value.inviteCode
       })
       snackbar.showMessage('注册成功', 'success')
       loginType.value = 'login'
@@ -620,6 +637,10 @@ const isOrgFormValid = computed(() => {
   // 所有字段都必须填写且符合验证规则
   return hasName && hasDescription && hasLogo && hasCertificate && hasEmail
 })
+
+// 在 script setup 部分添加
+const isRegisterFormValid = ref(false)
+const registering = ref(false)
 </script>
 
 <style scoped>
