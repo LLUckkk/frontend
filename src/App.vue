@@ -19,13 +19,16 @@
           @click="goToAnalytics"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-office-building" title="组织管理" value="organizations"
           @click="goToOrganizations"></v-list-item>
+        <v-list-item v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" 
+          prepend-icon="mdi-account-circle" title="组织信息" value="organization-profile"
+          @click="goToOrganizationProfile"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
           @click="goToFiles"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-account-group" title="用户管理" value="users"
           @click="goToUsers"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-clipboard-text-clock" title="日志记录" value="logs"
           @click="goToLogs"></v-list-item>
-        <v-list-item v-if="isLoggedIn && userStore.role === 'admin' && userStore.admin_type === 'organization_admin'" 
+        <v-list-item v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" 
           prepend-icon="mdi-gavel" title="人工审核" value="reviewRequests"
           @click="goToReviews"></v-list-item>
         <v-divider class="my-2"></v-divider>
@@ -58,10 +61,6 @@
         <v-icon>mdi-home</v-icon>
         <span>主页</span>
       </v-btn>
-      <v-btn v-if="isLoggedIn" to="/organizations" value="organizations">
-        <v-icon>mdi-office-building</v-icon>
-        <span>组织管理</span>
-      </v-btn>
       <v-btn v-if="isLoggedIn" to="/analytics" value="analytics">
         <v-icon>mdi-chart-bar</v-icon>
         <span>统计分析</span>
@@ -83,7 +82,7 @@
         <v-icon>mdi-clipboard-text-clock</v-icon>
         <span>日志记录</span>
       </v-btn>
-      <v-btn v-if="isLoggedIn && userStore.role === 'admin' && userStore.admin_type === 'organization_admin'" to="/reviews" value="reviews">
+      <v-btn v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" to="/reviews" value="reviews">
         <v-icon>mdi-gavel</v-icon>
         <span>人工审核</span>
       </v-btn>
@@ -296,6 +295,10 @@ const goToLogs = () => {
 
 const goToReviews = () => {
   router.push('/reviews')
+}
+
+const goToOrganizationProfile = () => {
+  router.push('/organization-profile')
 }
 
 onMounted(async () => {

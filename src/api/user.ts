@@ -22,7 +22,7 @@ export default {
     })
   },
   getUserInfo() {
-    return http.get('/user/details/');
+    return http.get('/admin/details/');
   },
 
   // 请求重置密码邮件
@@ -70,8 +70,7 @@ export default {
   },
 
   // 获取管理员详情
-  getAdminDetail(userId?: number) {
-    const url = userId ? `/api/admin_detail/${userId}/` : '/api/admin_detail/';
-    return http.get(url);
+  getAdminDetail(userId: number) {
+    return http.get(`/admin/details/${userId}/`);
   },
 }

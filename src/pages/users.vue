@@ -807,9 +807,9 @@ const getRoleColor = (role: string) => {
 const getRoleName = (role: string) => {
   switch (role) {
     case 'publisher':
-      return '出版社'
+      return '编辑'
     case 'reviewer':
-      return '审稿人'
+      return '专家'
     case 'admin':
       return '管理员'
     default:
