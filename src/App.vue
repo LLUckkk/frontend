@@ -21,7 +21,7 @@
           prepend-icon="mdi-office-building" title="组织管理" value="organizations"
           @click="goToOrganizations"></v-list-item>
         <v-list-item v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" 
-          prepend-icon="mdi-account-circle" title="组织信息" value="organization-profile"
+          prepend-icon="mdi-account-circle" title="组织信息" value="organization_profile"
           @click="goToOrganizationProfile"></v-list-item>
         <v-list-item v-if="isLoggedIn" prepend-icon="mdi-folder" title="图像管理" value="files"
           @click="goToFiles"></v-list-item>
@@ -299,7 +299,7 @@ const goToReviews = () => {
 }
 
 const goToOrganizationProfile = () => {
-  router.push('/organization-profile')
+  router.push('/organization_profile')
 }
 
 onMounted(async () => {

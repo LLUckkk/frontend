@@ -23,5 +23,13 @@ export default {
         'Content-Type': 'multipart/form-data'
       }
     })
+  },
+
+  createOrganization(data: any) {
+    return http.post('/organization/create/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   }
 } 

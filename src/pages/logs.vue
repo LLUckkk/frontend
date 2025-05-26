@@ -17,7 +17,7 @@
         v-model:search="searchQuery"
         item-title="username"
         item-value="id"
-        label="搜索出版社名"
+        label="搜索用户名"
         prepend-icon="mdi-magnify"
         return-object
         clearable
@@ -146,7 +146,7 @@
             v-model:search="downloadUserSearch"
             item-title="username"
             item-value="id"
-            label="选择出版社"
+            label="选择编辑社"
             prepend-icon="mdi-account"
             return-object
             multiple
@@ -590,7 +590,7 @@ const searchUsersForDownload = async (query: string) => {
   
   loadingDownloadUsers.value = true
   try {
-    const response = await userApi.getUsers({ query, page: 1, page_size: 10,  role: 'publisher' })
+    const response = await userApi.getUsers({ query, page: 1, page_size: 10 })
     downloadUsersList.value = response.data.users || []
   } catch (error) {
     console.error('搜索用户失败:', error)
@@ -669,7 +669,7 @@ const searchUsersForTable = async (query: string) => {
   
   loadingSearchUsers.value = true
   try {
-    const response = await userApi.getUsers({ query, page: 1, page_size: 10,  role: 'publisher' })
+    const response = await userApi.getUsers({ query, page: 1, page_size: 10})
     searchUsersList.value = response.data.users || []
   } catch (error) {
     console.error('搜索用户失败:', error)

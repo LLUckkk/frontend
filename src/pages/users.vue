@@ -28,13 +28,13 @@
           @click="showFilterDialog = true">
           筛选
         </v-btn>
-        <v-btn v-if="currentUser && currentUser.email === 'admin@mail.com'" color="success" class="text-none"
+        <!-- <v-btn v-if="currentUser && currentUser.email === 'admin@mail.com'" color="success" class="text-none"
           prepend-icon="mdi-account-plus" @click="showCreateAdminDialog = true">
           创建管理员
-        </v-btn>
+        </v-btn> -->
         <v-btn v-if="currentUser?.admin_type === 'organization_admin'" color="primary" class="text-none ml-2"
           prepend-icon="mdi-account-plus" @click="handleAddExpert">
-          添加专家
+          添加组织内用户
         </v-btn>
       </v-col>
     </v-row>
@@ -294,10 +294,10 @@
                 <span class="text-subtitle-1">简介：</span>
                 <span class="text-body-1 ml-2">{{ selectedUserDetails?.profile || '暂无简介' }}</span>
               </div>
-              <div v-if="selectedUserDetails?.organization" class="d-flex align-center">
+              <div v-if="selectedUserDetails?.organization_name" class="d-flex align-center">
                 <v-icon class="mr-2">mdi-office-building</v-icon>
                 <span class="text-subtitle-1">所属组织：</span>
-                <span class="text-body-1 ml-2">{{ selectedUserDetails.organization }}</span>
+                <span class="text-body-1 ml-2">{{ selectedUserDetails.organization_name }}</span>
               </div>
             </div>
           </div>
@@ -870,6 +870,7 @@ const selectedUserDetails = ref<{
   avatar: string
   admin_type: string
   organization: string
+  organization_name: string
 } | null>(null)
 
 // 打开用户详情对话框
@@ -891,8 +892,6 @@ const openUserDetailsDialog = async (user: User) => {
     selectedUserDetails.value = {
       ...response.data,
       avatar: 'http://122.9.45.122' + response.data.avatar,
-      admin_type: response.data.admin_type || 'unknown',
-      organization: response.data.organization || '未知'
     }
     showUserDetailsDialog.value = true
   } catch (error) {

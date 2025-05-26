@@ -424,7 +424,7 @@ interface User {
 
 const headers = computed(() => {
   const baseHeaders = [
-    { title: '出版社名', key: 'username', align: 'start' },
+    { title: '编辑名', key: 'username', align: 'start' },
     { title: '学科', key: 'subject', align: 'start' },
     { title: '上传时间', key: 'uploadTime', align: 'center' },
     { title: '操作', key: 'actions', align: 'center', sortable: false },

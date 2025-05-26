@@ -7,10 +7,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ActiveOrgTrend: typeof import('./components/analytics/ActiveOrgTrend.vue')['default']
     ActiveUserTrend: typeof import('./components/analytics/ActiveUserTrend.vue')['default']
     DynamicCaptcha: typeof import('./components/DynamicCaptcha.vue')['default']
     ImageTagStats: typeof import('./components/analytics/ImageTagStats.vue')['default']
     MethodStats: typeof import('./components/analytics/MethodStats.vue')['default']
+    OrgRanking: typeof import('./components/analytics/OrgRanking.vue')['default']
     PublisherRanking: typeof import('./components/analytics/PublisherRanking.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

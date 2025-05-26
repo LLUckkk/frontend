@@ -8,6 +8,9 @@ export default {
   getTopPublishers: () => {
     return http.get('/dashboard/top_publishers/')
   },
+  getTopOrganizations: () => {
+    return http.get('/dashboard/top_organizations/')
+  },
   getDailyTaskCount: () => {
     return http.get('/dashboard/daily_task_count/')
   },
@@ -19,6 +22,9 @@ export default {
   },
   getDailyActiveUsers: () => {
     return http.get('/dashboard/daily_active_users/')
+  },
+  getDailyActiveOrganizations: () => {
+    return http.get('/dashboard/daily_active_organizations/')
   },
   getDetectionMethodStats: () => {
     return http.get('/dashboard/get_sub_method_distribution_by_tag/')

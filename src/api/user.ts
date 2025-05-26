@@ -71,7 +71,7 @@ export default {
 
   // 获取管理员详情
   getAdminDetail(userId: number) {
-    return http.get(`/admin/details/${userId}/`);
+    return http.get(`/admin/details/${userId}`);
   },
 
   // 获取专家邀请码
