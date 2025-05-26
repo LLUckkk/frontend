@@ -10,6 +10,7 @@ interface UserState {
   avatar: string;
   isLoaded: boolean;
   admin_type: string;
+  organization: number;
 }
 
 const API_BASE_URL = 'http://122.9.45.122';
@@ -22,9 +23,10 @@ export const useUserStore = defineStore('user', {
     profile: '',
     avatar: './192.png',
     isLoaded: false,
-    admin_type: ''
+    admin_type: '',
+    organization: 0
   }),
-  
+
   actions: {
     async fetchUserInfo() {
       try {
@@ -36,6 +38,7 @@ export const useUserStore = defineStore('user', {
         this.avatar = response.data.avatar ? `${API_BASE_URL}${response.data.avatar}` : './192.png';
         this.admin_type = response.data.admin_type;
         this.isLoaded = true;
+        this.organization = response.data.organization;
         return true;
       } catch (error) {
         console.error('获取用户信息失败:', error);
@@ -43,7 +46,7 @@ export const useUserStore = defineStore('user', {
         return false;
       }
     },
-    
+
     clearUserInfo() {
       this.username = '';
       this.email = '';
@@ -52,9 +55,10 @@ export const useUserStore = defineStore('user', {
       this.avatar = './192.png';
       this.isLoaded = false;
       this.admin_type = '';
+      this.organization = 0;
     }
   },
-  
+
   getters: {
     displayName: (state) => state.username || '未登录',
     userRole: (state) => state.role || '未设置',

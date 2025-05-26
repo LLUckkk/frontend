@@ -2,8 +2,8 @@ import http from './request'
 
 export default {
   // 获取组织信息
-  getOrganizationInfo() {
-    return http.get('/organization/info/')
+  getOrgDetail(data: any) {
+    return http.get(`/organization/${data.organization_id}/`)
   },
 
   // 更新组织信息

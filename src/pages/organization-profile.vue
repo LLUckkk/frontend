@@ -72,13 +72,7 @@
 
             <v-divider class="my-6"></v-divider>
 
-            <v-btn
-              color="primary"
-              block
-              size="large"
-              prepend-icon="mdi-credit-card"
-              @click="openRechargeDialog"
-            >
+            <v-btn color="primary" block size="large" prepend-icon="mdi-credit-card" @click="openRechargeDialog">
               充值检测次数
             </v-btn>
           </v-card-text>
@@ -96,11 +90,7 @@
           <v-container>
             <v-row>
               <v-col cols="12">
-                <v-alert
-                  type="info"
-                  variant="tonal"
-                  class="mb-4"
-                >
+                <v-alert type="info" variant="tonal" class="mb-4">
                   <div class="text-body-1">
                     <div>当前剩余次数：</div>
                     <div>普通检测：{{ organizationQuota?.normal_quota || 0 }} 次</div>
@@ -115,24 +105,13 @@
                 </v-radio-group>
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="rechargeAmount"
-                  label="充值金额（元）"
-                  type="number"
-                  min="100"
-                  step="100"
-                  :rules="[
-                    v => v >= 100 || '最小充值金额为100元',
-                    v => v % 100 === 0 || '充值金额必须是100的倍数'
-                  ]"
-                  variant="outlined"
-                ></v-text-field>
+                <v-text-field v-model="rechargeAmount" label="充值金额（元）" type="number" min="100" step="100" :rules="[
+                  v => v >= 100 || '最小充值金额为100元',
+                  v => v % 100 === 0 || '充值金额必须是100的倍数'
+                ]" variant="outlined"></v-text-field>
               </v-col>
               <v-col cols="12">
-                <v-alert
-                  type="info"
-                  variant="tonal"
-                >
+                <v-alert type="info" variant="tonal">
                   <div class="text-body-1">
                     <div>充值说明：</div>
                     <div>每100元可兑换：</div>
@@ -149,11 +128,8 @@
           <v-btn color="grey" variant="text" @click="rechargeDialog = false">
             取消
           </v-btn>
-          <v-btn
-            color="primary"
-            @click="handleRecharge"
-            :disabled="!rechargeAmount || rechargeAmount < 100 || rechargeAmount % 100 !== 0"
-          >
+          <v-btn color="primary" @click="handleRecharge"
+            :disabled="!rechargeAmount || rechargeAmount < 100 || rechargeAmount % 100 !== 0">
             确认充值
           </v-btn>
         </v-card-actions>
@@ -196,7 +172,7 @@ const rechargeAmount = ref(100)
 // 获取组织信息
 const fetchOrganizationInfo = async () => {
   try {
-    const response = await organization.getOrganizationInfo()
+    const response = await organization.getOrgDetail({ organization_id: userStore.organization })
     organizationInfo.value = response.data
     // 获取组织配额信息
     await fetchOrganizationQuota()
@@ -227,7 +203,7 @@ const handleRecharge = async () => {
       amount: rechargeAmount.value,
       type: rechargeType.value
     })
-    
+
     // 充值成功
     rechargeDialog.value = false
     snackbar.showMessage('充值成功', 'success')
@@ -272,4 +248,4 @@ onMounted(() => {
 .quota-item:hover {
   transform: translateY(-2px);
 }
-</style> 
+</style>

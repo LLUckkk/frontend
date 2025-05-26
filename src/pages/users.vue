@@ -10,71 +10,38 @@
     <!-- 搜索和筛选区域 -->
     <v-row class="mb-4 align-center">
       <v-col cols="12" sm="8" md="6">
-        <v-text-field
-          v-model="searchQuery"
-          label="搜索用户名"
-          append-inner-icon="mdi-magnify"
-          clearable
-          density="compact"
-          hide-details
-          class="search-input"
-          @keyup.enter="handleSearch"
-          @click:append-inner="handleSearch"
-          @click:clear="handleSearch"
-          placeholder="请输入用户名"
-        ></v-text-field>
+        <v-text-field v-model="searchQuery" label="搜索用户名" append-inner-icon="mdi-magnify" clearable density="compact"
+          hide-details class="search-input" @keyup.enter="handleSearch" @click:append-inner="handleSearch"
+          @click:clear="handleSearch" placeholder="请输入用户名"></v-text-field>
       </v-col>
       <v-col v-if="currentUser?.admin_type === 'software_admin'" cols="12" sm="4" md="3">
-        <v-text-field
-          v-model="organizationQuery"
-          label="搜索组织"
-          append-inner-icon="mdi-magnify"
-          clearable
-          density="compact"
-          hide-details
-          class="search-input"
-          @keyup.enter="handleSearch"
-          @click:append-inner="handleSearch"
-          @click:clear="handleSearch"
-          placeholder="请输入组织名称"
-        ></v-text-field>
+        <v-text-field v-model="organizationQuery" label="搜索组织" append-inner-icon="mdi-magnify" clearable
+          density="compact" hide-details class="search-input" @keyup.enter="handleSearch"
+          @click:append-inner="handleSearch" @click:clear="handleSearch" placeholder="请输入组织名称"></v-text-field>
       </v-col>
       <!-- spacer 自动填充空位 -->
       <v-spacer></v-spacer>
 
       <!-- 筛选按钮，始终靠右 -->
       <v-col cols="auto">
-        <v-btn 
-          color="primary" 
-          class="text-none mr-2" 
-          prepend-icon="mdi-filter-variant"
-          @click="showFilterDialog = true"
-        >
+        <v-btn color="primary" class="text-none mr-2" prepend-icon="mdi-filter-variant"
+          @click="showFilterDialog = true">
           筛选
         </v-btn>
-        <v-btn
-          v-if="currentUser && currentUser.email === 'admin@mail.com'"
-          color="success"
-          class="text-none"
-          prepend-icon="mdi-account-plus"
-          @click="showCreateAdminDialog = true"
-        >
+        <v-btn v-if="currentUser && currentUser.email === 'admin@mail.com'" color="success" class="text-none"
+          prepend-icon="mdi-account-plus" @click="showCreateAdminDialog = true">
           创建管理员
+        </v-btn>
+        <v-btn v-if="currentUser?.admin_type === 'organization_admin'" color="primary" class="text-none ml-2"
+          prepend-icon="mdi-account-plus" @click="handleAddExpert">
+          添加专家
         </v-btn>
       </v-col>
     </v-row>
 
     <v-card class="elevation-2">
-      <v-data-table
-        :headers="headers"
-        :items="users"
-        class="elevation-0"
-        :items-per-page="pageSize"
-        hover
-        :width="'100%'"
-        :loading="loading"
-        hide-default-footer
-      >
+      <v-data-table :headers="headers" :items="users" class="elevation-0" :items-per-page="pageSize" hover
+        :width="'100%'" :loading="loading" hide-default-footer>
         <template v-slot:top>
           <div class="d-flex align-center pa-4">
             <div class="text-caption text-medium-emphasis">
@@ -93,80 +60,46 @@
         </template>
 
         <template v-slot:item.role="{ item }">
-          <v-chip
-            v-if="item.email === ROOT_ADMIN_EMAIL"
-            color="purple"
-            size="small"
-            class="role-chip"
-          >
+          <v-chip v-if="item.email === ROOT_ADMIN_EMAIL" color="purple" size="small" class="role-chip">
             根管理员
           </v-chip>
-          <v-chip
-            v-else-if="item.role === 'admin'"
-            :color="item.admin_type === 'software_admin' ? 'error' : 'warning'"
-            size="small"
-            class="role-chip"
-          >
+          <v-chip v-else-if="item.role === 'admin'" :color="item.admin_type === 'software_admin' ? 'error' : 'warning'"
+            size="small" class="role-chip">
             {{ item.admin_type === 'software_admin' ? '软件管理员' : '组织管理员' }}
           </v-chip>
-          <v-chip
-            v-else
-            :color="getRoleColor(item.role)"
-            size="small"
-            class="role-chip"
-          >
+          <v-chip v-else :color="getRoleColor(item.role)" size="small" class="role-chip">
             {{ getRoleName(item.role) }}
           </v-chip>
         </template>
 
         <template v-slot:item.permission="{ item }">
           <div class="d-flex flex-column align-center">
-            <v-chip
-              v-if="item.role === 'admin'||item.email === ROOT_ADMIN_EMAIL"
-              size="x-small"
-              color="error"
-              class="mb-1"
-            >
+            <v-chip v-if="item.role === 'admin' || item.email === ROOT_ADMIN_EMAIL" size="x-small" color="error"
+              class="mb-1">
               管理员权限
             </v-chip>
             <template v-else>
               <div class="d-flex flex-wrap justify-center gap-2">
                 <div class="d-flex align-center">
-                  <v-icon
-                    :color="getPermissionBit(item.permission, 3) ? 'info' : 'error'"
-                    size="small"
-                    class="mr-1"
-                  >
+                  <v-icon :color="getPermissionBit(item.permission, 3) ? 'info' : 'error'" size="small" class="mr-1">
                     {{ getPermissionBit(item.permission, 3) ? 'mdi-check-circle' : 'mdi-close-circle' }}
                   </v-icon>
                   <span class="text-caption">上传图像</span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon
-                    :color="getPermissionBit(item.permission, 2) ? 'success' : 'error'"
-                    size="small"
-                    class="mr-1"
-                  >
+                  <v-icon :color="getPermissionBit(item.permission, 2) ? 'success' : 'error'" size="small" class="mr-1">
                     {{ getPermissionBit(item.permission, 2) ? 'mdi-check-circle' : 'mdi-close-circle' }}
                   </v-icon>
                   <span class="text-caption">提交AI检测</span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon
-                    :color="getPermissionBit(item.permission, 1) ? 'warning' : 'error'"
-                    size="small"
-                    class="mr-1"
-                  >
+                  <v-icon :color="getPermissionBit(item.permission, 1) ? 'warning' : 'error'" size="small" class="mr-1">
                     {{ getPermissionBit(item.permission, 1) ? 'mdi-check-circle' : 'mdi-close-circle' }}
                   </v-icon>
                   <span class="text-caption">发布人工审核</span>
                 </div>
                 <div class="d-flex align-center">
-                  <v-icon
-                    :color="getPermissionBit(item.permission, 0) ? 'primary' : 'error'"
-                    size="small"
-                    class="mr-1"
-                  >
+                  <v-icon :color="getPermissionBit(item.permission, 0) ? 'primary' : 'error'" size="small" class="mr-1">
                     {{ getPermissionBit(item.permission, 0) ? 'mdi-check-circle' : 'mdi-close-circle' }}
                   </v-icon>
                   <span class="text-caption">提交人工审核</span>
@@ -185,59 +118,27 @@
         </template>
 
         <template v-slot:item.actions="{ item }">
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            color="info"
-            class="mr-2"
-            @click="openUserDetailsDialog(item)"
-          >
+          <v-btn icon variant="text" size="small" color="info" class="mr-2" @click="openUserDetailsDialog(item)">
             <v-icon>mdi-eye</v-icon>
           </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            color="primary"
-            class="mr-2"
-            @click="openPermissionDialog(item)"
-          >
+          <v-btn icon variant="text" size="small" color="primary" class="mr-2" @click="openPermissionDialog(item)">
             <v-icon>mdi-key-variant</v-icon>
           </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            color="error"
-            @click="openDeleteDialog(item)"
-          >
+          <v-btn icon variant="text" size="small" color="error" @click="openDeleteDialog(item)">
             <v-icon>mdi-delete</v-icon>
           </v-btn>
         </template>
       </v-data-table>
-      
+
       <div class="d-flex align-center justify-center pa-4">
         <div class="d-flex align-center">
           <span class="text-caption mr-2">每页显示</span>
-          <v-select
-            v-model="pageSize"
-            :items="[5, 10, 20, 50, 100]"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="width: 100px"
-            @update:model-value="handlePageSizeChange"
-          ></v-select>
+          <v-select v-model="pageSize" :items="[5, 10, 20, 50, 100]" density="compact" variant="outlined" hide-details
+            style="width: 100px" @update:model-value="handlePageSizeChange"></v-select>
           <span class="text-caption ml-2">条</span>
         </div>
-        <v-pagination
-          v-model="currentPage"
-          :length="totalPages"
-          :total-visible="7"
-          class="ml-4"
-          @update:model-value="handlePageChange"
-        ></v-pagination>
+        <v-pagination v-model="currentPage" :length="totalPages" :total-visible="7" class="ml-4"
+          @update:model-value="handlePageChange"></v-pagination>
       </div>
     </v-card>
 
@@ -249,33 +150,15 @@
           <div class="d-flex flex-column gap-4">
             <!-- 出版社权限 -->
             <template v-if="selectedUser?.role === 'publisher'">
-              <v-switch
-                v-model="editingPermissions.uploadImage"
-                label="上传图像权限"
-                color="info"
-                hide-details
-              ></v-switch>
-              <v-switch
-                v-model="editingPermissions.submitAI"
-                label="提交AI检测权限"
-                color="success"
-                hide-details
-              ></v-switch>
-              <v-switch
-                v-model="editingPermissions.publishReview"
-                label="发布人工审核权限"
-                color="warning"
-                hide-details
-              ></v-switch>
+              <v-switch v-model="editingPermissions.uploadImage" label="上传图像权限" color="info" hide-details></v-switch>
+              <v-switch v-model="editingPermissions.submitAI" label="提交AI检测权限" color="success" hide-details></v-switch>
+              <v-switch v-model="editingPermissions.publishReview" label="发布人工审核权限" color="warning"
+                hide-details></v-switch>
             </template>
             <!-- 审稿人权限 -->
             <template v-else-if="selectedUser?.role === 'reviewer'">
-              <v-switch
-                v-model="editingPermissions.submitReview"
-                label="提交人工审核权限"
-                color="primary"
-                hide-details
-              ></v-switch>
+              <v-switch v-model="editingPermissions.submitReview" label="提交人工审核权限" color="primary"
+                hide-details></v-switch>
             </template>
           </div>
         </v-card-text>
@@ -308,70 +191,31 @@
         <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column gap-4">
-            <v-select
-              v-model="filters.role"
-              :items="roleOptions"
-              label="角色"
-              clearable
-              hide-details
-            ></v-select>
-            
+            <v-select v-model="filters.role" :items="roleOptions" label="角色" clearable hide-details></v-select>
+
             <div class="d-flex flex-column gap-2">
               <div class="text-subtitle-2">权限筛选</div>
-              <v-switch
-                v-model="filters.permissions.uploadImage"
-                label="上传图像权限"
-                color="info"
-                hide-details
-              ></v-switch>
-              <v-switch
-                v-model="filters.permissions.submitAI"
-                label="提交AI检测权限"
-                color="success"
-                hide-details
-              ></v-switch>
-              <v-switch
-                v-model="filters.permissions.publishReview"
-                label="发布人工审核权限"
-                color="warning"
-                hide-details
-              ></v-switch>
-              <v-switch
-                v-model="filters.permissions.submitReview"
-                label="提交人工审核权限"
-                color="primary"
-                hide-details
-              ></v-switch>
+              <v-switch v-model="filters.enablePermissionFilter" label="启用权限筛选" color="info" hide-details></v-switch>
+              <template v-if="filters.enablePermissionFilter">
+                <v-switch v-model="filters.permissions.uploadImage" label="上传图像权限" color="info" hide-details></v-switch>
+                <v-switch v-model="filters.permissions.submitAI" label="提交AI检测权限" color="success"
+                  hide-details></v-switch>
+                <v-switch v-model="filters.permissions.publishReview" label="发布人工审核权限" color="warning"
+                  hide-details></v-switch>
+                <v-switch v-model="filters.permissions.submitReview" label="提交人工审核权限" color="primary"
+                  hide-details></v-switch>
+              </template>
             </div>
-            
-            <v-select
-              v-model="filters.timeRange"
-              :items="timeRangeOptions"
-              label="快速选择时间范围"
-              clearable
-              hide-details
-              @update:model-value="handleTimeRangeChange"
-            ></v-select>
+
+            <v-select v-model="filters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
+              @update:model-value="handleTimeRangeChange"></v-select>
 
             <div class="d-flex align-center gap-4">
-              <v-text-field
-                v-model="filters.startDate"
-                label="开始时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
-              <v-text-field
-                v-model="filters.endDate"
-                label="结束时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
+              <v-text-field v-model="filters.startDate" label="开始时间" type="datetime-local" hide-details
+                density="compact" :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"></v-text-field>
+              <v-text-field v-model="filters.endDate" label="结束时间" type="datetime-local" hide-details density="compact"
+                :error-messages="timeError" @update:model-value="handleCustomTimeChange"></v-text-field>
             </div>
           </div>
         </v-card-text>
@@ -384,34 +228,18 @@
     </v-dialog>
 
     <!-- 创建管理员对话框 -->
-    <v-dialog
-      v-if="currentUser && currentUser.email === 'admin@mail.com'"
-      v-model="showCreateAdminDialog"
-      max-width="500"
-    >
+    <v-dialog v-if="currentUser && currentUser.email === 'admin@mail.com'" v-model="showCreateAdminDialog"
+      max-width="500">
       <v-card class="elevation-4">
         <v-card-title class="text-h6 font-weight-bold">创建管理员</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column gap-4">
-            <v-text-field
-              v-model="newAdmin.username"
-              label="用户名"
-              :rules="[v => !!v || '用户名不能为空']"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newAdmin.email"
-              label="邮箱"
-              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']"
-              required
-            ></v-text-field>
-            <v-text-field
-              v-model="newAdmin.password"
-              label="密码"
-              type="password"
-              :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码长度不能少于6位']"
-              required
-            ></v-text-field>
+            <v-text-field v-model="newAdmin.username" label="用户名" :rules="[v => !!v || '用户名不能为空']"
+              required></v-text-field>
+            <v-text-field v-model="newAdmin.email" label="邮箱"
+              :rules="[v => !!v || '邮箱不能为空', v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址']" required></v-text-field>
+            <v-text-field v-model="newAdmin.password" label="密码" type="password"
+              :rules="[v => !!v || '密码不能为空', v => v.length >= 6 || '密码长度不能少于6位']" required></v-text-field>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -430,7 +258,8 @@
           <div class="d-flex flex-column gap-4">
             <div class="d-flex justify-center">
               <v-avatar size="120">
-                <v-img :src="selectedUserDetails?.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'" :alt="selectedUserDetails?.username"></v-img>
+                <v-img :src="selectedUserDetails?.avatar || 'https://randomuser.me/api/portraits/lego/1.jpg'"
+                  :alt="selectedUserDetails?.username"></v-img>
               </v-avatar>
             </div>
             <v-divider></v-divider>
@@ -448,22 +277,15 @@
               <div class="d-flex align-center">
                 <v-icon class="mr-2">mdi-account-cog</v-icon>
                 <span class="text-subtitle-1">角色：</span>
-                <v-chip
-                  :color="getRoleColor(selectedUserDetails?.role || '')"
-                  size="small"
-                  class="ml-2"
-                >
+                <v-chip :color="getRoleColor(selectedUserDetails?.role || '')" size="small" class="ml-2">
                   {{ getRoleName(selectedUserDetails?.role || '') }}
                 </v-chip>
               </div>
               <div v-if="selectedUserDetails?.role === 'admin'" class="d-flex align-center">
                 <v-icon class="mr-2">mdi-shield-account</v-icon>
                 <span class="text-subtitle-1">管理员类型：</span>
-                <v-chip
-                  :color="selectedUserDetails?.admin_type === 'software_admin' ? 'error' : 'warning'"
-                  size="small"
-                  class="ml-2"
-                >
+                <v-chip :color="selectedUserDetails?.admin_type === 'software_admin' ? 'error' : 'warning'" size="small"
+                  class="ml-2">
                   {{ selectedUserDetails?.admin_type === 'software_admin' ? '软件管理员' : '组织管理员' }}
                 </v-chip>
               </div>
@@ -486,11 +308,54 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- 邀请码对话框 -->
+    <v-dialog v-model="showInviteCodeDialog" max-width="500">
+      <v-card class="elevation-4">
+        <v-card-title class="text-h6 font-weight-bold">邀请码</v-card-title>
+        <v-card-text>
+          <v-tabs v-model="activeInviteTab" color="primary">
+            <v-tab value="publisher">编辑邀请码</v-tab>
+            <v-tab value="reviewer">专家邀请码</v-tab>
+          </v-tabs>
+          <v-window v-model="activeInviteTab">
+            <v-window-item value="publisher">
+              <div class="d-flex flex-column align-center gap-4 mt-4">
+                <v-icon color="success" size="64" class="mb-2">mdi-account-edit</v-icon>
+                <div class="text-h5 font-weight-bold">{{ publisherInviteCode }}</div>
+                <div class="text-body-2 text-medium-emphasis text-center">
+                  请将此邀请码发送给需要注册的编辑，编辑可以使用此邀请码完成注册。
+                </div>
+              </div>
+            </v-window-item>
+            <v-window-item value="reviewer">
+              <div class="d-flex flex-column align-center gap-4 mt-4">
+                <v-icon color="primary" size="64" class="mb-2">mdi-account-tie</v-icon>
+                <div class="text-h5 font-weight-bold">{{ reviewerInviteCode }}</div>
+                <div class="text-body-2 text-medium-emphasis text-center">
+                  请将此邀请码发送给需要注册的专家，专家可以使用此邀请码完成注册。
+                </div>
+              </div>
+            </v-window-item>
+          </v-window>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" @click="copyInviteCode">
+            <v-icon start>mdi-content-copy</v-icon>
+            复制邀请码
+          </v-btn>
+          <v-btn color="grey" variant="text" @click="showInviteCodeDialog = false">
+            关闭
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import userApi from '@/api/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 
@@ -519,11 +384,11 @@ const headers = computed(() => {
     { title: '注册时间', key: 'registerTime', align: 'center', width: '160px' },
     { title: '操作', key: 'actions', align: 'center', sortable: false, width: '120px' },
   ]
-  
+
   if (currentUser.value?.admin_type === 'software_admin') {
     baseHeaders.splice(5, 0, { title: '组织', key: 'organization', align: 'center', width: '120px' })
   }
-  
+
   return baseHeaders
 }) as any
 
@@ -555,9 +420,9 @@ const selectedHeader = ref<typeof headers[0] | null>(null)
 
 // 可搜索的列
 const searchableHeaders = computed(() => {
-  return headers.value.filter((header: { key: string }) => 
-    header.key !== 'avatar' && 
-    header.key !== 'permission' && 
+  return headers.value.filter((header: { key: string }) =>
+    header.key !== 'avatar' &&
+    header.key !== 'permission' &&
     header.key !== 'actions'
   )
 })
@@ -605,7 +470,7 @@ const updatePermissions = async () => {
   if (selectedUser.value && selectedUser.value.role !== 'admin' && selectedUser.value.email !== ROOT_ADMIN_EMAIL) {
     try {
       // 计算权限值（4位二进制）
-      const permissionValue = 
+      const permissionValue =
         (editingPermissions.value.uploadImage ? 8 : 0) +  // 第3位：上传图像
         (editingPermissions.value.submitAI ? 4 : 0) +     // 第2位：提交AI检测
         (editingPermissions.value.publishReview ? 2 : 0) + // 第1位：发布人工审核
@@ -614,13 +479,13 @@ const updatePermissions = async () => {
       // 转换为4位二进制字符串
       const permissionBinary = permissionValue.toString(2).padStart(4, '0')
       await userApi.updateUserPermission(selectedUser.value.id, permissionBinary)
-      
+
       // 更新本地数据
       const userToUpdate = users.value.find(u => u.id === selectedUser.value!.id)
       if (userToUpdate) {
         userToUpdate.permission = permissionBinary  // 使用二进制字符串
       }
-      
+
       snackbar.showMessage('权限更新成功', 'success')
     } catch (error) {
       console.error('更新权限失败:', error)
@@ -636,8 +501,8 @@ const openDeleteDialog = (user: User) => {
     snackbar.showMessage('不能删除根管理员', 'warning')
     return
   }
-  if(currentUser.value?.admin_type === 'organization_admin'){
-    if(user.admin_type === 'organization_admin'){
+  if (currentUser.value?.admin_type === 'organization_admin') {
+    if (user.admin_type === 'organization_admin') {
       snackbar.showMessage('不能删除自己', 'warning')
       return
     }
@@ -657,8 +522,8 @@ const deleteUser = async () => {
       snackbar.showMessage('删除用户失败', 'error')
     }
   }
-  currentPage.value=1
-  pageSize.value=10
+  currentPage.value = 1
+  pageSize.value = 10
   fetchUsers(currentPage.value, pageSize.value)
   showDeleteDialog.value = false
 }
@@ -676,6 +541,7 @@ const filters = ref<{
   timeRange: string | null
   startDate: string | null
   endDate: string | null
+  enablePermissionFilter: boolean
 }>({
   role: null,
   permissions: {
@@ -686,12 +552,13 @@ const filters = ref<{
   },
   timeRange: null,
   startDate: null,
-  endDate: null
+  endDate: null,
+  enablePermissionFilter: false
 })
 
 const roleOptions = [
-  { title: '出版社', value: 'publisher' },
-  { title: '审稿人', value: 'reviewer' },
+  { title: '编辑', value: 'publisher' },
+  { title: '专家', value: 'reviewer' },
   { title: '管理员', value: 'admin' }
 ]
 
@@ -723,7 +590,8 @@ const resetFilters = () => {
     },
     timeRange: null,
     startDate: null,
-    endDate: null
+    endDate: null,
+    enablePermissionFilter: false
   }
   searchQuery.value = ''
   organizationQuery.value = ''
@@ -740,7 +608,7 @@ const applyFilters = () => {
   if (timeError.value) {
     return
   }
-  
+
   // 计算权限值
   let permissionValue = 0
   if (filters.value.permissions.uploadImage !== null) {
@@ -755,7 +623,7 @@ const applyFilters = () => {
   if (filters.value.permissions.submitReview !== null) {
     permissionValue |= (filters.value.permissions.submitReview ? 1 : 0)
   }
-  
+
   currentPage.value = 1
   pageSize.value = 10
   fetchUsers(1, 10)
@@ -779,7 +647,7 @@ const handleTimeRangeChange = (value: string | null) => {
 const handleCustomTimeChange = () => {
   // 如果输入了自定义时间，清空快速选择
   filters.value.timeRange = null
-  
+
   // 验证时间
   if (!filters.value.startDate || !filters.value.endDate) {
     timeError.value = '开始时间和结束时间不能为空'
@@ -788,7 +656,7 @@ const handleCustomTimeChange = () => {
 
   const startTime = new Date(filters.value.startDate).getTime()
   const endTime = new Date(filters.value.endDate).getTime()
-  
+
   if (startTime >= endTime) {
     timeError.value = '开始时间必须早于结束时间'
   } else {
@@ -846,14 +714,16 @@ const fetchUsers = async (page: number, pageSize: number) => {
   try {
     // 计算权限筛选值（4 位二进制）
     let permissionFilter = ''
-    const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
-    if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
-      let value = 0
-      if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }
-      if (submitAI !== null) { value |= (submitAI ? 4 : 0) }
-      if (publishReview !== null) { value |= (publishReview ? 2 : 0) }
-      if (submitReview !== null) { value |= (submitReview ? 1 : 0) }
-      permissionFilter = value.toString(2).padStart(4, '0')
+    if (filters.value.enablePermissionFilter) {
+      const { uploadImage, submitAI, publishReview, submitReview } = filters.value.permissions
+      if (uploadImage !== null || submitAI !== null || publishReview !== null || submitReview !== null) {
+        let value = 0
+        if (uploadImage !== null) { value |= (uploadImage ? 8 : 0) }
+        if (submitAI !== null) { value |= (submitAI ? 4 : 0) }
+        if (publishReview !== null) { value |= (publishReview ? 2 : 0) }
+        if (submitReview !== null) { value |= (submitReview ? 1 : 0) }
+        permissionFilter = value.toString(2).padStart(4, '0')
+      }
     }
 
     // 计算时间筛选
@@ -888,7 +758,7 @@ const fetchUsers = async (page: number, pageSize: number) => {
     }
     const response = await userApi.getUsers(params)
     const { users: userList, current_page, total_pages, total_users } = response.data
-    
+
     // 转换后端数据格式为前端格式
     users.value = userList.map((user: any) => ({
       id: user.id,
@@ -897,15 +767,15 @@ const fetchUsers = async (page: number, pageSize: number) => {
       role: user.role,
       permission: user.permission,
       registerTime: new Date(user.date_joined).getTime(),
-      avatar: 'http://122.9.45.122'+user.avatar || '',
+      avatar: 'http://122.9.45.122' + user.avatar || '',
       admin_type: user.admin_type,
       organization: user.organization
     }))
-    
+
     currentPage.value = current_page
     totalPages.value = total_pages
     totalUsers.value = total_users
-    
+
     // 保存原始数据用于筛选
     originalUsers.value = [...users.value]
   } catch (error) {
@@ -959,9 +829,10 @@ const handlePageSizeChange = (size: number) => {
 }
 
 // 当前用户
-const currentUser = ref<{ 
+const currentUser = ref<{
   email: string;
   admin_type?: string;
+  organization?: number;
 } | null>(null)
 
 // 初始化
@@ -1016,7 +887,7 @@ const openUserDetailsDialog = async (user: User) => {
     } else {
       response = await userApi.getOtherUserInfo(user.id);
     }
-    
+
     selectedUserDetails.value = {
       ...response.data,
       avatar: 'http://122.9.45.122' + response.data.avatar,
@@ -1028,6 +899,53 @@ const openUserDetailsDialog = async (user: User) => {
     console.error('获取用户详情失败:', error)
     snackbar.showMessage('获取用户详情失败', 'error')
   }
+}
+
+// 邀请码相关
+const showInviteCodeDialog = ref(false)
+const activeInviteTab = ref('publisher')
+const publisherInviteCode = ref('')
+const reviewerInviteCode = ref('')
+
+// 获取邀请码
+const getInviteCode = async () => {
+  try {
+    const response = await userApi.getInviteCode({
+      organization_id: currentUser.value?.organization,
+    })
+    if (activeInviteTab.value === 'publisher') {
+      publisherInviteCode.value = response.data[0].code
+    } else {
+      reviewerInviteCode.value = response.data[1].code
+    }
+  } catch (error) {
+    console.error('获取邀请码失败:', error)
+    snackbar.showMessage('获取邀请码失败', 'error')
+  }
+}
+
+// 复制邀请码
+const copyInviteCode = () => {
+  const codeToCopy = activeInviteTab.value === 'publisher' ? publisherInviteCode.value : reviewerInviteCode.value
+  navigator.clipboard.writeText(codeToCopy).then(() => {
+    snackbar.showMessage('邀请码已复制到剪贴板', 'success')
+  }).catch(() => {
+    snackbar.showMessage('复制失败，请手动复制', 'error')
+  })
+}
+
+// 监听标签页切换
+watch(activeInviteTab, (newValue) => {
+  if (showInviteCodeDialog.value) {
+    getInviteCode()
+  }
+})
+
+// 修改按钮点击事件
+const handleAddExpert = () => {
+  showInviteCodeDialog.value = true
+  activeInviteTab.value = 'reviewer'
+  getInviteCode()
 }
 </script>
 

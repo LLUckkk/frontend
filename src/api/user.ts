@@ -73,4 +73,9 @@ export default {
   getAdminDetail(userId: number) {
     return http.get(`/admin/details/${userId}/`);
   },
+
+  // 获取专家邀请码
+  getInviteCode(data: any) {
+    return http.get(`/organization/${data.organization_id}/invitation_codes/`)
+  }
 }
