@@ -43,5 +43,13 @@ export default {
   // 确认重置密码
   confirmPasswordReset(data: { email: string, reset_code: string, new_password: string }) {
     return http.post('/password-reset/confirm/', data)
+  },
+
+  createOrganization(data: any) {
+    return http.post('/organization/create/', data, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
   }
 }

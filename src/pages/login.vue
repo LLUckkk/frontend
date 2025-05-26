@@ -67,157 +67,70 @@
     <div class="login-section">
       <div class="login-container">
         <div class="login-tabs mb-8">
-          <v-btn-toggle
-            v-model="loginType"
-            mandatory
-            divided
-            class="login-toggle"
-          >
+          <v-btn-toggle v-model="loginType" mandatory divided class="login-toggle">
             <v-btn value="login" class="flex-grow-1" :class="{ 'active-tab': loginType === 'login' }">登录</v-btn>
             <v-btn value="register" class="flex-grow-1" :class="{ 'active-tab': loginType === 'register' }">注册</v-btn>
           </v-btn-toggle>
         </div>
 
         <div class="role-selector mb-8">
-          <v-btn-toggle
-            v-model="selectedRole"
-            mandatory
-            class="role-toggle"
-          >
-            <v-btn 
-              value="publisher" 
-              :class="{ 'active-role': selectedRole === 'publisher' }"
-              class="role-btn"
-            >出版社</v-btn>
-            <v-btn 
-              value="reviewer" 
-              :class="{ 'active-role': selectedRole === 'reviewer' }"
-              class="role-btn"
-            >审稿人</v-btn>
+          <v-btn-toggle v-model="selectedRole" mandatory class="role-toggle">
+            <v-btn value="publisher" :class="{ 'active-role': selectedRole === 'publisher' }"
+              class="role-btn">出版社</v-btn>
+            <v-btn value="reviewer" :class="{ 'active-role': selectedRole === 'reviewer' }" class="role-btn">审稿人</v-btn>
           </v-btn-toggle>
         </div>
 
         <v-form ref="form" @submit.prevent="handleSubmit">
           <!-- 登录表单 -->
           <template v-if="loginType === 'login'">
-            <v-text-field
-              v-model="email"
-              label="请输入邮箱"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              prepend-inner-icon="mdi-email"
-              :rules="loginRules.email"
-            ></v-text-field>
+            <v-text-field v-model="email" label="请输入邮箱" variant="outlined" density="comfortable" class="mb-4"
+              prepend-inner-icon="mdi-email" :rules="loginRules.email"></v-text-field>
 
-            <v-text-field
-              v-model="password"
-              label="输入密码"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              type="password"
-              prepend-inner-icon="mdi-lock"
-              :rules="loginRules.password"
-            ></v-text-field>
+            <v-text-field v-model="password" label="输入密码" variant="outlined" density="comfortable" class="mb-4"
+              type="password" prepend-inner-icon="mdi-lock" :rules="loginRules.password"></v-text-field>
 
             <!-- 验证码区域 -->
             <div class="captcha-section mb-6">
-              <v-text-field
-                v-model="captchaInput"
-                label="请输入验证码"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="captchaError"
-                class="captcha-input"
-                prepend-inner-icon="mdi-shield-check"
-              >
+              <v-text-field v-model="captchaInput" label="请输入验证码" variant="outlined" density="comfortable"
+                :error-messages="captchaError" class="captcha-input" prepend-inner-icon="mdi-shield-check">
                 <template v-slot:append>
-                  <DynamicCaptcha
-                    ref="captchaRef"
-                    @update:code="code => captchaCode = code"
-                  />
+                  <DynamicCaptcha ref="captchaRef" @update:code="code => captchaCode = code" />
                 </template>
               </v-text-field>
             </div>
 
-            <v-checkbox
-              v-model="agreement"
-              label="我已阅读《隐私政策》和《使用协议》"
-              hide-details
-              class="mb-6"
-            ></v-checkbox>
+            <v-checkbox v-model="agreement" label="我已阅读《隐私政策》和《使用协议》" hide-details class="mb-6"></v-checkbox>
           </template>
 
           <!-- 注册表单 -->
           <template v-else>
-            <v-text-field
-              v-model="registerForm.email"
-              label="邮箱"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              prepend-inner-icon="mdi-email"
-              :rules="registerRules.email"
-            ></v-text-field>
+            <v-text-field v-model="registerForm.email" label="邮箱" variant="outlined" density="comfortable" class="mb-4"
+              prepend-inner-icon="mdi-email" :rules="registerRules.email"></v-text-field>
 
-            <v-text-field
-              v-model="registerForm.inviteCode"
-              label="邀请码"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              prepend-inner-icon="mdi-key"
-              :rules="registerRules.inviteCode"
-            ></v-text-field>
+            <v-text-field v-model="registerForm.inviteCode" label="邀请码" variant="outlined" density="comfortable"
+              class="mb-4" prepend-inner-icon="mdi-key" :rules="registerRules.inviteCode"></v-text-field>
 
             <!-- 验证码区域 -->
             <div class="captcha-section mb-6">
-              <v-text-field
-                v-model="captchaInput"
-                label="请输入验证码"
-                variant="outlined"
-                density="comfortable"
-                :error-messages="captchaError"
-                class="captcha-input"
-                prepend-inner-icon="mdi-shield-check"
-              >
+              <v-text-field v-model="captchaInput" label="请输入验证码" variant="outlined" density="comfortable"
+                :error-messages="captchaError" class="captcha-input" prepend-inner-icon="mdi-shield-check">
                 <template v-slot:append>
-                  <DynamicCaptcha
-                    ref="captchaRef"
-                    @update:code="code => captchaCode = code"
-                  />
+                  <DynamicCaptcha ref="captchaRef" @update:code="code => captchaCode = code" />
                 </template>
               </v-text-field>
             </div>
 
-            <v-checkbox
-              v-model="agreement"
-              label="我已阅读并同意《隐私政策》和《使用协议》"
-              hide-details
-              class="mb-6"
-              :rules="[v => !!v || '请阅读并同意相关协议']"
-            ></v-checkbox>
+            <v-checkbox v-model="agreement" label="我已阅读并同意《隐私政策》和《使用协议》" hide-details class="mb-6"
+              :rules="[v => !!v || '请阅读并同意相关协议']"></v-checkbox>
 
-            <v-btn
-              v-if="selectedRole === 'publisher'"
-              block
-              color="secondary"
-              size="large"
-              class="mb-4"
-              @click="showCreateOrgDialog = true"
-            >
+            <v-btn v-if="selectedRole === 'publisher'" block color="secondary" size="large" class="mb-4"
+              @click="showCreateOrgDialog = true">
               创建组织
             </v-btn>
           </template>
 
-          <v-btn
-            block
-            color="primary"
-            size="large"
-            type="submit"
-            :disabled="!isFormValid"
-          >
+          <v-btn block color="primary" size="large" type="submit" :disabled="!isFormValid">
             {{ loginType === 'login' ? '登录' : '注册' }}
           </v-btn>
 
@@ -235,75 +148,41 @@
     </div>
 
     <!-- 忘记密码对话框 -->
-    <v-dialog
-      v-model="showForgotPasswordDialog"
-      max-width="500"
-      persistent
-    >
+    <v-dialog v-model="showForgotPasswordDialog" max-width="500" persistent>
       <v-card>
         <v-card-title>重置密码</v-card-title>
         <v-card-text>
           <v-form>
             <div class="d-flex align-center mb-4">
-              <v-text-field 
-                v-model="forgotPasswordForm.email" 
-                label="邮箱" 
-                variant="outlined" 
-                class="flex-grow-1"
-                :rules="[
-                  v => !!v || '邮箱不能为空',
-                  v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
-                ]"
-              ></v-text-field>
-              <v-btn 
-                color="primary" 
-                class="ml-2"
-                @click="requestResetEmail" 
-                :loading="sendingEmail"
-                :disabled="countdown > 0"
-              >
+              <v-text-field v-model="forgotPasswordForm.email" label="邮箱" variant="outlined" class="flex-grow-1" :rules="[
+                v => !!v || '邮箱不能为空',
+                v => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+              ]"></v-text-field>
+              <v-btn color="primary" class="ml-2" @click="requestResetEmail" :loading="sendingEmail"
+                :disabled="countdown > 0">
                 {{ countdown > 0 ? `${countdown}秒后重发` : '发送验证码' }}
               </v-btn>
             </div>
-            
+
             <div class="mb-4">
               <div class="text-subtitle-2 mb-2">验证码</div>
               <VerificationCodeInput v-model="forgotPasswordForm.verificationCode" />
             </div>
-            
-            <v-text-field 
-              v-model="forgotPasswordForm.newPassword" 
-              label="新密码" 
-              type="password"
-              variant="outlined" 
-              class="mb-4"
-              placeholder="请输入新密码"
-              :rules="[
+
+            <v-text-field v-model="forgotPasswordForm.newPassword" label="新密码" type="password" variant="outlined"
+              class="mb-4" placeholder="请输入新密码" :rules="[
                 v => !!v || '密码不能为空',
                 v => v.length >= 6 || '密码至少6个字符'
-              ]"
-            ></v-text-field>
-            
-            <v-text-field 
-              v-model="forgotPasswordForm.confirmPassword" 
-              label="确认新密码" 
-              type="password"
-              variant="outlined" 
-              class="mb-4"
-              placeholder="请再次输入新密码"
-              :rules="[
+              ]"></v-text-field>
+
+            <v-text-field v-model="forgotPasswordForm.confirmPassword" label="确认新密码" type="password" variant="outlined"
+              class="mb-4" placeholder="请再次输入新密码" :rules="[
                 v => !!v || '请确认密码',
                 v => v === forgotPasswordForm.newPassword || '两次输入的密码不一致'
-              ]"
-            ></v-text-field>
-            
-            <v-btn 
-              color="primary" 
-              block
-              @click="resetPassword" 
-              :loading="resettingPassword"
-              :disabled="!isPasswordResetValid"
-            >
+              ]"></v-text-field>
+
+            <v-btn color="primary" block @click="resetPassword" :loading="resettingPassword"
+              :disabled="!isPasswordResetValid">
               重置密码
             </v-btn>
           </v-form>
@@ -318,71 +197,35 @@
     </v-dialog>
 
     <!-- 创建组织对话框 -->
-    <v-dialog
-      v-model="showCreateOrgDialog"
-      max-width="600"
-      persistent
-    >
+    <v-dialog v-model="showCreateOrgDialog" max-width="600" persistent>
       <v-card>
         <v-card-title>创建组织</v-card-title>
         <v-card-text>
           <v-form ref="orgForm" @submit.prevent="handleCreateOrg">
-            <v-text-field
-              v-model="orgFormData.name"
-              label="组织名称"
-              variant="outlined"
-              class="mb-4"
-              :rules="orgRules.name"
-            ></v-text-field>
+            <v-text-field v-model="orgFormData.name" label="组织名称" variant="outlined" class="mb-4"
+              :rules="orgRules.name"></v-text-field>
 
-            <v-textarea
-              v-model="orgFormData.description"
-              label="组织描述"
-              variant="outlined"
-              class="mb-4"
-              :rules="orgRules.description"
-              rows="3"
-            ></v-textarea>
+            <v-textarea v-model="orgFormData.description" label="组织描述" variant="outlined" class="mb-4"
+              :rules="orgRules.description" rows="3"></v-textarea>
+
+            <v-text-field v-model="orgFormData.email" label="组织邮箱" variant="outlined" class="mb-4"
+              :rules="orgRules.email"></v-text-field>
 
             <div class="mb-4">
               <div class="text-subtitle-2 mb-2">组织Logo</div>
-              <v-file-input
-                v-model="orgFormData.logo"
-                accept="image/*"
-                label="上传Logo"
-                variant="outlined"
-                prepend-icon="mdi-camera"
-                :rules="orgRules.logo"
-                @change="handleLogoChange"
-              ></v-file-input>
-              <v-img
-                v-if="orgFormData.logoPreview"
-                :src="orgFormData.logoPreview"
-                max-height="200"
-                class="mt-2"
-                contain
-              ></v-img>
+              <v-file-input v-model="orgFormData.logo" accept="image/*" label="上传Logo" variant="outlined"
+                prepend-icon="mdi-camera" :rules="orgRules.logo" @change="handleLogoChange"></v-file-input>
+              <v-img v-if="orgFormData.logoPreview" :src="orgFormData.logoPreview" max-height="200" class="mt-2"
+                contain></v-img>
             </div>
 
             <div class="mb-4">
               <div class="text-subtitle-2 mb-2">证明材料</div>
-              <v-file-input
-                v-model="orgFormData.certificate"
-                accept=".pdf,.jpg,.jpeg,.png"
-                label="上传证明材料"
-                variant="outlined"
-                prepend-icon="mdi-file-document"
-                :rules="orgRules.certificate"
-              ></v-file-input>
+              <v-file-input v-model="orgFormData.certificate" accept=".pdf,.jpg,.jpeg,.png" label="上传证明材料"
+                variant="outlined" prepend-icon="mdi-file-document" :rules="orgRules.certificate"></v-file-input>
             </div>
 
-            <v-btn
-              color="primary"
-              block
-              type="submit"
-              :loading="creatingOrg"
-              :disabled="!isOrgFormValid"
-            >
+            <v-btn color="primary" block type="submit" :loading="creatingOrg" :disabled="!isOrgFormValid">
               创建组织
             </v-btn>
           </v-form>
@@ -413,7 +256,6 @@ import VerificationCodeInput from '@/components/VerificationCodeInput.vue'
 
 const router = useRouter()
 const captchaRef = ref()
-const snackbarRef = ref()
 const loginType = ref('login')
 const selectedRole = ref('reviewer')
 const email = ref('')
@@ -438,6 +280,7 @@ const orgFormData = ref({
   logo: null as File | null,
   logoPreview: '',
   certificate: null as File | null,
+  email: ''
 })
 
 // 验证码相关
@@ -484,6 +327,10 @@ const orgRules = {
   certificate: [
     (v: File | null) => !!v || '请上传证明材料',
     (v: File | null) => !v || v.size <= 10 * 1024 * 1024 || '文件大小不能超过10MB'
+  ],
+  email: [
+    (v: string) => !!v || '组织邮箱不能为空',
+    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
   ]
 }
 
@@ -505,16 +352,16 @@ const validateCaptcha = () => {
 const isFormValid = computed(() => {
   if (!agreement.value) return false
   if (!captchaInput.value) return false
-  
+
   if (loginType.value === 'login') {
-    return email.value && password.value && 
-           /.+@.+\..+/.test(email.value) && 
-           password.value.length >= 6
+    return email.value && password.value &&
+      /.+@.+\..+/.test(email.value) &&
+      password.value.length >= 6
   } else {
-    return registerForm.value.email && 
-           registerForm.value.inviteCode &&
-           /.+@.+\..+/.test(registerForm.value.email) &&
-           registerForm.value.inviteCode.length >= 6
+    return registerForm.value.email &&
+      registerForm.value.inviteCode &&
+      /.+@.+\..+/.test(registerForm.value.email) &&
+      registerForm.value.inviteCode.length >= 6
   }
 })
 
@@ -524,24 +371,24 @@ const handleSubmit = async () => {
   }
   // 继续登录/注册流程...
   if (loginType.value === 'login') {
-      const response = await user.login({
-        email: email.value,
-        password: password.value,
-        role: selectedRole.value
-      }).then(async res => {
-        localStorage.setItem("2-token", res.data.access)
-        localStorage.setItem("2-refresh", res.data.refresh)
-        localStorage.setItem("2-isLoggedIn", "true")
-        
-        // 获取用户信息并存储到 user store
-        await userStore.fetchUserInfo();
-        
-        snackbar.showMessage('登录成功', 'success')
-        router.push('/')
-      }).catch(error => {
-        console.log(error)
-        let errorMessage = '网络错误，请稍后重试'
-        if (error.response) {
+    const response = await user.login({
+      email: email.value,
+      password: password.value,
+      role: selectedRole.value
+    }).then(async res => {
+      localStorage.setItem("2-token", res.data.access)
+      localStorage.setItem("2-refresh", res.data.refresh)
+      localStorage.setItem("2-isLoggedIn", "true")
+
+      // 获取用户信息并存储到 user store
+      await userStore.fetchUserInfo();
+
+      snackbar.showMessage('登录成功', 'success')
+      router.push('/')
+    }).catch(error => {
+      console.log(error)
+      let errorMessage = '网络错误，请稍后重试'
+      if (error.response) {
         switch (error.response.status) {
           case 401:
             errorMessage = '账号/密码错误'
@@ -569,10 +416,10 @@ const handleSubmit = async () => {
           // 处理字段验证错误
           const errors = error.response.data
           const errorMessages = []
-          
+
           if (errors.email) errorMessages.push(`邮箱已存在`)
           if (errors.inviteCode) errorMessages.push(`邀请码已存在`)
-          
+
           errorMessage = errorMessages.length > 0 ? errorMessages.join(';') : '请检查输入信息'
         }
       }
@@ -595,12 +442,12 @@ const countdownTimer = ref<number | null>(null)
 
 // 密码重置表单验证
 const isPasswordResetValid = computed(() => {
-  return forgotPasswordForm.value.email && 
-         /.+@.+\..+/.test(forgotPasswordForm.value.email) &&
-         forgotPasswordForm.value.verificationCode && 
-         forgotPasswordForm.value.newPassword && 
-         forgotPasswordForm.value.newPassword === forgotPasswordForm.value.confirmPassword &&
-         forgotPasswordForm.value.newPassword.length >= 6
+  return forgotPasswordForm.value.email &&
+    /.+@.+\..+/.test(forgotPasswordForm.value.email) &&
+    forgotPasswordForm.value.verificationCode &&
+    forgotPasswordForm.value.newPassword &&
+    forgotPasswordForm.value.newPassword === forgotPasswordForm.value.confirmPassword &&
+    forgotPasswordForm.value.newPassword.length >= 6
 })
 
 // 关闭忘记密码对话框
@@ -662,7 +509,7 @@ const resetPassword = async () => {
     snackbar.showMessage('请确保两次输入的密码一致且长度不少于6位', 'error')
     return
   }
-  
+
   try {
     resettingPassword.value = true
     await user.confirmPasswordReset({
@@ -691,12 +538,25 @@ onUnmounted(() => {
 
 // 处理Logo预览
 const handleLogoChange = (file: File | null) => {
-  if (file) {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      orgFormData.value.logoPreview = e.target?.result as string
+  if (file && file instanceof File) {
+    try {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          orgFormData.value.logoPreview = e.target.result as string
+        }
+      }
+      reader.onerror = () => {
+        console.error('读取文件失败')
+        orgFormData.value.logoPreview = ''
+        snackbar.showMessage('读取文件失败，请重试', 'error')
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('处理文件时出错:', error)
+      orgFormData.value.logoPreview = ''
+      snackbar.showMessage('处理文件时出错，请重试', 'error')
     }
-    reader.readAsDataURL(file)
   } else {
     orgFormData.value.logoPreview = ''
   }
@@ -712,7 +572,8 @@ const closeCreateOrgDialog = () => {
       description: '',
       logo: null,
       logoPreview: '',
-      certificate: null
+      certificate: null,
+      email: ''
     }
   }, 300)
 }
@@ -720,7 +581,7 @@ const closeCreateOrgDialog = () => {
 // 创建组织
 const handleCreateOrg = async () => {
   if (!isOrgFormValid.value) return
-  
+
   try {
     creatingOrg.value = true
     const formData = new FormData()
@@ -730,12 +591,12 @@ const handleCreateOrg = async () => {
       formData.append('logo', orgFormData.value.logo)
     }
     if (orgFormData.value.certificate) {
-      formData.append('certificate', orgFormData.value.certificate)
+      formData.append('proof_materials', orgFormData.value.certificate)
     }
-    
-    // TODO: 调用创建组织API
-    // await user.createOrganization(formData)
-    
+    formData.append('email', orgFormData.value.email)
+
+    await user.createOrganization(formData)
+
     snackbar.showMessage('组织创建成功', 'success')
     closeCreateOrgDialog()
   } catch (error: any) {
@@ -749,12 +610,15 @@ const handleCreateOrg = async () => {
 
 // 组织表单验证
 const isOrgFormValid = computed(() => {
-  return orgFormData.value.name &&
-         orgFormData.value.description &&
-         orgFormData.value.logo &&
-         orgFormData.value.certificate &&
-         orgFormData.value.name.length >= 2 &&
-         orgFormData.value.description.length >= 10
+  // 检查所有必填字段是否都已填写
+  const hasName = orgFormData.value.name && orgFormData.value.name.length >= 2
+  const hasDescription = orgFormData.value.description && orgFormData.value.description.length >= 10
+  const hasLogo = orgFormData.value.logo !== null
+  const hasCertificate = orgFormData.value.certificate !== null
+  const hasEmail = orgFormData.value.email && /.+@.+\..+/.test(orgFormData.value.email)
+
+  // 所有字段都必须填写且符合验证规则
+  return hasName && hasDescription && hasLogo && hasCertificate && hasEmail
 })
 </script>
 
@@ -939,4 +803,4 @@ const isOrgFormValid = computed(() => {
   opacity: 0.7;
   background-color: rgb(var(--v-theme-on-surface));
 }
-</style> 
+</style>
