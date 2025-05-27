@@ -27,6 +27,10 @@ export default {
     return http.get('/get_all_reviewers/')
   },
 
+  getReviewers(data: any) {
+    return http.get(`publishers/${data.publisher_id}/reviewers/`)
+  },
+
   //获取某个出版社所有检测的任务
   getAllDetectionTask(data: any) {
     return http.get('/user-tasks/', { params: data })

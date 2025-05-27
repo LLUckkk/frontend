@@ -137,7 +137,7 @@
               </v-card-title>
               <v-card-text class="pa-6">
                 <v-autocomplete v-model="selectedPeopleList" :items="filteredPeople" :loading="isSearching"
-                  :search-input.sync="searchQuery" item-title="name" item-value="id" label="搜索审核人员" multiple chips
+                  v-model:search="searchQuery" item-title="username" item-value="id" label="搜索审核人员" multiple chips
                   closable-chips hide-details variant="outlined" @update:search="searchPeople">
                   <template v-slot:chip="{ props, item }">
                     <v-chip v-bind="props" :prepend-avatar="getAvatar(item.raw.avatar)">
@@ -302,12 +302,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
 interface Image {
   result_id: string
@@ -451,13 +452,18 @@ const props = withDefaults(defineProps<{
 
 onMounted(async () => {
   try {
-    allPeople.value = (await publisher.getAllReviewers()).data
+    const userStore = useUserStore()
+    const response = await (await publisher.getReviewers({ publisher_id: userStore.id }))
+    allPeople.value = Array.isArray(response.data.reviewers) ? response.data.reviewers : []
+
     detectionResult.value.fakeImages = (await publisher.getFakeImage({ task_id: props.task_id, include_image: 1 })).data.results
     detectionResult.value.realImages = (await publisher.getNormalImage({ task_id: props.task_id, include_image: 1 })).data.results
     detectionResult.value.fakeCount = detectionResult.value.fakeImages.length
     detectionResult.value.totalCount = detectionResult.value.realImages.length + detectionResult.value.fakeCount
   } catch (error) {
+    console.error('获取数据失败:', error)
     snackbar.showMessage('获取数据失败', 'error')
+    allPeople.value = []
   }
 })
 
@@ -581,17 +587,26 @@ const hasSelectedImages = computed(() => selectedFakeCount.value > 0 || selected
 // 审核人员相关计算属性
 const selectedPeople = computed(() => selectedPeopleList.value.length)
 const filteredPeople = computed(() => {
-  if (!searchQuery.value) return allPeople.value
+  const people = allPeople.value || []
+  if (!searchQuery.value) return people
   const query = searchQuery.value.toLowerCase()
-  return allPeople.value.filter(person =>
-    person.username.toLowerCase().includes(query)
-  )
+  return people.filter(person => person.username.toLowerCase().includes(query))
 })
 
-const searchPeople = async (query: string) => {
+const searchPeople = async () => {
+  if (!searchQuery.value) return
   isSearching.value = true
-  await new Promise(resolve => setTimeout(resolve, 500))
-  isSearching.value = false
+  try {
+    const userStore = useUserStore()
+    const response = await publisher.getReviewers({ publisher_id: userStore.id })
+    allPeople.value = Array.isArray(response.data) ? response.data : []
+  } catch (error) {
+    console.error('获取审核人员失败:', error)
+    snackbar.showMessage('获取审核人员失败', 'error')
+    allPeople.value = []
+  } finally {
+    isSearching.value = false
+  }
 }
 
 // 监听标签页切换

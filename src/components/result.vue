@@ -112,7 +112,6 @@ const props = defineProps({
     required: true,
     default: () => 0
   }
-
 });
 
 const formatNumber = (result: number) => {
@@ -540,5 +539,23 @@ const imageJudgements = props.result
   letter-spacing: 0;
   min-width: 120px;
   /* 确保按钮有固定的最小宽度 */
+}
+
+.review-comment {
+  margin-top: 8px;
+  padding: 8px;
+  background-color: rgba(var(--v-theme-primary), 0.05);
+  border-radius: 4px;
+}
+
+.review-comment .text-caption {
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-primary), 0.5);
+}
+
+.review-comment .text-body-2 {
+  font-size: 0.875rem;
+  margin-top: 4px;
+  color: rgba(var(--v-theme-primary), 0.8);
 }
 </style>

@@ -27,7 +27,14 @@
               </v-list-item>
               <v-list-item>
                 <template v-slot:prepend>
-                  <v-icon>mdi-email</v-icon>
+                  <v-icon>mdi-account-group</v-icon>
+                </template>
+                <v-list-item-title>所属组织</v-list-item-title>
+                <v-list-item-subtitle>{{ userStore.organization_name || '未加入组织' }}</v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon>mdi-text-box</v-icon>
                 </template>
                 <v-list-item-title>个人简介</v-list-item-title>
                 <v-list-item-subtitle>{{ userStore.profile || '未设置' }}</v-list-item-subtitle>

@@ -140,6 +140,12 @@
             </div>
 
             <v-checkbox v-model="agreement" label="我已阅读《隐私政策》和《使用协议》" hide-details class="mb-6"></v-checkbox>
+
+            <!-- 创建组织按钮 -->
+            <v-btn v-if="selectedRole === 'publisher'" block color="secondary" size="large" class="mb-4"
+              @click="showCreateOrgDialog = true">
+              创建组织
+            </v-btn>
           </template>
 
           <v-btn block color="primary" size="large" type="submit" :disabled="!isFormValid">
@@ -209,43 +215,96 @@
     </v-dialog>
 
     <!-- 创建组织对话框 -->
-    <v-dialog v-model="showCreateOrgDialog" max-width="600" persistent>
-      <v-card>
-        <v-card-title>创建组织</v-card-title>
-        <v-card-text>
+    <v-dialog v-model="showCreateOrgDialog" max-width="700" persistent>
+      <v-card class="create-org-dialog">
+        <v-card-title class="d-flex align-center pa-6">
+          <v-icon size="32" color="primary" class="mr-3">mdi-office-building</v-icon>
+          <span class="text-h5">创建组织</span>
+        </v-card-title>
+
+        <v-card-text class="pa-6">
           <v-form ref="orgForm" @submit.prevent="handleCreateOrg">
-            <v-text-field v-model="orgFormData.name" label="组织名称" variant="outlined" class="mb-4"
-              :rules="orgRules.name"></v-text-field>
+            <!-- 组织信息部分 -->
+            <div class="form-section mb-8">
+              <div class="section-header d-flex align-center mb-4">
+                <v-icon color="primary" class="mr-2">mdi-domain</v-icon>
+                <span class="text-h6">组织信息</span>
+              </div>
 
-            <v-textarea v-model="orgFormData.description" label="组织描述" variant="outlined" class="mb-4"
-              :rules="orgRules.description" rows="3"></v-textarea>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="orgFormData.name" label="组织名称" variant="outlined" density="comfortable"
+                    :rules="orgRules.name" prepend-inner-icon="mdi-tag"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="orgFormData.adminUsername" label="管理员用户名" variant="outlined"
+                    density="comfortable" :rules="orgRules.adminUsername"
+                    prepend-inner-icon="mdi-account"></v-text-field>
+                </v-col>
+              </v-row>
 
-            <v-text-field v-model="orgFormData.email" label="组织邮箱" variant="outlined" class="mb-4"
-              :rules="orgRules.email"></v-text-field>
+              <v-textarea v-model="orgFormData.description" label="组织描述" variant="outlined" density="comfortable"
+                :rules="orgRules.description" rows="3" prepend-inner-icon="mdi-text-box"></v-textarea>
 
-            <div class="mb-4">
-              <div class="text-subtitle-2 mb-2">组织Logo</div>
-              <v-file-input v-model="orgFormData.logo" accept="image/*" label="上传Logo" variant="outlined"
-                prepend-icon="mdi-camera" :rules="orgRules.logo" @change="handleLogoChange"></v-file-input>
-              <v-img v-if="orgFormData.logoPreview" :src="orgFormData.logoPreview" max-height="200" class="mt-2"
-                contain></v-img>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="orgFormData.adminEmail" label="管理员邮箱" variant="outlined" density="comfortable"
+                    :rules="orgRules.adminEmail" prepend-inner-icon="mdi-email"></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field v-model="orgFormData.adminPassword" label="管理员密码" type="password" variant="outlined"
+                    density="comfortable" :rules="orgRules.adminPassword" prepend-inner-icon="mdi-lock"></v-text-field>
+                </v-col>
+              </v-row>
+
+              <v-text-field v-model="orgFormData.adminConfirmPassword" label="确认管理员密码" type="password"
+                variant="outlined" density="comfortable" :rules="orgRules.adminConfirmPassword"
+                prepend-inner-icon="mdi-lock-check"></v-text-field>
             </div>
 
-            <div class="mb-4">
-              <div class="text-subtitle-2 mb-2">证明材料</div>
-              <v-file-input v-model="orgFormData.certificate" accept=".pdf,.jpg,.jpeg,.png" label="上传证明材料"
-                variant="outlined" prepend-icon="mdi-file-document" :rules="orgRules.certificate"></v-file-input>
-            </div>
+            <!-- 文件上传部分 -->
+            <div class="form-section">
+              <div class="section-header d-flex align-center mb-4">
+                <v-icon color="primary" class="mr-2">mdi-file-upload</v-icon>
+                <span class="text-h6">文件上传</span>
+              </div>
 
-            <v-btn color="primary" block type="submit" :loading="creatingOrg" :disabled="!isOrgFormValid">
-              创建组织
-            </v-btn>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <div class="upload-section pa-4 rounded-lg">
+                    <div class="text-subtitle-2 mb-2">组织Logo</div>
+                    <v-file-input v-model="orgFormData.logo" accept="image/*" label="上传Logo" variant="outlined"
+                      density="comfortable" prepend-icon="mdi-camera" :rules="orgRules.logo" @change="handleLogoChange"
+                      class="mb-2"></v-file-input>
+                    <v-img v-if="orgFormData.logoPreview" :src="orgFormData.logoPreview" max-height="150"
+                      class="rounded-lg" contain></v-img>
+                  </div>
+                </v-col>
+
+                <v-col cols="12" md="6">
+                  <div class="upload-section pa-4 rounded-lg">
+                    <div class="text-subtitle-2 mb-2">证明材料</div>
+                    <v-file-input v-model="orgFormData.certificate" accept=".pdf,.jpg,.jpeg,.png" label="上传证明材料"
+                      variant="outlined" density="comfortable" prepend-icon="mdi-file-document"
+                      :rules="orgRules.certificate"></v-file-input>
+                  </div>
+                </v-col>
+              </v-row>
+            </div>
           </v-form>
         </v-card-text>
-        <v-card-actions>
+
+        <v-divider></v-divider>
+
+        <v-card-actions class="pa-6">
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="closeCreateOrgDialog">
+          <v-btn color="grey" variant="text" @click="closeCreateOrgDialog" class="mr-2">
             取消
+          </v-btn>
+          <v-btn color="primary" variant="elevated" @click="handleCreateOrg" :loading="creatingOrg"
+            :disabled="!isOrgFormValid">
+            <v-icon start>mdi-check</v-icon>
+            创建组织
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -295,7 +354,10 @@ const orgFormData = ref({
   logo: null as File | null,
   logoPreview: '',
   certificate: null as File | null,
-  email: ''
+  adminUsername: '',
+  adminEmail: '',
+  adminPassword: '',
+  adminConfirmPassword: ''
 })
 
 // 验证码相关
@@ -346,6 +408,22 @@ const orgRules = {
   email: [
     (v: string) => !!v || '组织邮箱不能为空',
     (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+  ],
+  adminUsername: [
+    (v: string) => !!v || '管理员用户名不能为空',
+    (v: string) => v.length >= 2 || '用户名至少2个字符'
+  ],
+  adminEmail: [
+    (v: string) => !!v || '管理员邮箱不能为空',
+    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
+  ],
+  adminPassword: [
+    (v: string) => !!v || '管理员密码不能为空',
+    (v: string) => v.length >= 6 || '密码至少6个字符'
+  ],
+  adminConfirmPassword: [
+    (v: string) => !!v || '请确认管理员密码',
+    (v: string) => v === orgFormData.value.adminPassword || '两次输入的密码不一致'
   ]
 }
 
@@ -590,7 +668,10 @@ const closeCreateOrgDialog = () => {
       logo: null,
       logoPreview: '',
       certificate: null,
-      email: ''
+      adminUsername: '',
+      adminEmail: '',
+      adminPassword: '',
+      adminConfirmPassword: ''
     }
   }, 300)
 }
@@ -610,7 +691,10 @@ const handleCreateOrg = async () => {
     if (orgFormData.value.certificate) {
       formData.append('proof_materials', orgFormData.value.certificate)
     }
-    formData.append('email', orgFormData.value.email)
+    formData.append('email', orgFormData.value.adminEmail)
+    formData.append('admin_username', orgFormData.value.adminUsername)
+    formData.append('admin_email', orgFormData.value.adminEmail)
+    formData.append('admin_password', orgFormData.value.adminPassword)
 
     await user.createOrganization(formData)
 
@@ -632,10 +716,14 @@ const isOrgFormValid = computed(() => {
   const hasDescription = orgFormData.value.description && orgFormData.value.description.length >= 10
   const hasLogo = orgFormData.value.logo !== null
   const hasCertificate = orgFormData.value.certificate !== null
-  const hasEmail = orgFormData.value.email && /.+@.+\..+/.test(orgFormData.value.email)
+  const hasAdminUsername = orgFormData.value.adminUsername && orgFormData.value.adminUsername.length >= 2
+  const hasAdminEmail = orgFormData.value.adminEmail && /.+@.+\..+/.test(orgFormData.value.adminEmail)
+  const hasAdminPassword = orgFormData.value.adminPassword && orgFormData.value.adminPassword.length >= 6
+  const hasAdminConfirmPassword = orgFormData.value.adminConfirmPassword === orgFormData.value.adminPassword
 
   // 所有字段都必须填写且符合验证规则
-  return hasName && hasDescription && hasLogo && hasCertificate && hasEmail
+  return hasName && hasDescription && hasLogo && hasCertificate &&
+    hasAdminUsername && hasAdminEmail && hasAdminPassword && hasAdminConfirmPassword
 })
 
 // 在 script setup 部分添加
@@ -823,5 +911,40 @@ const registering = ref(false)
 .forgot-password-dialog :deep(.v-overlay__scrim) {
   opacity: 0.7;
   background-color: rgb(var(--v-theme-on-surface));
+}
+
+.create-org-dialog {
+  border-radius: 12px;
+}
+
+.form-section {
+  background-color: rgba(var(--v-theme-surface), 0.5);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.section-header {
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.1);
+  padding-bottom: 8px;
+}
+
+.upload-section {
+  background-color: rgba(var(--v-theme-surface), 0.8);
+  border: 1px dashed rgba(var(--v-theme-primary), 0.2);
+  transition: all 0.3s ease;
+}
+
+.upload-section:hover {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+:deep(.v-field__input) {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+:deep(.v-field__prepend-inner) {
+  padding-top: 8px;
 }
 </style>
