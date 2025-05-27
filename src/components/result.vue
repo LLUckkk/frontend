@@ -31,8 +31,48 @@
           <!-- 图片预览区域 -->
           <div class="preview-section">
             <div class="preview-box">
-              <v-img v-if="props.imageUrl" :src="props.imageUrl" contain height="100%" class="rounded-lg"></v-img>
+              <v-img v-if="props.imageUrl" :src="props.imageUrl" contain height="100%" class="rounded-lg">
+                <template v-slot:placeholder>
+                  <div class="d-flex align-center justify-center fill-height">
+                    <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                  </div>
+                </template>
+              </v-img>
               <span v-else class="text-h4">PIC</span>
+              
+              <!-- 添加标注层 -->
+              <div class="annotation-layer" v-if="props.imageUrl">
+                <svg class="annotation-svg">
+                  <g v-for="(dimensionAnnotations, dimensionIndex) in props.annotations" :key="dimensionIndex">
+                    <g v-if="showAnnotations[dimensionIndex]">
+                      <g v-for="(annotationObject, objIndex) in dimensionAnnotations" :key="objIndex">
+                        <!-- 添加连接线 -->
+                        <polyline
+                          :points="annotationObject.points.map(p => `${p.x},${p.y}`).join(' ')"
+                          :stroke="annotationObject.color"
+                          stroke-width="7"
+                          fill="none"
+                          opacity="0.7"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <!-- 保持原有的点 -->
+                        <circle
+                          v-for="(point, pointIndex) in annotationObject.points"
+                          :key="pointIndex"
+                          :cx="point.x"
+                          :cy="point.y"
+                          r="4"
+                          :fill="annotationObject.color"
+                          :stroke="annotationObject.color"
+                          stroke-width="2"
+                          opacity="0.7"
+                        />
+                      </g>
+                    </g>
+                  </g>
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -43,6 +83,17 @@
               <div v-for="(dimension, index) in dimensions" :key="index" class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
+                  <v-btn
+                    v-if="props.annotations[index]?.length > 0"
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    class="annotation-btn"
+                    @click="toggleAnnotations(index)"
+                  >
+                    <v-icon start>{{ showAnnotations[index] ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
+                    {{ showAnnotations[index] ? '隐藏标注' : '显示标注' }}
+                  </v-btn>
                 </div>
                 <div class="degree-result mb-2">
                   <div class="d-flex align-center">
@@ -83,9 +134,9 @@ import { ref } from 'vue'
 
 const props = defineProps({
   taskId: {
-    type: String, // 或 Number，取决于 taskData?.id 的类型
-    required: false, // 如果可选，设为 false
-    default: null, // 默认值
+    type: String,
+    required: false,
+    default: null,
   },
   imageUrl: {
     type: String,
@@ -111,6 +162,12 @@ const props = defineProps({
     type: Number,
     required: true,
     default: () => 0
+  },
+  // 添加标注点集合属性，适应 Canvas 坐标格式
+  annotations: {
+    type: Array as PropType<Array<Array<{ points: { x: number, y: number }[], color: string }>>>,
+    required: true,
+    default: () => []
   }
 });
 
@@ -230,6 +287,12 @@ const getDegreeLabel = (value: number | null) => {
 // 图片造假判定数据
 const imageJudgements = props.result
 
+// 在 script setup 中添加
+const showAnnotations = ref<boolean[]>(Array(dimensions.value.length).fill(false));
+
+const toggleAnnotations = (index: number) => {
+  showAnnotations.value[index] = !showAnnotations.value[index];
+}
 
 </script>
 
@@ -557,5 +620,47 @@ const imageJudgements = props.result
   font-size: 0.875rem;
   margin-top: 4px;
   color: rgba(var(--v-theme-primary), 0.8);
+}
+
+.annotation-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.preview-box {
+  position: relative;
+  height: calc(100vh - 380px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  overflow: hidden;
+}
+
+.annotation-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.annotation-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.annotation-svg circle {
+  transition: all 0.3s ease;
+}
+
+.annotation-svg circle:hover {
+  r: 6;
+  opacity: 0.8;
 }
 </style>

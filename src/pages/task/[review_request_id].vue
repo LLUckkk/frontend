@@ -135,7 +135,7 @@
         </v-toolbar>
         <result-component v-if="showDetailDialog" :task-id="taskData?.id"
           :imageUrl="getImageUrl(images[currentImageIndex].img_url)" :reasons="reasons" :result="result"
-          :scores="scores" :ai_detection="AI_detection" />
+          :scores="scores" :ai_detection="AI_detection" :annotations="annotations" />
       </v-card>
     </v-dialog>
   </div>
@@ -149,7 +149,7 @@ import { useUserStore } from '@/stores/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ResultComponent from '@/components/result.vue'
 import publisher from '@/api/publisher'
-import reviewer from '@/api/reviewer'
+import Color from 'vuetify/directives/color'
 
 const router = useRouter()
 const route = useRoute()
@@ -197,6 +197,7 @@ const review_results = ref<Review[]>([])
 const reasons = ref<string[]>([])
 const result = ref(false)
 const scores = ref<number[]>([])
+const annotations = ref<Array<Array<{ points: { x: number; y: number; }[]; color: string; }>>>([])
 
 const currentImage = computed(() => {
   return images.value[currentImageIndex.value]
@@ -216,6 +217,8 @@ const fetchReviewDetail = async (review: Review) => {
     reasons.value = response.reasons
     result.value = response.result
     scores.value = response.scores
+    annotations.value = response.points
+    console.log(annotations.value)
   } catch (error) {
     snackbar.showMessage('获取人工审核详情失败', 'error')
   }
