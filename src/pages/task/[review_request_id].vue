@@ -22,6 +22,10 @@
                   <span class="text-h5 font-weight-bold primary--text">{{ formatNumber(AI_detection) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
+                <v-btn color="primary" variant="elevated" prepend-icon="mdi-download" @click="handleDownloadReport"
+                  class="ml-4">
+                  下载人工审核报告
+                </v-btn>
               </div>
 
 
@@ -149,7 +153,6 @@ import { useUserStore } from '@/stores/user'
 import { useSnackbarStore } from '@/stores/snackbar'
 import ResultComponent from '@/components/result.vue'
 import publisher from '@/api/publisher'
-import Color from 'vuetify/directives/color'
 
 const router = useRouter()
 const route = useRoute()
@@ -294,6 +297,27 @@ const formatNumber = (result: number) => {
 const handleViewDetail = (review: Review) => {
   showDetailDialog.value = true
   fetchReviewDetail(review)
+}
+
+const handleDownloadReport = async () => {
+  try {
+    const response = await publisher.downloadReviewReport({ review_request_id: review_request_id.value })
+    // 创建一个 Blob 对象
+    const blob = new Blob([response.data], { type: 'application/pdf' })
+    // 创建一个下载链接
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `人工审核报告_${review_request_id.value}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    // 清理
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    snackbar.showMessage('报告下载成功', 'success')
+  } catch (error) {
+    snackbar.showMessage('报告下载失败', 'error')
+  }
 }
 
 onMounted(async () => {

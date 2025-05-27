@@ -64,6 +64,12 @@ export default {
     })
   },
 
+  downloadReviewReport(data: any) {
+    return http.get(`/manual-review/${data.review_request_id}/report/`, {
+      responseType: 'blob'
+    })
+  },
+
   getPublisherReviewTasks(params: {
     page?: number
     page_size?: number
