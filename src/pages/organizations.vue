@@ -5,17 +5,27 @@
       <v-col>
         <h1 class="text-h4 font-weight-bold">组织管理</h1>
       </v-col>
-      <v-col cols="auto" class="d-flex align-center">
-        <v-btn
-          color="primary"
-          prepend-icon="mdi-plus"
-          size="large"
-          elevation="2"
-          @click="openCreateDialog"
-        >
-          新建组织
-        </v-btn>
+    </v-row>
+
+    <!-- 搜索和筛选区域 -->
+    <v-row class="mb-4 align-center">
+      <v-col cols="12" sm="8" md="6">
+        <v-text-field
+          v-model="searchQuery"
+          label="搜索组织名称"
+          append-inner-icon="mdi-magnify"
+          clearable
+          density="compact"
+          hide-details
+          class="search-input"
+          @keyup.enter="handleSearch"
+          @click:append-inner="handleSearch"
+          @click:clear="handleSearch"
+          placeholder="请输入组织名称"
+        ></v-text-field>
       </v-col>
+      <v-spacer></v-spacer>
+      <!--need zhw here-->
     </v-row>
 
     <!-- 组织列表 -->
@@ -42,19 +52,35 @@
               <v-window-item value="existing">
                 <v-data-table
                   :headers="headers"
-                  :items="existingOrganizations"
+                  :items="organizations"
                   :loading="loading"
                   class="elevation-1 rounded-lg"
                   hover
+                  :items-per-page="pageSize"
+                  hide-default-footer
                 >
+                  <template v-slot:top>
+                    <div class="d-flex align-center pa-4">
+                      <div class="text-caption text-medium-emphasis">
+                        共 {{ totalOrganizations }} 条记录
+                      </div>
+                    </div>
+                  </template>
+
+                  <template v-slot:item.logo="{ item }">
+                    <v-avatar size="40">
+                      <v-img :src="getImgUrl(item.logo)" :alt="item.name"></v-img>
+                    </v-avatar>
+                  </template>
+
                   <template v-slot:item.actions="{ item }">
                     <v-btn
-                      icon="mdi-pencil"
+                      icon="mdi-eye"
                       size="small"
-                      color="primary"
+                      color="info"
                       class="me-2 action-btn"
                       variant="tonal"
-                      @click="editOrganization(item)"
+                      @click="showDetails(item)"
                     ></v-btn>
                     <v-btn
                       icon="mdi-delete"
@@ -62,10 +88,33 @@
                       color="error"
                       class="action-btn"
                       variant="tonal"
-                      @click="deleteOrganization(item)"
+                      @click="showDeleteConfirm(item)"
                     ></v-btn>
                   </template>
                 </v-data-table>
+
+                <div class="d-flex align-center justify-center pa-4">
+                  <div class="d-flex align-center">
+                    <span class="text-caption mr-2">每页显示</span>
+                    <v-select
+                      v-model="pageSize"
+                      :items="[5, 10, 20, 50, 100]"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      style="width: 100px"
+                      @update:model-value="handleItemsPerPageChange"
+                    ></v-select>
+                    <span class="text-caption ml-2">条</span>
+                  </div>
+                  <v-pagination
+                    v-model="currentPage"
+                    :length="totalPages"
+                    :total-visible="7"
+                    class="ml-4"
+                    @update:model-value="handlePageChange"
+                  ></v-pagination>
+                </div>
               </v-window-item>
 
               <!-- 待审核组织列表 -->
@@ -76,7 +125,17 @@
                   :loading="loading"
                   class="elevation-1 rounded-lg"
                   hover
+                  :items-per-page="pageSize"
+                  hide-default-footer
                 >
+                  <template v-slot:top>
+                    <div class="d-flex align-center pa-4">
+                      <div class="text-caption text-medium-emphasis">
+                        共 {{ totalPendingOrganizations }} 条记录
+                      </div>
+                    </div>
+                  </template>
+
                   <template v-slot:item.actions="{ item }">
                     <v-btn
                       icon="mdi-eye"
@@ -91,7 +150,7 @@
                       size="small"
                       class="me-2 action-btn"
                       variant="tonal"
-                      @click="approveOrganization(item)"
+                      @click="approveOrganization(item.id)"
                     >
                       通过
                     </v-btn>
@@ -100,12 +159,35 @@
                       size="small"
                       class="action-btn"
                       variant="tonal"
-                      @click="rejectOrganization(item)"
+                      @click="rejectOrganization(item.id)"
                     >
                       拒绝
                     </v-btn>
                   </template>
                 </v-data-table>
+
+                <div class="d-flex align-center justify-center pa-4">
+                  <div class="d-flex align-center">
+                    <span class="text-caption mr-2">每页显示</span>
+                    <v-select
+                      v-model="pageSize"
+                      :items="[5, 10, 20, 50, 100]"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      style="width: 100px"
+                      @update:model-value="handleItemsPerPageChange"
+                    ></v-select>
+                    <span class="text-caption ml-2">条</span>
+                  </div>
+                  <v-pagination
+                    v-model="currentPage"
+                    :length="totalPages"
+                    :total-visible="7"
+                    class="ml-4"
+                    @update:model-value="handlePageChange"
+                  ></v-pagination>
+                </div>
               </v-window-item>
             </v-window>
           </v-card-text>
@@ -113,143 +195,13 @@
       </v-col>
     </v-row>
 
-    <!-- 创建/编辑组织对话框 -->
-    <v-dialog v-model="dialog" max-width="800px" transition="dialog-bottom-transition">
-      <v-card class="dialog-card">
-        <v-card-title class="d-flex align-center pa-4">
-          <v-icon size="24" color="primary" class="me-2">{{ formTitle === '新建组织' ? 'mdi-plus' : 'mdi-pencil' }}</v-icon>
-          <span class="text-h5">{{ formTitle }}</span>
-        </v-card-title>
-
-        <v-card-text class="pa-6">
-          <v-container>
-            <v-row>
-              <v-col cols="12" class="d-flex justify-center">
-                <v-avatar size="200" class="mb-4 organization-logo">
-                  <v-img :src="editedItem.logoPreview || '/default-organization.png'" alt="组织Logo"></v-img>
-                </v-avatar>
-              </v-col>
-              <v-col cols="12" class="d-flex justify-center">
-                <v-file-input
-                  v-model="editedItem.logo"
-                  accept="image/*"
-                  label="上传Logo"
-                  variant="outlined"
-                  prepend-icon="mdi-camera"
-                  :rules="orgRules.logo"
-                  @change="handleLogoChange"
-                  class="mb-4"
-                ></v-file-input>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="editedItem.name"
-                  label="组织名称"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  :rules="orgRules.name"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="editedItem.description"
-                  label="组织描述"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  rows="3"
-                  :rules="orgRules.description"
-                ></v-textarea>
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="editedItem.email"
-                  label="组织邮箱"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  type="email"
-                  :rules="orgRules.email"
-                ></v-text-field>
-              </v-col>
-            </v-row>
-            <v-divider class="my-4"></v-divider>
-            <div class="text-h6 mb-4">管理员账号信息</div>
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedItem.adminUsername"
-                  label="管理员用户名"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  :rules="orgRules.adminUsername"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedItem.adminEmail"
-                  label="管理员邮箱"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  type="email"
-                  :rules="orgRules.adminEmail"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedItem.adminPassword"
-                  label="管理员密码"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  type="password"
-                  :rules="orgRules.adminPassword"
-                ></v-text-field>
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedItem.adminPasswordConfirm"
-                  label="确认密码"
-                  variant="outlined"
-                  required
-                  hide-details="auto"
-                  class="mb-4"
-                  type="password"
-                  :rules="orgRules.adminPasswordConfirm"
-                ></v-text-field>
-              </v-col>
-            </v-row>
-          </v-container>
-        </v-card-text>
-
-        <v-card-actions class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn color="error" variant="tonal" @click="closeDialog" class="me-2">
-            取消
-          </v-btn>
-          <v-btn color="primary" @click="saveOrganization" :disabled="!isFormValid" :loading="creatingOrg">
-            保存
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- 申请详情对话框 -->
+    <!-- 组织详情对话框 -->
     <v-dialog v-model="detailsDialog" max-width="800px" transition="dialog-bottom-transition">
-      <v-card class="dialog-card">
+      <v-card class="dialog-card" v-if="selectedItem">
         <v-card-title class="d-flex justify-space-between align-center pa-4">
           <div class="d-flex align-center">
             <v-icon size="24" color="primary" class="me-2">mdi-eye</v-icon>
-            <span class="text-h5">申请详情</span>
+            <span class="text-h5">组织详情</span>
           </div>
           <v-btn icon @click="detailsDialog = false" variant="tonal">
             <v-icon>mdi-close</v-icon>
@@ -261,7 +213,7 @@
             <v-row>
               <v-col cols="12" class="d-flex justify-center">
                 <v-avatar size="200" class="mb-6 organization-logo">
-                  <v-img :src="selectedItem.logo || '/default-organization.png'" alt="组织Logo"></v-img>
+                  <v-img :src="getImgUrl(selectedItem.logo)" alt="组织Logo"></v-img>
                 </v-avatar>
               </v-col>
               <v-col cols="12">
@@ -278,59 +230,48 @@
 
                   <v-list-item class="mb-2">
                     <template v-slot:prepend>
-                      <v-icon color="primary" size="24">mdi-account</v-icon>
+                      <v-icon color="primary" size="24">mdi-text-box</v-icon>
                     </template>
-                    <v-list-item-title class="text-subtitle-1 font-weight-bold">申请人</v-list-item-title>
-                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.applicant }}</v-list-item-subtitle>
+                    <v-list-item-title class="text-subtitle-1 font-weight-bold">组织描述</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.description || '暂无描述' }}</v-list-item-subtitle>
                   </v-list-item>
 
                   <v-divider class="my-2"></v-divider>
 
                   <v-list-item class="mb-2">
                     <template v-slot:prepend>
-                      <v-icon color="primary" size="24">mdi-calendar</v-icon>
+                      <v-icon color="primary" size="24">mdi-account-group</v-icon>
                     </template>
-                    <v-list-item-title class="text-subtitle-1 font-weight-bold">申请时间</v-list-item-title>
-                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.appliedAt }}</v-list-item-subtitle>
+                    <v-list-item-title class="text-subtitle-1 font-weight-bold">用户数量</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.user_count }}</v-list-item-subtitle>
                   </v-list-item>
 
                   <v-divider class="my-2"></v-divider>
 
-                  <v-list-item>
+                  <v-list-item class="mb-2">
                     <template v-slot:prepend>
-                      <v-icon color="primary" size="24">mdi-text-box</v-icon>
+                      <v-icon color="primary" size="24">mdi-image-multiple</v-icon>
                     </template>
-                    <v-list-item-title class="text-subtitle-1 font-weight-bold">组织描述</v-list-item-title>
-                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.description }}</v-list-item-subtitle>
+                    <v-list-item-title class="text-subtitle-1 font-weight-bold">图像数量</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.image_count }}</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
               </v-col>
 
-              <v-col cols="12">
+              <v-col cols="12" v-if="selectedItem.proof_materials">
                 <v-card class="mt-6 documents-card" elevation="2">
                   <v-card-title class="d-flex align-center pa-4">
                     <v-icon color="primary" size="24" class="me-2">mdi-file-document</v-icon>
-                    <span class="text-h6">相关证明材料</span>
+                    <span class="text-h6">证明材料</span>
                   </v-card-title>
                   <v-card-text class="pa-4">
-                    <v-list class="rounded-lg">
-                      <v-list-item v-for="(doc, index) in selectedItem.documents" :key="index" class="mb-2">
-                        <template v-slot:prepend>
-                          <v-icon color="primary" size="24">mdi-file-pdf-box</v-icon>
-                        </template>
-                        <v-list-item-title class="text-subtitle-1">{{ doc.name }}</v-list-item-title>
-                        <template v-slot:append>
-                          <v-btn
-                            color="primary"
-                            variant="tonal"
-                            prepend-icon="mdi-download"
-                            @click="downloadDocument(doc)"
-                          >
-                            下载
-                          </v-btn>
-                        </template>
-                      </v-list-item>
-                    </v-list>
+                    <v-btn
+                      color="primary"
+                      prepend-icon="mdi-download"
+                      @click="downloadProofMaterials(selectedItem.proof_materials)"
+                    >
+                      下载证明材料
+                    </v-btn>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -339,302 +280,301 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+
+    <!-- 删除确认对话框 -->
+    <v-dialog v-model="showDeleteDialog" max-width="400px" transition="dialog-bottom-transition">
+      <v-card class="dialog-card">
+        <v-card-title class="d-flex justify-space-between align-center pa-4">
+          <div class="d-flex align-center">
+            <v-icon size="24" color="error" class="me-2">mdi-alert</v-icon>
+            <span class="text-h5">确认删除</span>
+          </div>
+          <v-btn icon @click="showDeleteDialog = false" variant="tonal">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="pa-6">
+          <p class="text-body-1">
+            确定要删除组织 "{{ selectedItem?.name }}" 吗？此操作不可撤销。
+          </p>
+        </v-card-text>
+
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn
+            color="grey-darken-1"
+            variant="tonal"
+            @click="showDeleteDialog = false"
+          >
+            取消
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="tonal"
+            @click="confirmDelete"
+            :loading="loading"
+          >
+            确认删除
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import organization from '@/api/organization'
+import type { DataTableHeader } from 'vuetify'
 
 const snackbar = useSnackbarStore()
+
+// 表格头部配置
+const headers = computed<DataTableHeader[]>(() => [
+  { title: 'Logo', key: 'logo', align: 'center', sortable: false, width: '80px' },
+  { title: '组织名称', key: 'name', align: 'start', width: '120px' },
+  { title: '用户数量', key: 'user_count', align: 'center', width: '100px' },
+  { title: '图像数量', key: 'image_count', align: 'center', width: '100px' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '120px' }
+] as const)
+
+const pendingHeaders = computed<DataTableHeader[]>(() => [
+  { title: '组织名称', key: 'name', align: 'start', width: '120px' },
+  { title: '管理员名', key: 'admin_username', align: 'start', width: '120px' },
+  { title: '管理员邮箱', key: 'admin_email', align: 'start', width: '180px' },
+  { title: '提交时间', key: 'submitted_at', align: 'center', width: '160px' },
+  { title: '操作', key: 'actions', align: 'center', sortable: false, width: '180px' }
+] as const)
 
 // 类型定义
 interface Organization {
   id: number
   name: string
   description: string
-  email: string
   logo?: string
-  createdAt: string
+  proof_materials?: string
+  user_count: number
+  image_count: number
 }
 
-interface PendingOrganization extends Organization {
-  applicant: string
-  appliedAt: string
-  documents: Array<{
-    name: string
-    url: string
-  }>
-}
-
-interface EditedItem {
+interface PendingOrganization {
+  id: number
   name: string
-  description: string
-  logo: File | null
-  logoPreview: string
   email: string
-  adminUsername: string
-  adminEmail: string
-  adminPassword: string
-  adminPasswordConfirm: string
+  admin_username: string
+  admin_email: string
+  submitted_at: string
 }
 
 // 状态变量
 const activeTab = ref('existing')
 const loading = ref(false)
-const dialog = ref(false)
-const editedIndex = ref(-1)
-const creatingOrg = ref(false)
-const editedItem = ref<EditedItem>({
-  name: '',
-  description: '',
-  logo: null,
-  logoPreview: '',
-  email: '',
-  adminUsername: '',
-  adminEmail: '',
-  adminPassword: '',
-  adminPasswordConfirm: ''
-})
-
-// 表格头部配置
-const headers = [
-  { title: '组织名称', key: 'name' },
-  { title: '描述', key: 'description' },
-  { title: '邮箱', key: 'email' },
-  { title: '创建时间', key: 'createdAt' },
-  { title: '操作', key: 'actions', sortable: false }
-]
-
-const pendingHeaders = [
-  { title: '组织名称', key: 'name' },
-  { title: '申请人', key: 'applicant' },
-  { title: '申请时间', key: 'appliedAt' },
-  { title: '描述', key: 'description' },
-  { title: '操作', key: 'actions', sortable: false }
-]
-
-// 表单验证规则
-const orgRules = {
-  name: [
-    (v: string) => !!v || '组织名称不能为空',
-    (v: string) => v.length >= 2 || '组织名称至少2个字符'
-  ],
-  description: [
-    (v: string) => !!v || '组织描述不能为空',
-    (v: string) => v.length >= 10 || '组织描述至少10个字符'
-  ],
-  logo: [
-    (v: File | null) => !!v || '请上传组织Logo',
-    (v: File | null) => !v || v.size <= 5 * 1024 * 1024 || 'Logo大小不能超过5MB'
-  ],
-  email: [
-    (v: string) => !!v || '组织邮箱不能为空',
-    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
-  ],
-  adminUsername: [
-    (v: string) => !!v || '管理员用户名不能为空',
-    (v: string) => v.length >= 2 || '用户名至少2个字符'
-  ],
-  adminEmail: [
-    (v: string) => !!v || '管理员邮箱不能为空',
-    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
-  ],
-  adminPassword: [
-    (v: string) => !!v || '管理员密码不能为空',
-    (v: string) => v.length >= 6 || '密码至少6位'
-  ],
-  adminPasswordConfirm: [
-    (v: string) => !!v || '请确认密码',
-    (v: string) => v === editedItem.value.adminPassword || '两次输入的密码不一致'
-  ]
-}
-
-// 模拟数据
-const existingOrganizations = ref<Organization[]>([])
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalOrganizations = ref(0)
+const totalPendingOrganizations = ref(0)
+const totalPages = ref(1)
+const showDeleteDialog = ref(false)
+const detailsDialog = ref(false)
+const selectedItem = ref<Organization | null>(null)
+const organizations = ref<Organization[]>([])
 const pendingOrganizations = ref<PendingOrganization[]>([])
 
-// 计算属性
-const formTitle = computed(() => {
-  return editedIndex.value === -1 ? '新建组织' : '编辑组织'
-})
 
-const isFormValid = computed(() => {
-  const hasName = editedItem.value.name && editedItem.value.name.length >= 2
-  const hasDescription = editedItem.value.description && editedItem.value.description.length >= 10
-  const hasLogo = editedItem.value.logo !== null
-  const hasEmail = editedItem.value.email && /.+@.+\..+/.test(editedItem.value.email)
-  const hasAdminUsername = editedItem.value.adminUsername && editedItem.value.adminUsername.length >= 2
-  const hasAdminEmail = editedItem.value.adminEmail && /.+@.+\..+/.test(editedItem.value.adminEmail)
-  const hasAdminPassword = editedItem.value.adminPassword && editedItem.value.adminPassword.length >= 6
-  const hasAdminPasswordConfirm = editedItem.value.adminPasswordConfirm === editedItem.value.adminPassword
-  return hasName && hasDescription && hasLogo && hasEmail && hasAdminUsername && hasAdminEmail && hasAdminPassword && hasAdminPasswordConfirm
-})
-
-// 方法
-const openCreateDialog = () => {
-  editedIndex.value = -1
-  editedItem.value = {
-    name: '',
-    description: '',
-    logo: null,
-    logoPreview: '',
-    email: '',
-    adminUsername: '',
-    adminEmail: '',
-    adminPassword: '',
-    adminPasswordConfirm: ''
-  }
-  dialog.value = true
+const getImgUrl=(logo:any)=>{
+  return import.meta.env.VITE_API_URL+logo
 }
 
-const editOrganization = (item: Organization) => {
-  editedIndex.value = existingOrganizations.value.indexOf(item)
-  editedItem.value = {
-    name: item.name,
-    description: item.description,
-    logo: null,
-    logoPreview: item.logo || '',
-    email: item.email,
-    adminUsername: '',
-    adminEmail: '',
-    adminPassword: '',
-    adminPasswordConfirm: ''
-  }
-  dialog.value = true
-}
-
-const deleteOrganization = async (item: Organization) => {
+// 获取组织列表
+const fetchOrganizations = async () => {
   try {
-    // TODO: 实现删除组织的API调用
+    loading.value = true
+    const response = await organization.getOrgList({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      query: searchQuery.value
+    })
+    organizations.value = response.data.organizations
+    totalOrganizations.value = response.data.total_organizations
+    totalPages.value = response.data.total_pages
+    currentPage.value = response.data.current_page
+  } catch (error) {
+    snackbar.showMessage('获取组织列表失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取待审核组织列表
+const fetchPendingOrganizations = async () => {
+  try {
+    loading.value = true
+    const response = await organization.getPendingOrgList({
+      page: currentPage.value,
+      page_size: pageSize.value,
+      query: searchQuery.value
+    })
+    pendingOrganizations.value = response.data.applications
+    totalPendingOrganizations.value = response.data.total_organizations
+    totalPages.value = response.data.total_pages
+    currentPage.value = response.data.current_page
+  } catch (error) {
+    snackbar.showMessage('获取待审核组织列表失败', 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 显示组织详情
+const showDetails = async (item: Organization | PendingOrganization) => {
+  try {
+    if ('user_count' in item) {
+      // 现有组织
+      const response = await organization.getOrgDetail({ organization_id: item.id })
+      selectedItem.value = response.data
+    } else {
+      // 待审核组织
+      selectedItem.value = {
+        id: item.id,
+        name: item.name,
+        description: '',
+        logo: undefined,
+        proof_materials: undefined,
+        user_count: 0,
+        image_count: 0
+      }
+    }
+    detailsDialog.value = true
+  } catch (error) {
+    snackbar.showMessage('获取组织详情失败', 'error')
+  }
+}
+
+// 删除组织
+const deleteOrganization = async (id: number) => {
+  try {
+    await organization.deleteOrg({ organization_id: id })
     snackbar.showMessage('删除成功', 'success')
+    await fetchOrganizations()
   } catch (error) {
     snackbar.showMessage('删除失败', 'error')
   }
 }
 
-const approveOrganization = async (item: PendingOrganization) => {
+// 审核通过组织
+const approveOrganization = async (id: number) => {
   try {
-    // TODO: 实现审核通过的API调用
-    snackbar.showMessage('审核通过', 'success')
+    await organization.approveOrg({ organization_id: id })
+    snackbar.showMessage('审核通过成功', 'success')
+    await fetchPendingOrganizations()
+  } catch (error) {
+    snackbar.showMessage('审核通过失败', 'error')
+  }
+}
+
+// 拒绝组织申请
+const rejectOrganization = async (id: number) => {
+  try {
+    await organization.rejectOrg({ organization_id: id })
+    snackbar.showMessage('已拒绝申请', 'success')
+    await fetchPendingOrganizations()
   } catch (error) {
     snackbar.showMessage('操作失败', 'error')
   }
 }
 
-const rejectOrganization = async (item: PendingOrganization) => {
-  try {
-    // TODO: 实现审核拒绝的API调用
-    snackbar.showMessage('已拒绝', 'success')
-  } catch (error) {
-    snackbar.showMessage('操作失败', 'error')
-  }
-}
-
-const closeDialog = () => {
-  dialog.value = false
-  editedIndex.value = -1
-}
-
-const handleLogoChange = (file: File | null) => {
-  if (file && file instanceof File) {
-    try {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        if (e.target?.result) {
-          editedItem.value.logoPreview = e.target.result as string
-        }
-      }
-      reader.onerror = () => {
-        console.error('读取文件失败')
-        editedItem.value.logoPreview = ''
-        snackbar.showMessage('读取文件失败，请重试', 'error')
-      }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error('处理文件时出错:', error)
-      editedItem.value.logoPreview = ''
-      snackbar.showMessage('处理文件时出错，请重试', 'error')
-    }
+// 搜索处理
+const handleSearch = () => {
+  currentPage.value = 1
+  if (activeTab.value === 'existing') {
+    fetchOrganizations()
   } else {
-    editedItem.value.logoPreview = ''
+    fetchPendingOrganizations()
   }
 }
 
-const saveOrganization = async () => {
-  if (!isFormValid.value) {
-    snackbar.showMessage('请填写所有必填字段', 'error')
-    return
-  }
-  try {
-    creatingOrg.value = true
-    const formData = new FormData()
-    formData.append('name', editedItem.value.name)
-    formData.append('description', editedItem.value.description)
-    if (editedItem.value.logo) {
-      formData.append('logo', editedItem.value.logo)
-    }
-    formData.append('email', editedItem.value.email)
-    formData.append('admin_username', editedItem.value.adminUsername)
-    formData.append('admin_email', editedItem.value.adminEmail)
-    formData.append('admin_password', editedItem.value.adminPassword)
-    formData.append('admin_password_confirm', editedItem.value.adminPasswordConfirm)
-    await organization.createOrganization(formData)
-    snackbar.showMessage('组织创建成功', 'success')
-    closeDialog()
-  } catch (error: any) {
-    console.error('创建组织失败:', error)
-    const errorMsg = error.response?.data?.message || '创建组织失败'
-    snackbar.showMessage(errorMsg, 'error')
-  } finally {
-    creatingOrg.value = false
+// 分页处理
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  if (activeTab.value === 'existing') {
+    fetchOrganizations()
+  } else {
+    fetchPendingOrganizations()
   }
 }
 
-// 详情对话框相关
-const detailsDialog = ref(false)
-const selectedItem = ref<PendingOrganization>({
-  id: 0,
-  name: '',
-  applicant: '',
-  appliedAt: '',
-  description: '',
-  email: '',
-  createdAt: '',
-  documents: []
+const handleItemsPerPageChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  if (activeTab.value === 'existing') {
+    fetchOrganizations()
+  } else {
+    fetchPendingOrganizations()
+  }
+}
+
+// 监听标签页切换
+watch(activeTab, (newValue) => {
+  currentPage.value = 1
+  if (newValue === 'existing') {
+    fetchOrganizations()
+  } else {
+    fetchPendingOrganizations()
+  }
 })
 
-const showDetails = (item: PendingOrganization) => {
-  selectedItem.value = { ...item }
-  detailsDialog.value = true
+// 确认删除
+const confirmDelete = async () => {
+  if (selectedItem.value) {
+    try {
+      await deleteOrganization(selectedItem.value.id)
+      showDeleteDialog.value = false
+    } catch (error) {
+      snackbar.showMessage('删除失败', 'error')
+    }
+  }
 }
 
-const downloadDocument = (doc: { name: string; url: string }) => {
-  window.open(doc.url, '_blank')
+// 显示删除确认对话框
+const showDeleteConfirm = (item: Organization) => {
+  selectedItem.value = item
+  showDeleteDialog.value = true
 }
+
+// 监听搜索查询变化
+watch(searchQuery, () => {
+  currentPage.value = 1
+  if (activeTab.value === 'existing') {
+    fetchOrganizations()
+  } else {
+    fetchPendingOrganizations()
+  }
+})
+
+// 下载证明材料
+const downloadProofMaterials = (url: string) => {
+  if (!url) return
+  const link = document.createElement('a')
+  link.href = getImgUrl(url)
+  link.download = '证明材料'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+// 初始化
+onMounted(() => {
+  fetchOrganizations()
+})
 </script>
 
 <style scoped>
 .organizations-page {
   background-color: rgb(var(--v-theme-background));
   min-height: 100vh;
-}
-
-.page-header {
-  background-color: rgb(var(--v-theme-surface));
-  border-radius: 12px;
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.create-btn {
-  transition: all 0.2s;
-  border: 1px solid rgb(var(--v-theme-primary));
-}
-
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(var(--v-theme-primary), 0.2);
 }
 
 .list-card {
@@ -691,5 +631,25 @@ const downloadDocument = (doc: { name: string; url: string }) => {
 :deep(.v-btn) {
   text-transform: none;
   letter-spacing: normal;
+}
+
+.search-input {
+  width: 100%;
+}
+
+:deep(.v-text-field .v-field__input) {
+  min-height: 40px;
+}
+
+:deep(.v-btn--variant-outlined) {
+  border-color: rgb(var(--v-theme-outline));
+}
+
+:deep(.v-select .v-field__input) {
+  min-height: 40px;
+}
+
+:deep(.v-select .v-field__append-inner) {
+  padding-top: 0;
 }
 </style>

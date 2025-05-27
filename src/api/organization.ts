@@ -6,16 +6,6 @@ export default {
     return http.get(`/organization/${data.organization_id}/`)
   },
 
-  // 更新组织信息
-  updateOrganizationInfo(data: {
-    name?: string;
-    description?: string;
-    logo?: string;
-    contact?: string;
-  }) {
-    return http.put('/organization/info/', data)
-  },
-
   // 上传组织Logo
   uploadLogo(data: FormData) {
     return http.post('/organization/upload_logo/', data, {
@@ -31,5 +21,30 @@ export default {
         'Content-Type': 'multipart/form-data'
       }
     })
+  },
+
+  // 获取组织列表
+  getOrgList(params: any) {
+    return http.get('/organizations/', { params })
+  },
+
+  // 获取待审核组织列表
+  getPendingOrgList(params: any) {
+    return http.get('/organization/applications/get_pending/', { params })
+  },
+
+  // 删除组织
+  deleteOrg(data: { organization_id: number }) {
+    return http.delete(`/organization/${data.organization_id}/delete/`)
+  },
+
+  // 审核通过组织
+  approveOrg(data: { organization_id: number }) {
+    return http.post(`/organization/${data.organization_id}/approve/`)
+  },
+
+  // 拒绝组织申请
+  rejectOrg(data: { organization_id: number }) {
+    return http.post(`/organization/${data.organization_id}/reject/`)
   }
 } 

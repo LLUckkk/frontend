@@ -219,7 +219,7 @@
             errorMessage = '账号/密码错误'
             break
           default://400
-            errorMessage = '请联系管理员'
+            errorMessage = '账号/密码错误'
             break
         }
       }
