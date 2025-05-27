@@ -18,6 +18,5 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     Snackbar: typeof import('./components/Snackbar.vue')['default']
     TaskTrend: typeof import('./components/analytics/TaskTrend.vue')['default']
-    VerificationCodeInput: typeof import('./components/VerificationCodeInput.vue')['default']
   }
 }

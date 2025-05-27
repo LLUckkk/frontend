@@ -14,7 +14,7 @@
         <v-card class="organization-card" elevation="2">
           <v-card-text class="text-center pa-6">
             <v-avatar size="200" class="mb-6 organization-logo">
-              <v-img :src="organizationInfo.logo || '/default-organization.png'" alt="组织Logo"></v-img>
+              <v-img :src="getImgUrl(organizationInfo.logo) || '/default-organization.png'" alt="组织Logo"></v-img>
             </v-avatar>
             <h2 class="text-h5 font-weight-bold mb-2">{{ organizationInfo.name }}</h2>
             <p class="text-body-1 text-grey mb-4">{{ organizationInfo.description }}</p>
@@ -22,11 +22,11 @@
             <div class="text-left">
               <div class="d-flex align-center mb-2">
                 <v-icon color="primary" class="me-2">mdi-email</v-icon>
-                <span class="text-body-1">{{ organizationInfo.contact }}</span>
+                <span class="text-body-1">{{ organizationInfo.email }}</span>
               </div>
               <div class="d-flex align-center mb-2">
                 <v-icon color="primary" class="me-2">mdi-calendar</v-icon>
-                <span class="text-body-1">创建时间：{{ organizationInfo.createdAt }}</span>
+                <span class="text-body-1">创建时间：{{ formatTime(organizationInfo.created_at) }}</span>
               </div>
             </div>
           </v-card-text>
@@ -47,7 +47,7 @@
                   <v-card-text>
                     <div class="text-h6 mb-2">普通检测</div>
                     <div class="text-h4 font-weight-bold text-primary mb-2">
-                      {{ organizationQuota?.normal_quota || 0 }}
+                      {{ organizationQuota?.remaining_non_llm_uses || 0 }}
                     </div>
                     <div class="text-body-2 text-grey">
                       每周基础配额：100次
@@ -60,7 +60,7 @@
                   <v-card-text>
                     <div class="text-h6 mb-2">LLM检测</div>
                     <div class="text-h4 font-weight-bold text-primary mb-2">
-                      {{ organizationQuota?.llm_quota || 0 }}
+                      {{ organizationQuota?.remaining_llm_uses || 0 }}
                     </div>
                     <div class="text-body-2 text-grey">
                       每周基础配额：3次
@@ -72,7 +72,14 @@
 
             <v-divider class="my-6"></v-divider>
 
-            <v-btn color="primary" block size="large" prepend-icon="mdi-credit-card" @click="openRechargeDialog">
+            <v-btn 
+              color="primary" 
+              block 
+              size="large" 
+              prepend-icon="mdi-credit-card" 
+              @click="openRechargeDialog"
+              :disabled="!canRecharge"
+            >
               充值检测次数
             </v-btn>
           </v-card-text>
@@ -93,14 +100,14 @@
                 <v-alert type="info" variant="tonal" class="mb-4">
                   <div class="text-body-1">
                     <div>当前剩余次数：</div>
-                    <div>普通检测：{{ organizationQuota?.normal_quota || 0 }} 次</div>
-                    <div>LLM检测：{{ organizationQuota?.llm_quota || 0 }} 次</div>
+                    <div>普通检测：{{ organizationQuota?.remaining_non_llm_uses || 0 }} 次</div>
+                    <div>LLM检测：{{ organizationQuota?.remaining_llm_uses || 0 }} 次</div>
                   </div>
                 </v-alert>
               </v-col>
               <v-col cols="12">
                 <v-radio-group v-model="rechargeType" inline>
-                  <v-radio label="普通检测" value="normal"></v-radio>
+                  <v-radio label="普通检测" value="non-llm"></v-radio>
                   <v-radio label="LLM检测" value="llm"></v-radio>
                 </v-radio-group>
               </v-col>
@@ -115,8 +122,8 @@
                   <div class="text-body-1">
                     <div>充值说明：</div>
                     <div>每100元可兑换：</div>
-                    <div v-if="rechargeType === 'normal'">- 100次普通检测</div>
-                    <div v-else>- 5次LLM检测</div>
+                    <div v-if="rechargeType === 'non-llm'">- 100次普通检测</div>
+                    <div v-else>- 3次LLM检测</div>
                   </div>
                 </v-alert>
               </v-col>
@@ -139,7 +146,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import { useUserStore } from '@/stores/user'
 import payment from '@/api/payment'
@@ -154,20 +161,43 @@ const organizationInfo = ref({
   name: '',
   description: '',
   logo: '',
-  contact: '',
-  createdAt: ''
+  email: '',
+  created_at: ''
 })
 
 // 组织配额信息
 const organizationQuota = ref<{
-  normal_quota: number;
-  llm_quota: number;
+  remaining_non_llm_uses: number;
+  remaining_llm_uses: number;
 } | null>(null)
 
 // 充值相关
 const rechargeDialog = ref(false)
-const rechargeType = ref<'normal' | 'llm'>('normal')
+const rechargeType = ref<'non-llm' | 'llm'>('non-llm')
 const rechargeAmount = ref(100)
+
+// 计算是否可以充值
+const canRecharge = computed(() => {
+  if (!organizationQuota.value) return false
+  return organizationQuota.value.remaining_non_llm_uses < 1000 && organizationQuota.value.remaining_llm_uses < 1000
+})
+
+const getImgUrl=(logo:any)=>{
+  return import.meta.env.VITE_API_URL+logo
+}
+
+const formatTime = (data: string) => {
+  const timestamp = new Date(data).getTime()
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 
 // 获取组织信息
 const fetchOrganizationInfo = async () => {
@@ -184,7 +214,7 @@ const fetchOrganizationInfo = async () => {
 // 获取组织配额信息
 const fetchOrganizationQuota = async () => {
   try {
-    const response = await payment.getOrganizationQuota(organizationInfo.value.id)
+    const response = await organization.getOrgUsage()
     organizationQuota.value = response.data
   } catch (error) {
     snackbar.showMessage('获取组织配额信息失败', 'error')
@@ -193,15 +223,38 @@ const fetchOrganizationQuota = async () => {
 
 // 打开充值对话框
 const openRechargeDialog = () => {
+  if (!canRecharge.value) {
+    snackbar.showMessage('任意一种检测次数超过10000次时不能充值', 'warning')
+    return
+  }
   rechargeDialog.value = true
 }
 
 // 处理充值
 const handleRecharge = async () => {
   try {
-    await payment.createRechargeOrder({
+    // 计算充值后的次数
+    const currentNonLLMUses = organizationQuota.value?.remaining_non_llm_uses || 0
+    const currentLLMUses = organizationQuota.value?.remaining_llm_uses || 0
+    const rechargeCount = rechargeType.value === 'non-llm' ? 
+      Math.floor(rechargeAmount.value / 100) * 100 : // 普通检测：每100元100次
+      Math.floor(rechargeAmount.value / 100) * 3     // LLM检测：每100元3次
+
+    const newNonLLMUses = rechargeType.value === 'non-llm' ? 
+      currentNonLLMUses + rechargeCount : 
+      currentNonLLMUses
+    const newLLMUses = rechargeType.value === 'llm' ? 
+      currentLLMUses + rechargeCount : 
+      currentLLMUses
+
+    if (newNonLLMUses > 1000 || newLLMUses > 1000) {
+      snackbar.showMessage('充值金额过多', 'warning')
+      return
+    }
+
+    await organization.rechargeUses({
       amount: rechargeAmount.value,
-      type: rechargeType.value
+      choice: rechargeType.value
     })
 
     // 充值成功

@@ -447,7 +447,7 @@ const showDetails = async (item: Organization | PendingOrganization) => {
         image_count: 0
       }
     }
-    detailsDialog.value = true
+  detailsDialog.value = true
   } catch (error) {
     snackbar.showMessage('获取组织详情失败', 'error')
   }

@@ -46,5 +46,15 @@ export default {
   // 拒绝组织申请
   rejectOrg(data: { organization_id: number }) {
     return http.post(`/organization/${data.organization_id}/reject/`)
+  },
+
+  // 获取组织使用次数
+  getOrgUsage() {
+    return http.get('/organization/usage/')
+  },
+
+  // 充值使用次数
+  rechargeUses(data: { amount: number; choice: 'non-llm' | 'llm' }) {
+    return http.post('/organization/recharge-uses/', data)
   }
 } 
