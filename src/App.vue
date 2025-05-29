@@ -6,7 +6,7 @@
       location="left" class="navigation-drawer" @mouseenter="rail = false" @mouseleave="rail = true"
       :width="rail ? 56 : 200">
       <v-list>
-        <v-list-item :prepend-avatar="isLoggedIn ? userStore.avatar : undefined" :subtitle="userStore.role"
+        <v-list-item :prepend-avatar="isLoggedIn ? userStore.avatar : undefined" :subtitle="getSubTitle(userStore.admin_type)"
           :title="userStore.displayName">
         </v-list-item>
       </v-list>
@@ -212,6 +212,14 @@ const previewContent = ref('')
 const markAsRead = (index: number) => {
   notifications.value[index].unread = false
   updateUnreadStatus()
+}
+
+const getSubTitle = (admin_type : string) =>{
+  if(admin_type === 'software_admin'){
+    return '软件管理员'
+  }else if(admin_type === 'organization_admin'){
+    return '组织管理员'
+  }
 }
 
 // 更新未读状态
