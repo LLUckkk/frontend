@@ -47,7 +47,7 @@
       <!-- <v-btn v-if="isAdmin" :color="hasUnreadNotifications ? 'red' : ''"
         :icon="hasUnreadNotifications ? 'mdi-bell-badge' : 'mdi-bell-outline'"
         @click="showNotifications = true"></v-btn> -->
-      <v-btn icon="mdi-broadcast" @click="showBroadcastDialog = true"></v-btn>
+      <v-btn icon="mdi-broadcast" v-if="isLoggedIn && userStore.admin_type === 'software_admin'" @click="showBroadcastDialog = true"></v-btn>
     </v-app-bar>
 
     <v-main>
