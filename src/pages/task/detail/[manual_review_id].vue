@@ -22,10 +22,17 @@
                     formatNumber(overall?.confidence_score) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <v-btn color="primary" variant="elevated" class="px-8 py-2" rounded="pill"
-                  prepend-icon="mdi-file-document-outline" elevation="2" @click="downloadReport">
-                  下载AI检测结果
-                </v-btn>
+                <v-card class="ml-4 pa-2 elevation-1" flat rounded="lg" width="250">
+                  <v-card-title class="pa-2 pb-1 text-subtitle-2 font-weight-bold">AI 检测结果</v-card-title>
+                  <v-card-text class="pa-2 pt-1">
+                    <!-- 造假维度列表 -->
+                    <div v-for="(dimension, index) in detection_results" :key="index"
+                      class="d-flex justify-space-between text-body-2 text-grey">
+                      <span class="font-weight-medium">{{ convert(index) }}:</span>
+                      <span class="text-primary">{{ dimension.probability.toFixed(2) }}</span> <!-- 占位符分数 -->
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
 
               <!-- 右侧任务信息 -->
@@ -34,7 +41,7 @@
 
                   <v-row align="center" justify="start">
                     <v-col class="d-flex" cols="auto">
-                      <div class="text-h6 font-weight-medium mb-4">答题卡</div>
+                      <div class="text-h6 font-weight-medium mb-4">审核进度</div>
                     </v-col>
                     <v-col class="d-flex align-center ml-4" cols="auto">
                       <v-btn color="primary" @click="handleSubmit">
@@ -184,6 +191,7 @@ import reviewer from '@/api/reviewer'
 import type { RouteParams } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
 import DrawingDialog from '@/components/DrawingDialog.vue'
+import publisher from '@/api/publisher'
 
 const router = useRouter()
 const snackbar = useSnackbarStore()
@@ -213,35 +221,49 @@ const urn = ref<SubMethod[]>([])
 const activeOverlay = ref()
 const isOverlayVisible = ref(false)
 const overall = ref()
+const detection_results = ref<dimension[]>([])
+
+interface dimension {
+  method: string,
+  probability: number
+}
+
+const convert = (index: number) => {
+  switch (index) {
+    case 0:
+      return '高斯模糊'
+    case 1:
+      return '亮度/对比度调节'
+    case 2:
+      return '智能修复'
+    case 3:
+      return '暴力覆盖'
+    case 4:
+      return '同图复制'
+    case 5:
+      return '重叠切割'
+    case 6:
+      return '跨图拼接'
+  }
+}
+
+
+const fetchDetectionResults = async () => {
+  try {
+    const id = await (await publisher.getDetectionID({ img_id: currentImage.value?.id })).data.
+      detection_result_id
+    const response = (await publisher.getSingleImageResult(id)).data
+    detection_results.value = response.sub_methods
+  } catch (error) {
+    snackbar.showMessage('获取检测结果失败', 'error')
+  }
+}
+
 
 const formatNumber = (result: number) => {
   return `${(result * 100).toFixed(2)}%`
 }
 
-const downloadReport = async () => {
-  try {
-    const response = await reviewer.getDetectionResult({ img_id: currentImage.value?.id })
-    const contentDisposition = response.headers['content-disposition']
-
-    let fileName = ''
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="(.+)"/);
-      if (match) fileName = match[1];
-    }
-
-    const blob = new Blob([response.data], { type: 'application/pdf' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    snackbar.showMessage('报告下载失败', 'error')
-  }
-}
 
 onMounted(async () => {
   try {
@@ -260,6 +282,7 @@ onMounted(async () => {
       { name: '跨图拼接', value: null, reason: '', showFakeArea: false, drawingPaths: [] }
     ])
     fetchMaskImage()
+    fetchDetectionResults()
 
   } catch (error) {
     snackbar.showMessage('获取任务详情失败', 'error')
@@ -320,6 +343,7 @@ const handleImageSelect = (index: number) => {
   currentImageIndex.value = index
   currentDrawingDimension.value = -1 // 重置绘制状态
   fetchMaskImage()
+  fetchDetectionResults()
 }
 
 const handlePrevImage = () => {

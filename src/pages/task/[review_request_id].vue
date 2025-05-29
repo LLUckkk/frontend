@@ -26,6 +26,18 @@
                   class="ml-4">
                   下载人工审核报告
                 </v-btn>
+                <!-- 添加的v-card文本区域 -->
+                <v-card class="ml-4 pa-2 elevation-1" flat rounded="lg" width="250">
+                  <v-card-title class="pa-2 pb-1 text-subtitle-2 font-weight-bold">AI 检测结果</v-card-title>
+                  <v-card-text class="pa-2 pt-1">
+                    <!-- 造假维度列表 -->
+                    <div v-for="(dimension, index) in detection_results" :key="index"
+                      class="d-flex justify-space-between text-body-2 text-grey">
+                      <span class="font-weight-medium">{{ convert(index) }}:</span>
+                      <span class="text-primary">{{ dimension.probability.toFixed(2) }}</span> <!-- 占位符分数 -->
+                    </div>
+                  </v-card-text>
+                </v-card>
               </div>
 
 
@@ -190,6 +202,12 @@ interface RouteParams {
   id: string
 }
 
+interface dimension {
+  method: string,
+  probability: number
+}
+
+
 const taskData = ref<Task | null>(null)
 const images = ref<Image[]>([])
 const currentImageIndex = ref(0)
@@ -201,10 +219,44 @@ const reasons = ref<string[]>([])
 const result = ref(false)
 const scores = ref<number[]>([])
 const annotations = ref<Array<Array<{ points: { x: number; y: number; }[]; color: string; }>>>([])
+const detection_results = ref<dimension[]>([])
+
 
 const currentImage = computed(() => {
   return images.value[currentImageIndex.value]
 })
+
+const convert = (index: number) => {
+  switch (index) {
+    case 0:
+      return '高斯模糊'
+    case 1:
+      return '亮度/对比度调节'
+    case 2:
+      return '智能修复'
+    case 3:
+      return '暴力覆盖'
+    case 4:
+      return '同图复制'
+    case 5:
+      return '重叠切割'
+    case 6:
+      return '跨图拼接'
+  }
+}
+
+
+// 获取检测结果
+const fetchDetectionResults = async () => {
+  try {
+    const id = await (await publisher.getDetectionID({ img_id: currentImage.value.img_id })).data.
+      detection_result_id
+    const response = (await publisher.getSingleImageResult(id)).data
+    detection_results.value = response.sub_methods
+  } catch (error) {
+    snackbar.showMessage('获取检测结果失败', 'error')
+  }
+}
 
 const fetchReview = async (img: Image) => {
   try {
@@ -230,6 +282,7 @@ const fetchReviewDetail = async (review: Review) => {
 const handleImageSelect = (index: number) => {
   currentImageIndex.value = index
   fetchReview(currentImage.value)
+  fetchDetectionResults()
 }
 
 const getResult = (result: boolean) => {
@@ -256,35 +309,6 @@ const getImageUrl = (url: string) => {
   return import.meta.env.VITE_API_URL + url
 }
 
-const checkTaskPermission = async () => {
-  try {
-    // 这里应该是从API获取任务数据
-    // 模拟API调用
-    const response = await new Promise<Task>((resolve) => {
-      resolve({
-        id: (route.params as RouteParams).id,
-        publishTime: '2024-01-01 12:00:00',
-        reviewer: '张三',
-        progress: 90,
-        publisherId: 'user123' // 这里应该是实际的发布者ID
-      })
-    })
-
-    // 检查当前用户是否为任务发布者
-    if (response.publisherId !== userStore.username) {
-      snackbar.showMessage('您没有权限访问此任务', 'error')
-      router.push('/history')
-      return false
-    }
-
-    taskData.value = response
-    return true
-  } catch (error) {
-    snackbar.showMessage('获取任务信息失败', 'error')
-    router.push('/history')
-    return false
-  }
-}
 
 // 添加弹窗控制变量
 const showDetailDialog = ref(false)
@@ -302,13 +326,32 @@ const handleViewDetail = (review: Review) => {
 const handleDownloadReport = async () => {
   try {
     const response = await publisher.downloadReviewReport({ review_request_id: review_request_id.value })
-    // 创建一个 Blob 对象
-    const blob = new Blob([response.data], { type: 'application/pdf' })
-    // 创建一个下载链接
+    // 打印response.data（Blob对象）的类型和大小
+    console.log('Downloaded data is a Blob. Type:', response.data.type, 'Size:', response.data.size);
+
+    // 确保response.data是一个Blob对象
+    if (!(response.data instanceof Blob)) {
+      console.error('Expected Blob data, but received:', response.data);
+      snackbar.showMessage('下载失败：未收到文件数据', 'error');
+      return;
+    }
+
+    const blob = response.data
+
+    // 检查Blob类型是否为ZIP
+    if (blob.type !== 'application/zip') {
+      console.warn('Downloaded Blob type is not application/zip:', blob.type);
+      snackbar.showMessage('下载的文件不是ZIP格式', 'warning');
+      return;
+    }
+
+    // 创建一个 Blob URL
     const url = window.URL.createObjectURL(blob)
+    // 创建一个下载链接
     const link = document.createElement('a')
     link.href = url
-    link.download = `人工审核报告_${review_request_id.value}.pdf`
+    link.download = `人工审核报告_${review_request_id.value}.zip`
+    link.target = '_blank' // 在新标签页打开
     document.body.appendChild(link)
     link.click()
     // 清理
@@ -327,12 +370,13 @@ onMounted(async () => {
   if (!hasPermission) return
   try {
     const response = (await publisher.getRequestDetail({ review_request_id: review_request_id.value })).data
-    console.log(response)
     done.value = response.status.done
     process.value = response.status.process
     AI_detection.value = response.ai_detection_result.confidence_score
     images.value = response.images
     review_results.value = (await publisher.getImageReviewAll({ review_request_id: review_request_id.value, img_id: images.value[0].img_id })).data.reviewers_results
+    currentImageIndex.value = 0
+    fetchDetectionResults()
   } catch (error) {
     snackbar.showMessage('获取人工审核结果失败', 'error')
   }

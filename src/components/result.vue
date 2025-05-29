@@ -13,9 +13,6 @@
                   <span class="text-h5 font-weight-bold primary--text">{{ formatNumber(props.ai_detection) }}</span>
                   <span class="text-caption">为假</span>
                 </div>
-                <v-chip color="primary" variant="outlined" size="x-large" class="font-weight-medium px-3" elevation="1">
-                  查看AI检测结果
-                </v-chip>
               </div>
             </div>
           </div>
@@ -113,7 +110,7 @@
               <div class="fake-judge-section mt-4 pt-4">
                 <div class="text-subtitle-1 mb-4">造假判定</div>
                 <div class="d-flex align-center">
-                  <v-icon :color="props.result === true ? 'error' : 'success'" class="mr-2">
+                  <v-icon :color="props.result === true ? 'success' : 'error'" class="mr-2">
                     {{ props.result === true ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                   </v-icon>
                   <span class="text-body-1">

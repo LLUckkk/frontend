@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import publisherApi from '@/api/publisher'
 import { useSnackbarStore } from '@/stores/snackbar'
@@ -394,46 +394,8 @@ const formatDateFilter = (timestamp: number) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-// 示例数据
-const mockTasks = [
-  {
-    review_request_id: 1001,
-    request_time: '2024-03-20 10:30:00',
-    status: 'pending',
-    progress: '0/5'
-  },
-  {
-    review_request_id: 1002,
-    request_time: '2024-03-19 15:45:00',
-    status: 'in_progress',
-    progress: '2/5'
-  },
-  {
-    review_request_id: 1003,
-    request_time: '2024-03-18 09:20:00',
-    status: 'completed',
-    progress: '5/5'
-  },
-  {
-    review_request_id: 1004,
-    request_time: '2024-03-17 14:10:00',
-    status: 'in_progress',
-    progress: '1/5'
-  },
-  {
-    review_request_id: 1005,
-    request_time: '2024-03-16 11:25:00',
-    status: 'pending',
-    progress: '0/5'
-  }
-]
-
 // 初始化
 onMounted(() => {
-  // 使用示例数据
-  // tasks.value = mockTasks
-  // totalTasks.value = mockTasks.length
-  // totalPages.value = Math.ceil(mockTasks.length / pageSize.value)
   fetchTasks(currentPage.value, pageSize.value)
 })
 </script>
