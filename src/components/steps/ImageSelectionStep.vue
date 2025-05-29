@@ -88,7 +88,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useSnackbarStore } from '@/stores/snackbar';
 import upload from '@/api/upload'
-import publisher from '@/api/publisher';
 
 const snackbar = useSnackbarStore()
 const task_name = ref('')

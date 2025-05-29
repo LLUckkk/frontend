@@ -5,8 +5,8 @@
       <v-col cols="12" lg="11">
         <v-row>
           <v-col cols="12" md="4">
-            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'free' }"
-              @click="selectedVersion = 'free'">
+            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 1 }"
+              @click="selectedVersion = 1">
               <v-card-title class="text-h6">基础版</v-card-title>
               <v-card-subtitle>0元/张</v-card-subtitle>
               <v-card-text>
@@ -50,8 +50,8 @@
           </v-col>
 
           <v-col cols="12" md="4">
-            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'pro' }"
-              @click="selectedVersion = 'pro'">
+            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 2 }"
+              @click="selectedVersion = 2">
               <v-card-title class="text-h6">专业版</v-card-title>
               <v-card-subtitle>1元/张</v-card-subtitle>
               <v-card-text>
@@ -98,8 +98,8 @@
           </v-col>
 
           <v-col cols="12" md="4">
-            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 'premium' }"
-              @click="selectedVersion = 'premium'">
+            <v-card class="h-100" :class="{ 'border border-primary': selectedVersion === 3 }"
+              @click="selectedVersion = 3">
               <v-card-title class="text-h6">至尊版</v-card-title>
               <v-card-subtitle>定制价格</v-card-subtitle>
               <v-card-text>
@@ -264,9 +264,10 @@ import { useSnackbarStore } from '@/stores/snackbar'
 import ImageSelectionStep from '@/components/steps/ImageSelectionStep.vue'
 import publisher from '@/api/publisher'
 import axios from 'axios'
+import { modes } from 'vuetify/components/VColorPicker/util'
 
 const router = useRouter()
-const selectedVersion = ref<'free' | 'pro' | 'premium' | null>(null)
+const selectedVersion = ref<1 | 2 | 3 | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedFiles = ref<File[]>([])
 const fileId = ref()
@@ -287,41 +288,6 @@ interface Image {
   extracted_from_pdf: boolean
   selected: boolean
 }
-
-const timelineItems = ref([
-  {
-    name: 'zhw',
-    avatar: '/avatars/default.png',
-    tag: '个人用户',
-    tagColor: 'warning',
-    count: '10',
-    rate: '30%'
-  },
-  {
-    name: 'hhh',
-    avatar: '/avatars/default.png',
-    tag: '至尊用户',
-    tagColor: 'error',
-    count: '240',
-    rate: '15%'
-  },
-  {
-    name: 'wyt',
-    avatar: '/avatars/default.png',
-    tag: '个人用户',
-    tagColor: 'warning',
-    count: '21',
-    rate: '45%'
-  },
-  {
-    name: 'md',
-    avatar: '/avatars/default.png',
-    tag: '至尊用户',
-    tagColor: 'error',
-    count: '521',
-    rate: '25%'
-  }
-])
 
 const handleDrop = (event: DragEvent) => {
   event.preventDefault()
@@ -387,9 +353,7 @@ const handleSubmit = async () => {
   try {
     const formData = new FormData()
     formData.append('file', selectedFiles.value[0])
-
     const { data } = await uploadApi.uploadFile(formData)
-    console.log(data)
     fileId.value = data.file_id
     snackbar.showMessage('文件上传成功，正在处理中...', 'success')
 
@@ -447,7 +411,7 @@ const handleNext = async () => {
   handleTag(currentTag.value)
   if (canProceed.value) {
     try {
-      const task_id = (await publisher.submitDetection({ image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value })).data.task_id
+      const task_id = (await publisher.submitDetection({ image_ids: selectedImages.value.map(img => img.image_id), task_name: currentTaskName.value, mode: selectedVersion.value })).data.task_id
       router.push(`/history`)
     } catch (error: any) {
       const message = error?.response?.data?.message || '图片上传失败'

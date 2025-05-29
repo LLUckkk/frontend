@@ -338,10 +338,10 @@ const handleDownloadReport = async () => {
 
     const blob = response.data
 
-    // 检查Blob类型是否为ZIP
-    if (blob.type !== 'application/zip') {
-      console.warn('Downloaded Blob type is not application/zip:', blob.type);
-      snackbar.showMessage('下载的文件不是ZIP格式', 'warning');
+    // 检查Blob类型是否为PDF
+    if (blob.type !== 'application/pdf') {
+      console.warn('Downloaded Blob type is not application/pdf:', blob.type);
+      snackbar.showMessage('下载的文件不是PDF格式', 'warning');
       return;
     }
 
@@ -350,7 +350,7 @@ const handleDownloadReport = async () => {
     // 创建一个下载链接
     const link = document.createElement('a')
     link.href = url
-    link.download = `人工审核报告_${review_request_id.value}.zip`
+    link.download = `人工审核报告_${review_request_id.value}.pdf`
     link.target = '_blank' // 在新标签页打开
     document.body.appendChild(link)
     link.click()
