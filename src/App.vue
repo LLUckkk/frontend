@@ -67,10 +67,6 @@
         <span>统计分析</span>
       </v-btn>
       
-      <v-btn v-if="isLoggedIn" to="/files" value="files">
-        <v-icon>mdi-folder</v-icon>
-        <span>图像管理</span>
-      </v-btn>
       <v-btn v-if="isLoggedIn && userStore.admin_type === 'software_admin'" to="/organizations" value="organizations">
         <v-icon>mdi-office-building</v-icon>
         <span>组织管理</span>
@@ -78,6 +74,10 @@
       <v-btn v-if="isLoggedIn && userStore.admin_type === 'organization_admin'" to="/organization_profile" value="organization_profile">
         <v-icon>mdi-account-circle</v-icon>
         <span>组织信息</span>
+      </v-btn>
+      <v-btn v-if="isLoggedIn" to="/files" value="files">
+        <v-icon>mdi-folder</v-icon>
+        <span>图像管理</span>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/users" value="users">
         <v-icon>mdi-account-group</v-icon>
@@ -205,7 +205,6 @@ const notifications = ref([
 
 const broadcastContent = ref('')
 const broadcastTitle = ref('')
-const isAdmin = computed(() => userStore.role === 'admin')
 const showBroadcastDialog = ref(false)
 const previewContent = ref('')
 

@@ -50,7 +50,7 @@
                       {{ organizationQuota?.remaining_non_llm_uses || 0 }}
                     </div>
                     <div class="text-body-2 text-grey">
-                      每周基础配额：100次
+                      基础配额：100次
                     </div>
                   </v-card-text>
                 </v-card>
@@ -63,7 +63,7 @@
                       {{ organizationQuota?.remaining_llm_uses || 0 }}
                     </div>
                     <div class="text-body-2 text-grey">
-                      每周基础配额：3次
+                      基础配额：3次
                     </div>
                   </v-card-text>
                 </v-card>

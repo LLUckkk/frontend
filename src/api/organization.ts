@@ -16,7 +16,7 @@ export default {
   },
 
   createOrganization(data: any) {
-    return http.post('/organization/create/', data, {
+    return http.post('organizations/create-directly/', data, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -56,5 +56,10 @@ export default {
   // 充值使用次数
   rechargeUses(data: { amount: number; choice: 'non-llm' | 'llm' }) {
     return http.post('/organization/recharge-uses/', data)
+  },
+
+  // 获取待审核组织详情
+  getPendingApplicationDetail(app_id: number) {
+    return http.get(`/organization/applications/${app_id}/`)
   }
 } 

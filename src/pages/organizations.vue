@@ -164,15 +164,37 @@
 
                   <v-list-item class="mb-2">
                     <template v-slot:prepend>
+                      <v-icon color="primary" size="24">mdi-text-box</v-icon>
+                    </template>
+                    <v-list-item-title class="text-subtitle-1 font-weight-bold">管理员邮箱</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.email
+                    }}</v-list-item-subtitle>
+                  </v-list-item>
+
+                  <v-divider class="my-2"></v-divider>
+
+                  <v-list-item class="mb-2">
+                    <template v-slot:prepend>
+                      <v-icon color="primary" size="24">mdi-calendar</v-icon>
+                    </template>
+                    <v-list-item-title class="text-subtitle-1 font-weight-bold">注册时间</v-list-item-title>
+                    <v-list-item-subtitle class="text-body-1 mt-1">{{ formatTime(selectedItem.created_at)
+                    }}</v-list-item-subtitle>
+                  </v-list-item>
+
+                  <v-divider class="my-2" v-if="selectedItem.user_count"></v-divider>
+
+                  <v-list-item class="mb-2" v-if="selectedItem.user_count">
+                    <template v-slot:prepend>
                       <v-icon color="primary" size="24">mdi-account-group</v-icon>
                     </template>
                     <v-list-item-title class="text-subtitle-1 font-weight-bold">用户数量</v-list-item-title>
                     <v-list-item-subtitle class="text-body-1 mt-1">{{ selectedItem.user_count }}</v-list-item-subtitle>
                   </v-list-item>
 
-                  <v-divider class="my-2"></v-divider>
+                  <v-divider class="my-2" v-if="selectedItem.image_count"></v-divider>
 
-                  <v-list-item class="mb-2">
+                  <v-list-item class="mb-2" v-if="selectedItem.image_count">
                     <template v-slot:prepend>
                       <v-icon color="primary" size="24">mdi-image-multiple</v-icon>
                     </template>
@@ -364,6 +386,8 @@ interface Organization {
   description: string
   logo?: string
   proof_materials?: string
+  email:string
+  created_at:string
   user_count: number
   image_count: number
 }
@@ -446,6 +470,18 @@ const orgRules = {
   ]
 }
 
+const formatTime = (data: string) => {
+  const timestamp = new Date(data).getTime()
+  const date = new Date(timestamp)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 
 const getImgUrl = (logo: any) => {
   return import.meta.env.VITE_API_URL + logo
@@ -481,7 +517,7 @@ const fetchPendingOrganizations = async () => {
       query: searchQuery.value
     })
     pendingOrganizations.value = response.data.applications
-    totalPendingOrganizations.value = response.data.total_organizations
+    totalPendingOrganizations.value = response.data.total_count
     totalPages.value = response.data.total_pages
     currentPage.value = response.data.current_page
   } catch (error) {
@@ -499,16 +535,13 @@ const showDetails = async (item: Organization | PendingOrganization) => {
       const response = await organization.getOrgDetail({ organization_id: item.id })
       selectedItem.value = response.data
     } else {
-      // 待审核组织
-      selectedItem.value = {
-        id: item.id,
-        name: item.name,
-        description: '',
-        logo: undefined,
-        proof_materials: undefined,
-        user_count: 0,
-        image_count: 0
-      }
+      // 待审核组织，调用新接口获取详情
+      const response = await organization.getPendingApplicationDetail(item.id)
+        selectedItem.value = 
+        {
+          ...response.data,
+          created_at:response.data.submitted_at,
+        }
     }
     detailsDialog.value = true
   } catch (error) {
@@ -599,7 +632,7 @@ const handleCreateOrg = async () => {
   try {
     creatingOrg.value = true
     const formData = new FormData()
-    formData.append('name', orgFormData.value.name)
+    formData.append('org_name', orgFormData.value.name)
     formData.append('description', orgFormData.value.description)
     if (orgFormData.value.logo) {
       formData.append('logo', orgFormData.value.logo)

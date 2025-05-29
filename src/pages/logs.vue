@@ -146,7 +146,7 @@
             v-model:search="downloadUserSearch"
             item-title="username"
             item-value="id"
-            label="选择编辑社"
+            label="选择用户"
             prepend-icon="mdi-account"
             return-object
             multiple

@@ -12,7 +12,7 @@
       <v-col cols="12" sm="8" md="6">
         <v-text-field
           v-model="searchQuery"
-          label="搜索出版社"
+          label="搜索编辑"
           append-inner-icon="mdi-magnify"
           clearable
           density="compact"
@@ -21,7 +21,7 @@
           @keyup.enter="handleSearch"
           @click:append-inner="handleSearch"
           @click:clear="handleSearch"
-          placeholder="请输入出版社名称"
+          placeholder="请输入编辑名称"
         ></v-text-field>
       </v-col>
       <v-col cols="12" sm="4" md="6" class="d-flex justify-end">
@@ -277,7 +277,7 @@ interface ReviewRequest {
 
 const headers = [
   { title: '头像', key: 'avatar', align: 'center', sortable: false },
-  { title: '出版社', key: 'username', align: 'start' },
+  { title: '编辑', key: 'username', align: 'start' },
   { title: '审核状态', key: 'state', align: 'center' },
   { title: '提交时间', key: 'time', align: 'center' },
   { title: '操作', key: 'actions', align: 'center', sortable: false },
@@ -500,7 +500,7 @@ const fetchRequests = async (page: number, pageSize: number) => {
       endTime: endTimeFilter
     }
     const response = await reviewApi.getReviewRequests(params)
-    const { requests: requestList, current_page, total_pages, total_users } = response.data
+    const { requests: requestList, current_page, total_pages, total_requests } = response.data
     
     requests.value = requestList.map((request: any) => ({
       id: request.id,
@@ -513,7 +513,7 @@ const fetchRequests = async (page: number, pageSize: number) => {
     
     currentPage.value = current_page
     totalPages.value = total_pages
-    totalRequests.value = total_users
+    totalRequests.value = total_requests
   } catch (error) {
     console.error('获取审核请求失败:', error)
     snackbar.showMessage('获取审核请求失败', 'error')

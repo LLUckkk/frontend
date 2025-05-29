@@ -61,7 +61,7 @@
 
         <template v-slot:item.role="{ item }">
           <v-chip v-if="item.email === ROOT_ADMIN_EMAIL" color="purple" size="small" class="role-chip">
-            根管理员
+            软件管理员
           </v-chip>
           <v-chip v-else-if="item.role === 'admin'" :color="item.admin_type === 'software_admin' ? 'error' : 'warning'"
             size="small" class="role-chip">
@@ -498,7 +498,7 @@ const updatePermissions = async () => {
 const openDeleteDialog = (user: User) => {
   // 根管理员不能被删除
   if (user.email === ROOT_ADMIN_EMAIL) {
-    snackbar.showMessage('不能删除根管理员', 'warning')
+    snackbar.showMessage('不能删除软件管理员', 'warning')
     return
   }
   if (currentUser.value?.admin_type === 'organization_admin') {
@@ -593,8 +593,8 @@ const resetFilters = () => {
     endDate: null,
     enablePermissionFilter: false
   }
-  searchQuery.value = ''
-  organizationQuery.value = ''
+  // searchQuery.value = ''
+  // organizationQuery.value = ''
   timeError.value = ''
   currentPage.value = 1
   pageSize.value = 10
@@ -875,11 +875,11 @@ const selectedUserDetails = ref<{
 
 // 打开用户详情对话框
 const openUserDetailsDialog = async (user: User) => {
-  // 检查权限
-  if (user.role === 'admin' && currentUser.value?.email !== ROOT_ADMIN_EMAIL) {
-    snackbar.showMessage('只有根管理员才能查看管理员信息', 'warning')
-    return
-  }
+  // // 检查权限
+  // if (user.role === 'admin' && currentUser.value?.email !== ROOT_ADMIN_EMAIL) {
+  //   snackbar.showMessage('只有软件管理员才能查看管理员信息', 'warning')
+  //   return
+  // }
 
   try {
     let response;
