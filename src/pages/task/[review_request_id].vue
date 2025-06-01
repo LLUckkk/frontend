@@ -287,9 +287,9 @@ const handleImageSelect = (index: number) => {
 
 const getResult = (result: boolean) => {
   if (result === true) {
-    return '真'
-  } else {
     return '假'
+  } else {
+    return '真'
   }
 }
 
