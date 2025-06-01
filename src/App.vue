@@ -314,27 +314,6 @@ const handleLogout = async () => {
   }
 }
 
-const getNotificationIcon = (type: string) => {
-  switch (type) {
-    case 'global':
-      return 'mdi-information'
-    case 'system':
-      return 'mdi-check-circle'
-    case 'p2r':
-      return 'mdi-alert'
-    case 'r2p':
-      return 'mdi-alert-circle'
-    case 'task':
-      return 'mdi-clipboard-check'
-    case 'message':
-      return 'mdi-message-text'
-    case 'system':
-      return 'mdi-cog'
-    default:
-      return 'mdi-bell'
-  }
-}
-
 const toggleTheme = () => {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
   localStorage.setItem('app_theme', theme.value)
