@@ -267,15 +267,15 @@ const getDegreeLabel = (value: number | null) => {
   if (value === null) return '未评分'
   switch (value) {
     case 1:
-      return '很差'
+      return '基本没有'
     case 2:
-      return '较差'
+      return '轻微'
     case 3:
-      return '一般'
+      return '不明显'
     case 4:
-      return '较好'
+      return '较严重'
     case 5:
-      return '很好'
+      return '严重'
     default:
       return '未评分'
   }
