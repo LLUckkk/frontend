@@ -36,7 +36,7 @@
                 </template>
               </v-img>
               <span v-else class="text-h4">PIC</span>
-              
+
               <!-- 添加标注层 -->
               <div class="annotation-layer" v-if="props.imageUrl">
                 <svg class="annotation-svg">
@@ -44,27 +44,13 @@
                     <g v-if="showAnnotations[dimensionIndex]">
                       <g v-for="(annotationObject, objIndex) in dimensionAnnotations" :key="objIndex">
                         <!-- 添加连接线 -->
-                        <polyline
-                          :points="annotationObject.points.map(p => `${p.x},${p.y}`).join(' ')"
-                          :stroke="annotationObject.color"
-                          stroke-width="7"
-                          fill="none"
-                          opacity="0.7"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
+                        <polyline :points="annotationObject.points.map(p => `${p.x},${p.y}`).join(' ')"
+                          :stroke="annotationObject.color" stroke-width="7" fill="none" opacity="0.7"
+                          stroke-linecap="round" stroke-linejoin="round" />
                         <!-- 保持原有的点 -->
-                        <circle
-                          v-for="(point, pointIndex) in annotationObject.points"
-                          :key="pointIndex"
-                          :cx="point.x"
-                          :cy="point.y"
-                          r="4"
-                          :fill="annotationObject.color"
-                          :stroke="annotationObject.color"
-                          stroke-width="2"
-                          opacity="0.7"
-                        />
+                        <circle v-for="(point, pointIndex) in annotationObject.points" :key="pointIndex" :cx="point.x"
+                          :cy="point.y" r="4" :fill="annotationObject.color" :stroke="annotationObject.color"
+                          stroke-width="2" opacity="0.7" />
                       </g>
                     </g>
                   </g>
@@ -80,14 +66,8 @@
               <div v-for="(dimension, index) in dimensions" :key="index" class="dimension-item mb-6">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <span class="text-subtitle-1">{{ dimension.name }}</span>
-                  <v-btn
-                    v-if="props.annotations[index]?.length > 0"
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    class="annotation-btn"
-                    @click="toggleAnnotations(index)"
-                  >
+                  <v-btn v-if="props.annotations[index]?.length > 0" size="small" variant="text" color="primary"
+                    class="annotation-btn" @click="toggleAnnotations(index)">
                     <v-icon start>{{ showAnnotations[index] ? 'mdi-eye-off' : 'mdi-eye' }}</v-icon>
                     {{ showAnnotations[index] ? '隐藏标注' : '显示标注' }}
                   </v-btn>
@@ -249,15 +229,15 @@ const getDegreeIcon = (value: number | null) => {
   if (value === null) return 'mdi-emoticon-neutral'
   switch (value) {
     case 1:
-      return 'mdi-emoticon-frown'
+      return 'mdi-emoticon-happy'
     case 2:
-      return 'mdi-emoticon-sad'
+      return 'mdi-emoticon-smile'
     case 3:
       return 'mdi-emoticon-neutral'
     case 4:
-      return 'mdi-emoticon-smile'
+      return 'mdi-emoticon-sad'
     case 5:
-      return 'mdi-emoticon-happy'
+      return 'mdi-emoticon-frown'
     default:
       return 'mdi-emoticon-neutral'
   }
