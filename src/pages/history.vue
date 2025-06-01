@@ -22,42 +22,17 @@
         <v-card-title class="text-h6 font-weight-bold">筛选条件</v-card-title>
         <v-card-text>
           <div class="d-flex flex-column gap-4">
-            <v-select
-              v-model="filters.status"
-              :items="statusOptions"
-              label="任务状态"
-              clearable
-              hide-details
-            ></v-select>
-            
-            <v-select
-              v-model="filters.timeRange"
-              :items="timeRangeOptions"
-              label="快速选择时间范围"
-              clearable
-              hide-details
-              @update:model-value="handleTimeRangeChange"
-            ></v-select>
+            <v-select v-model="filters.status" :items="statusOptions" label="任务状态" clearable hide-details></v-select>
+
+            <v-select v-model="filters.timeRange" :items="timeRangeOptions" label="快速选择时间范围" clearable hide-details
+              @update:model-value="handleTimeRangeChange"></v-select>
 
             <div class="d-flex align-center gap-4">
-              <v-text-field
-                v-model="filters.startDate"
-                label="开始时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
-              <v-text-field
-                v-model="filters.endDate"
-                label="结束时间"
-                type="datetime-local"
-                hide-details
-                density="compact"
-                :error-messages="timeError"
-                @update:model-value="handleCustomTimeChange"
-              ></v-text-field>
+              <v-text-field v-model="filters.startDate" label="开始时间" type="datetime-local" hide-details
+                density="compact" :error-messages="timeError"
+                @update:model-value="handleCustomTimeChange"></v-text-field>
+              <v-text-field v-model="filters.endDate" label="结束时间" type="datetime-local" hide-details density="compact"
+                :error-messages="timeError" @update:model-value="handleCustomTimeChange"></v-text-field>
             </div>
           </div>
         </v-card-text>
@@ -100,7 +75,8 @@
               :disabled="item.status !== 'completed'">
               下一步
             </v-btn>
-            <v-btn size="small" color="error" variant="text" @click="handleDelete(item)">
+            <v-btn size="small" color="error" variant="text" @click="handleDelete(item)"
+              :disabled="item.status !== 'completed'">
               删除
             </v-btn>
           </div>
@@ -135,6 +111,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSnackbarStore } from '@/stores/snackbar'
 import publisher from '@/api/publisher'
+import Review_request_id from './task/[review_request_id].vue'
 
 const router = useRouter()
 const snackbar = useSnackbarStore()
@@ -208,10 +185,10 @@ const handleTimeRangeChange = (value: string | null) => {
 // 处理自定义时间变化
 const handleCustomTimeChange = () => {
   filters.value.timeRange = null
-  
+
   // 检查是否都为空或都存在
-  if ((!filters.value.startDate && filters.value.endDate) || 
-      (filters.value.startDate && !filters.value.endDate)) {
+  if ((!filters.value.startDate && filters.value.endDate) ||
+    (filters.value.startDate && !filters.value.endDate)) {
     timeError.value = '开始时间和结束时间必须同时设置或同时为空'
     return
   }
@@ -224,7 +201,7 @@ const handleCustomTimeChange = () => {
 
   const startTime = new Date(filters.value.startDate!).getTime()
   const endTime = new Date(filters.value.endDate!).getTime()
-  
+
   if (startTime >= endTime) {
     timeError.value = '开始时间必须早于结束时间'
   } else {
@@ -385,21 +362,19 @@ const applyFilters = () => {
   fetchTasks(1, pageSize.value)
 }
 
-// 获取进度条颜色
-const getProgressColor = (progress: number) => {
-  if (progress === 100) return 'success'
-  if (progress > 0) return 'warning'
-  return 'error'
-}
-
 // 操作按钮处理函数
 const handleNext = (item: Task) => {
-  console.log(item.task_id)
   router.push(`/step/${item.task_id}`)
 }
 
-const handleDelete = (item: Task) => {
-  console.log('删除', item)
+//处理删除
+const handleDelete = async (item: Task) => {
+  try {
+    await publisher.deleteDetectionTask({ task_id: item.task_id })
+    fetchTasks(currentPage.value, pageSize.value)
+  } catch {
+    snackbar.showMessage('删除检测任务失败', 'error')
+  }
 }
 
 // 时间格式化函数

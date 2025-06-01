@@ -108,6 +108,10 @@ export default {
   //publisher根据imgid获取detectionid
   getDetectionID(data: any) {
     return http.get(`/tasks_image/${data.img_id}/getdr/`)
+  },
+
+  deleteDetectionTask(data: any) {
+    return http.delete(`/detection-task-delete/${data.task_id}/`)
   }
 
 }
