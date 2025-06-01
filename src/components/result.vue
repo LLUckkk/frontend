@@ -211,19 +211,20 @@ const getDegreeColor = (value: number | null) => {
   if (value === null) return 'grey'
   switch (value) {
     case 1:
-      return 'error'
+      return 'success'
     case 2:
-      return 'warning'
+      return 'info'
     case 3:
       return 'yellow'
     case 4:
-      return 'info'
+      return 'warning'
     case 5:
       return 'success'
     default:
-      return 'grey'
+      return 'error'
   }
 }
+
 
 const getDegreeIcon = (value: number | null) => {
   if (value === null) return 'mdi-emoticon-neutral'
