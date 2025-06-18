@@ -505,7 +505,7 @@ const fetchRequests = async (page: number, pageSize: number) => {
     requests.value = requestList.map((request: any) => ({
       id: request.id,
       username: request.username,
-      avatar: 'http://122.9.45.122' + request.avatar || '',
+      avatar: import.meta.env.VITE_API_URL + request.avatar || '',
       state: request.state,
       file_type: request.file_type,
       time: request.time

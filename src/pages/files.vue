@@ -30,7 +30,7 @@
             <v-chip class="ma-1">
               {{ item.raw.username }}
               <v-avatar start size="24" class="mr-2">
-                <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
               </v-avatar>
             </v-chip>
           </template>
@@ -38,7 +38,7 @@
             <v-list-item v-bind="props" :title="item.raw.username" :subtitle="item.raw.email">
               <template v-slot:prepend>
                 <v-avatar size="24" class="mr-2">
-                  <v-img :src="`http://122.9.45.122${item.raw.avatar}`" cover></v-img>
+                  <v-img :src="getImageUrl(item.raw.avatar)" cover></v-img>
                 </v-avatar>
               </template>
             </v-list-item>

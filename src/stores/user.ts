@@ -13,7 +13,7 @@ interface UserState {
   organization: number;
 }
 
-const API_BASE_URL = 'http://122.9.45.122';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export const useUserStore = defineStore('user', {
   state: (): UserState => ({

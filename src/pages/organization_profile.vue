@@ -149,8 +149,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSnackbarStore } from '@/stores/snackbar'
 import { useUserStore } from '@/stores/user'
-import payment from '@/api/payment'
 import organization from '@/api/organization'
+import userApi from '@/api/user'
 
 const snackbar = useSnackbarStore()
 const userStore = useUserStore()
@@ -198,10 +198,18 @@ const formatTime = (data: string) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
+// 当前用户
+const currentUser = ref<{
+  email: string;
+  admin_type?: string;
+  organization?: number;
+} | null>(null)
 
 // 获取组织信息
 const fetchOrganizationInfo = async () => {
   try {
+    const res = await userApi.getUserInfo()
+    currentUser.value = res.data
     const response = await organization.getOrgDetail({ organization_id: userStore.organization })
     organizationInfo.value = response.data
     // 获取组织配额信息

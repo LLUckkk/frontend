@@ -341,10 +341,10 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" @click="copyInviteCode">
+          <!-- <v-btn color="primary" @click="copyInviteCode">
             <v-icon start>mdi-content-copy</v-icon>
             复制邀请码
-          </v-btn>
+          </v-btn> -->
           <v-btn color="grey" variant="text" @click="showInviteCodeDialog = false">
             关闭
           </v-btn>
@@ -767,7 +767,7 @@ const fetchUsers = async (page: number, pageSize: number) => {
       role: user.role,
       permission: user.permission,
       registerTime: new Date(user.date_joined).getTime(),
-      avatar: 'http://122.9.45.122' + user.avatar || '',
+      avatar: import.meta.env.VITE_API_URL + user.avatar || '',
       admin_type: user.admin_type,
       organization: user.organization
     }))
@@ -891,7 +891,7 @@ const openUserDetailsDialog = async (user: User) => {
 
     selectedUserDetails.value = {
       ...response.data,
-      avatar: 'http://122.9.45.122' + response.data.avatar,
+      avatar: import.meta.env.VITE_API_URL + response.data.avatar,
     }
     showUserDetailsDialog.value = true
   } catch (error) {
